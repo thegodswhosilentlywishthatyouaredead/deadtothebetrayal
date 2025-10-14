@@ -614,10 +614,17 @@ function createZonePerformanceElement(zone, rank) {
     const zoneCard = document.createElement('div');
     zoneCard.className = `zone-performance-card rank-${rank}`;
     
-    const productivityPercentage = Math.round(zone.productivityScore || 0);
-    const activeTeams = zone.teams ? zone.teams.filter(t => t.status === 'active').length : 0;
+    // Calculate metrics with proper formatting
+    const productivityPercentage = parseFloat(zone.productivityScore || 0).toFixed(2);
+    const activeTeams = zone.teams ? zone.teams.filter(t => t.status === 'active' || t.status === 'available').length : 0;
     const totalTeams = zone.teams ? zone.teams.length : 0;
-    const efficiencyPercentage = Math.round(zone.averageRating ? zone.averageRating * 20 : 85);
+    const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+    const avgRating = parseFloat(zone.averageRating || 0).toFixed(2);
+    
+    // Determine productivity color
+    let productivityColor = '#28a745'; // green
+    if (productivityPercentage < 50) productivityColor = '#dc3545'; // red
+    else if (productivityPercentage < 70) productivityColor = '#ffc107'; // yellow
     
     zoneCard.innerHTML = `
         <div class="zone-header">
@@ -627,27 +634,33 @@ function createZonePerformanceElement(zone, rank) {
         
         <div class="zone-metrics">
             <div class="zone-metric">
-                <span class="zone-metric-value">${zone.totalTickets || 0}</span>
+                <span class="zone-metric-value">${totalTickets}</span>
                 <div class="zone-metric-label">Total Tickets</div>
             </div>
             <div class="zone-metric">
-                <span class="zone-metric-value">${totalTeams}</span>
-                <div class="zone-metric-label">Teams</div>
+                <span class="zone-metric-value">${activeTeams}/${totalTeams}</span>
+                <div class="zone-metric-label">Active Teams</div>
             </div>
         </div>
         
         <div class="zone-productivity">
-            <div class="productivity-label">Productivity</div>
-            <div class="productivity-score">${productivityPercentage}%</div>
+            <div class="productivity-label">Productivity Score</div>
+            <div class="productivity-score" style="color: ${productivityColor}">${productivityPercentage}%</div>
         </div>
         
         <div class="productivity-bar">
-            <div class="productivity-fill" style="width: ${Math.min(100, Math.max(0, productivityPercentage))}%"></div>
+            <div class="productivity-fill" style="width: ${Math.min(100, Math.max(0, productivityPercentage))}%; background: linear-gradient(90deg, ${productivityColor} 0%, ${productivityColor}cc 100%);"></div>
         </div>
         
-        <div class="mt-2">
-            <small class="text-muted">
-                ${zone.openTickets || 0} open • ${zone.closedTickets || 0} closed • ${zone.averageRating ? zone.averageRating.toFixed(2) : '0.00'}★ rating
+        <div class="mt-2" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-top: 1px solid rgba(0, 102, 204, 0.1);">
+            <small style="color: #6c757d; font-weight: 500;">
+                <i class="fas fa-folder-open" style="color: #ffc107;"></i> ${zone.openTickets || 0} open
+            </small>
+            <small style="color: #6c757d; font-weight: 500;">
+                <i class="fas fa-check-circle" style="color: #28a745;"></i> ${zone.closedTickets || 0} closed
+            </small>
+            <small style="color: #6c757d; font-weight: 500;">
+                <i class="fas fa-star" style="color: #ffc107;"></i> ${avgRating}
             </small>
         </div>
     `;
