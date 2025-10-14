@@ -3534,7 +3534,7 @@ async function loadPerformanceAnalysis() {
         // Create charts
         createTicketTrendsChart(allTickets);
         createStatusDistributionChart(allTickets);
-        createAgingAnalysisChart(allTickets);
+        createProductivityVsEfficiencyChart(allTickets, allTeams);
         createZonePerformanceChart(allTickets);
         createPriorityBreakdownChart(allTickets);
         createCategoryDistributionChart(allTickets);
@@ -3723,70 +3723,134 @@ function createStatusDistributionChart(tickets) {
     });
 }
 
-// Create Aging Analysis Chart
-function createAgingAnalysisChart(tickets) {
-    const ctx = document.getElementById('agingAnalysisChart');
+// Create Productivity vs Efficiency Trends Chart
+function createProductivityVsEfficiencyChart(tickets, teams) {
+    const ctx = document.getElementById('productivityVsEfficiencyChart');
     if (!ctx) {
         console.warn(`⚠️ Canvas not found for chart`);
         return;
     }
     
-    console.log('⏳ Creating Aging Analysis Chart...');
+    console.log('📈 Creating Productivity vs Efficiency Trends Chart...');
     
-    const now = new Date();
-    const aging = {
-        '0-24h': 0,
-        '24-48h': 0,
-        '48h+': 0
-    };
+    // Calculate trends over last 30 days
+    const days = [];
+    const productivityData = [];
+    const efficiencyData = [];
     
-    const activeTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        // Get tickets for this day
+        const dayTickets = tickets.filter(t => {
+            const ticketDate = new Date(t.createdAt);
+            return ticketDate >= date && ticketDate < nextDay;
+        });
+        
+        // Calculate productivity (completion rate)
+        const dayResolved = tickets.filter(t => {
+            const resolvedDate = t.resolvedAt;
+            if (!resolvedDate) return false;
+            const rDate = new Date(resolvedDate);
+            return rDate >= date && rDate < nextDay;
+        }).length;
+        
+        const productivity = dayTickets.length > 0 
+            ? (dayResolved / dayTickets.length * 100)
+            : 0;
+        
+        // Calculate efficiency (resolved within 2h target)
+        const dayResolvedFast = tickets.filter(t => {
+            const resolvedDate = t.resolvedAt;
+            if (!resolvedDate) return false;
+            const rDate = new Date(resolvedDate);
+            if (rDate < date || rDate >= nextDay) return false;
+            
+            const hours = (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60);
+            return hours <= 2;
+        }).length;
+        
+        const efficiency = dayResolved > 0
+            ? (dayResolvedFast / dayResolved * 100)
+            : 0;
+        
+        days.push(date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' }));
+        productivityData.push(productivity);
+        efficiencyData.push(efficiency);
+    }
     
-    activeTickets.forEach(t => {
-        const hours = (now - new Date(t.createdAt)) / (1000 * 60 * 60);
-        if (hours < 24) aging['0-24h']++;
-        else if (hours < 48) aging['24-48h']++;
-        else aging['48h+']++;
+    // Calculate current values (last day)
+    const currentProductivity = productivityData[productivityData.length - 1] || 0;
+    const currentEfficiency = efficiencyData[efficiencyData.length - 1] || 0;
+    
+    updateElement('current-productivity', `${currentProductivity.toFixed(2)}%`);
+    updateElement('current-efficiency', `${currentEfficiency.toFixed(2)}%`);
+    
+    console.log('📊 Productivity vs Efficiency:', {
+        avgProductivity: (productivityData.reduce((a, b) => a + b, 0) / productivityData.length).toFixed(2),
+        avgEfficiency: (efficiencyData.reduce((a, b) => a + b, 0) / efficiencyData.length).toFixed(2),
+        currentProductivity: currentProductivity.toFixed(2),
+        currentEfficiency: currentEfficiency.toFixed(2)
     });
     
-    console.log('📊 Aging breakdown:', aging, `(${activeTickets.length} active tickets)`);
-    
-    updateElement('aging-0-24', aging['0-24h']);
-    updateElement('aging-24-48', aging['24-48h']);
-    updateElement('aging-48plus', aging['48h+']);
-    
-    chartInstances['agingAnalysis'] = new Chart(ctx, {
-        type: 'bar',
+    chartInstances['productivityVsEfficiency'] = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: ['< 24 hours', '24-48 hours', '> 48 hours'],
-            datasets: [{
-                label: 'Active Tickets',
-                data: [aging['0-24h'], aging['24-48h'], aging['48h+']],
-                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
-                borderRadius: 8,
-                barThickness: 60
-            }]
+            labels: days,
+            datasets: [
+                {
+                    label: 'Productivity (Completion Rate)',
+                    data: productivityData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                },
+                {
+                    label: 'Efficiency (< 2h Target)',
+                    data: efficiencyData,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
             plugins: {
                 legend: { 
                     display: true,
                     position: 'top',
                     labels: {
                         font: {
-                            size: 14,
+                            size: 13,
                             weight: '500'
-                        }
+                        },
+                        usePointStyle: true,
+                        padding: 15
                     }
                 },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            const total = activeTickets.length;
-                            const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
-                            return `${context.parsed.y} tickets (${percentage}%)`;
+                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
                         }
                     }
                 }
@@ -3794,34 +3858,44 @@ function createAgingAnalysisChart(tickets) {
             scales: {
                 y: { 
                     beginAtZero: true,
+                    max: 100,
                     ticks: {
-                        stepSize: 1,
+                        callback: function(value) {
+                            return value + '%';
+                        },
                         font: {
                             size: 12
                         }
                     },
                     title: {
                         display: true,
-                        text: 'Number of Active Tickets',
+                        text: 'Percentage (%)',
                         font: {
                             size: 13,
                             weight: '600'
                         }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)'
                     }
                 },
                 x: {
                     ticks: {
                         font: {
-                            size: 12,
-                            weight: '500'
-                        }
+                            size: 11
+                        },
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        display: false
                     }
                 }
             }
         }
     });
     
-    console.log('✅ Aging Analysis Chart created');
+    console.log('✅ Productivity vs Efficiency Chart created');
 }
 
 // Create Zone Performance Chart
