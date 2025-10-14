@@ -1175,3 +1175,181 @@ function logout() {
         window.location.href = 'index.html';
     }
 }
+
+// AI Assistant Functions
+let fieldAIChatHistory = [];
+
+function toggleFieldAI() {
+    // For mobile - expand/collapse widget
+    if (window.innerWidth <= 768) {
+        const widget = document.getElementById('field-ai-widget');
+        widget.classList.toggle('expanded');
+    }
+}
+
+function sendFieldQuickQuery(query) {
+    console.log('🤖 Quick query:', query);
+    sendFieldAIMessage(query);
+}
+
+async function sendFieldAIMessage(customQuery = null) {
+    const input = document.getElementById('field-ai-input');
+    const sendBtn = document.getElementById('field-ai-send-btn');
+    const chatContainer = document.getElementById('field-ai-chat');
+    
+    const query = customQuery || input.value.trim();
+    
+    if (!query) return;
+    
+    console.log('🤖 Sending field AI query:', query);
+    
+    // Clear input
+    if (!customQuery) {
+        input.value = '';
+    }
+    
+    // Disable send button
+    sendBtn.disabled = true;
+    
+    // Add user message
+    addFieldAIMessage(query, 'user');
+    
+    // Show typing indicator
+    showFieldAITyping();
+    
+    try {
+        // Get context data
+        const context = await getFieldTeamContext();
+        
+        // Send to AI API
+        const response = await fetch(`${API_BASE}/ai/query`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                query: query,
+                context: {
+                    userType: 'field_team',
+                    userName: currentUser.name,
+                    teamData: context
+                }
+            })
+        });
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        removeFieldAITyping();
+        
+        // Add AI response
+        addFieldAIMessage(data.response, 'assistant');
+        
+        // Store in history
+        fieldAIChatHistory.push({
+            query: query,
+            response: data.response,
+            timestamp: new Date().toISOString()
+        });
+        
+        console.log('✅ AI response received');
+        
+    } catch (error) {
+        console.error('❌ Error querying AI:', error);
+        removeFieldAITyping();
+        addFieldAIMessage(
+            'Sorry, I\'m having trouble connecting right now. Please try again in a moment.',
+            'assistant'
+        );
+    } finally {
+        sendBtn.disabled = false;
+    }
+}
+
+async function getFieldTeamContext() {
+    // Get current context for AI
+    try {
+        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsData = await ticketsResponse.json();
+        
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        
+        const myActiveTickets = myTickets.filter(t => 
+            t.status === 'open' || t.status === 'in_progress' || t.status === 'assigned'
+        );
+        
+        return {
+            ticketCount: myTickets.length,
+            activeTickets: myActiveTickets.length,
+            todayTickets: myTickets,
+            performance: {
+                rating: 4.8,
+                efficiency: 92,
+                completedToday: myTickets.filter(t => t.status === 'completed' || t.status === 'resolved').length
+            },
+            totalSystemTickets: ticketsData.total || 0,
+            totalSystemTeams: teamsData.total || 0
+        };
+    } catch (error) {
+        console.error('Error getting context:', error);
+        return {
+            ticketCount: myTickets.length,
+            activeTickets: myTickets.length
+        };
+    }
+}
+
+function addFieldAIMessage(message, type) {
+    const chatContainer = document.getElementById('field-ai-chat');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `field-ai-message ${type}`;
+    
+    const avatar = type === 'assistant' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+    
+    messageDiv.innerHTML = `
+        <div class="field-ai-avatar">
+            ${avatar}
+        </div>
+        <div class="field-ai-bubble">
+            ${message.replace(/\n/g, '<br>')}
+        </div>
+    `;
+    
+    chatContainer.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function showFieldAITyping() {
+    const chatContainer = document.getElementById('field-ai-chat');
+    
+    const typingDiv = document.createElement('div');
+    typingDiv.className = 'field-ai-message assistant';
+    typingDiv.id = 'field-ai-typing';
+    
+    typingDiv.innerHTML = `
+        <div class="field-ai-avatar">
+            <i class="fas fa-robot"></i>
+        </div>
+        <div class="field-ai-bubble">
+            <div class="field-ai-typing">
+                <div class="field-ai-typing-dot"></div>
+                <div class="field-ai-typing-dot"></div>
+                <div class="field-ai-typing-dot"></div>
+            </div>
+        </div>
+    `;
+    
+    chatContainer.appendChild(typingDiv);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removeFieldAITyping() {
+    const typingDiv = document.getElementById('field-ai-typing');
+    if (typingDiv) {
+        typingDiv.remove();
+    }
+}

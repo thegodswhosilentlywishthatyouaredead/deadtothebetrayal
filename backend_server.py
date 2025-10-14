@@ -257,11 +257,19 @@ def ai_query():
     try:
         data = request.get_json()
         query = data.get('query', '').lower()
+        context = data.get('context', {})
+        user_type = context.get('userType', 'admin')
+        user_name = context.get('userName', 'User')
+        team_data = context.get('teamData', {})
         
-        # Simple AI response
-        if 'performance' in query or 'productivity' in query:
-            response = f"""**Team Performance Overview:**
-            
+        # Field team specific responses
+        if user_type == 'field_team':
+            response = generate_field_team_response(query, user_name, team_data)
+        else:
+            # Admin responses
+            if 'performance' in query or 'productivity' in query:
+                response = f"""**Team Performance Overview:**
+                
 - Total Teams: {len(field_teams)} active technicians
 - Total Tickets: {len(tickets)} service requests
 - System Health: All systems operational ✅
@@ -270,17 +278,17 @@ def ai_query():
 {chr(10).join([f"- {t['name']} ({t['zone']}): {t['productivity']['customerRating']:.1f}★" for t in sorted(field_teams, key=lambda x: x['productivity']['customerRating'], reverse=True)[:3]])}
 
 All teams are performing excellently! 🎯"""
-        
-        elif 'ticket' in query:
-            response = f"""**Ticket Analytics:**
             
+            elif 'ticket' in query:
+                response = f"""**Ticket Analytics:**
+                
 - Total Tickets: {len(tickets)}
 - Open Tickets: {len([t for t in tickets if t['status'] == 'open'])}
 - System is maintaining excellent response times! 📊"""
-        
-        else:
-            response = f"""**AIFF System Overview:**
             
+            else:
+                response = f"""**AIFF System Overview:**
+                
 Welcome to Advanced Intelligence Field Force Systems! 🚀
 
 **Current Status:**
@@ -297,6 +305,242 @@ How can I help you today? 💡"""
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def generate_field_team_response(query, user_name, team_data):
+    """Generate field team specific responses"""
+    
+    if 'performance' in query or 'how am i' in query or 'my performance' in query:
+        ticket_count = team_data.get('ticketCount', 0)
+        active_count = team_data.get('activeTickets', 0)
+        performance = team_data.get('performance', {})
+        
+        return f"""**Your Performance Summary - {user_name}:**
+
+**Today's Metrics:**
+- 📋 Tickets Assigned: {ticket_count} tasks
+- ✅ Completed: {performance.get('completedToday', 0)} tickets
+- ⭐ Customer Rating: {performance.get('rating', 4.8):.2f}/5.0
+- 📈 Efficiency Score: {performance.get('efficiency', 92):.2f}%
+
+**Performance Highlights:**
+✅ Excellent work! You're performing above team average
+✅ Customers are very satisfied with your service
+✅ Your response time is faster than average
+✅ Keep up the great quality!
+
+**Tips to Maintain Performance:**
+1. Document all work thoroughly with photos
+2. Keep customers informed of progress
+3. Double-check all connections before closing tickets
+4. Update ticket status in real-time
+
+Keep up the amazing work! 🌟"""
+    
+    elif 'task' in query or 'ticket' in query or 'today' in query or 'assigned' in query:
+        ticket_count = team_data.get('ticketCount', 0)
+        active_count = team_data.get('activeTickets', 0)
+        
+        return f"""**Your Tasks Today - {user_name}:**
+
+**Assigned Tickets:** {ticket_count} tasks
+**Active Tasks:** {active_count} in progress
+
+**Priority Tips:**
+1. ⚡ Complete HIGH priority tickets first
+2. 📍 Group nearby locations for efficiency
+3. ⏰ Schedule complex tasks during off-peak hours
+4. 📞 Call customers before arrival
+
+**Time Management:**
+- Average ticket: 1.5-2 hours
+- Travel time: Factor in 15-20 minutes between sites
+- Break time: Take proper breaks for safety
+- Documentation: Reserve 30 minutes end-of-day
+
+**Before Starting Each Task:**
+✓ Review ticket details thoroughly
+✓ Check required materials
+✓ Verify customer contact information
+✓ Plan route to location
+✓ Inform customer of arrival time
+
+You've got this! 💪"""
+    
+    elif 'troubleshoot' in query or 'fiber' in query or 'network' in query or 'fix' in query or 'repair' in query:
+        return f"""**Network Troubleshooting Guide - {user_name}:**
+
+**Fiber Optic Quick Steps:**
+
+**1. Visual Inspection (5 min):**
+- Check for physical damage to cables
+- Inspect connectors for dirt/damage
+- Verify LED indicators on ONU/ONT
+- Look for bent or crimped cables
+
+**2. Power & Connectivity (5 min):**
+- Confirm power supply working
+- Check LED status:
+  🟢 Green: Good signal
+  🔴 Red: No signal/weak
+  🟡 Amber: Connection issues
+
+**3. Signal Testing (10 min):**
+- Use optical power meter
+- Test at customer premises and FDP
+- Compare with standard values
+- Document all measurements
+
+**Common Issues & Fixes:**
+🔧 Dirty Connectors → Clean with fiber optic cleaner
+🔧 Bent Cable → Straighten or replace section
+🔧 Loose Connections → Re-seat firmly
+🔧 Damaged FDP → Report to infrastructure team
+
+**CPE Device Issues:**
+1. Power cycle (wait 30 seconds)
+2. Check configuration settings
+3. Verify MAC address registration
+4. Test with spare device if available
+
+**Safety Reminders:**
+⚠️ Never look into fiber cables
+⚠️ Use safety glasses when cleaving
+⚠️ Dispose fiber scraps properly
+
+Need specific help? Just ask! 🔧"""
+    
+    elif 'optimize' in query or 'improve' in query or 'efficiency' in query or 'better' in query or 'tips' in query:
+        return f"""**Work Optimization Tips - {user_name}:**
+
+**Save 30-45 min/day with these tips:**
+
+**1. Route Planning:**
+- Group nearby tickets together
+- Start with farthest location, work back
+- Check traffic before departure
+- Use the Route Planning tab!
+
+**2. Time Management:**
+- Morning (8-11 AM): High-priority tickets
+- Midday (11-2 PM): Travel-heavy tasks
+- Afternoon (2-5 PM): Medium-priority tickets
+- End of Day: Documentation
+
+**3. Material Preparation:**
+- Check inventory before leaving
+- Pack common items: fiber cables, connectors, CPE
+- Bring testing equipment
+- Have spare parts ready
+
+**4. Customer Communication:**
+- Call 15-20 minutes before arrival
+- Explain issue and solution clearly
+- Set realistic expectations
+- Ask for feedback
+
+**5. Documentation:**
+- Take "before" and "after" photos
+- Record all measurements
+- Update status in real-time
+- Submit expenses daily
+
+**Target Metrics:**
+- Resolution Time: < 2 hours per ticket
+- First-Time Fix: > 95% success rate
+- Customer Rating: > 4.5/5.0
+- Daily Tickets: 5-7 completions
+
+You're doing great! Keep it up! 🚀"""
+    
+    elif 'safety' in query or 'equipment' in query or 'tool' in query:
+        return f"""**Safety & Equipment Guide - {user_name}:**
+
+**Personal Protective Equipment (PPE):**
+✓ Safety glasses (REQUIRED)
+✓ Gloves (REQUIRED)
+✓ Steel-toe boots (REQUIRED)
+✓ Reflective vest (for road work)
+✓ Hard hat (for pole work)
+
+**Equipment Checklist:**
+📦 Testing Tools:
+  - Optical power meter
+  - Visual fault locator
+  - OTDR (if available)
+  - Multimeter
+
+🔧 Hand Tools:
+  - Fiber cleaver
+  - Wire strippers
+  - Crimping tool
+  - Screwdrivers
+
+📦 Materials:
+  - Fiber cables (various lengths)
+  - Connectors and adapters
+  - CPE units (backup)
+  - Cleaning supplies
+
+**Safety Protocols:**
+
+⚠️ Fiber Optic Safety:
+- NEVER look directly into fiber cables
+- Always use fiber scope
+- Dispose of scraps in designated container
+- Wear safety glasses when cleaving
+
+⚠️ Electrical Safety:
+- Verify power is OFF before working
+- Use insulated tools
+- Check voltage before connecting
+- Follow lockout/tagout procedures
+
+⚠️ Vehicle Safety:
+- Park safely with hazard lights
+- Use warning cones/signs
+- Secure tools while driving
+- Follow traffic regulations
+
+🆘 Emergency: Call 999 immediately
+📞 Supervisor: Report any unsafe conditions
+
+Stay safe out there! 🛡️"""
+    
+    else:
+        return f"""**Hello {user_name}! 👋**
+
+I'm your AI Field Assistant. I can help you with:
+
+**📊 Performance Questions:**
+- "How is my performance?"
+- "What's my customer rating?"
+- "How can I improve?"
+
+**🔧 Technical Support:**
+- "How to troubleshoot fiber issues?"
+- "CPE device won't connect?"
+- "How to test signal strength?"
+- "Network troubleshooting steps?"
+
+**📋 Task Management:**
+- "What are my tasks today?"
+- "How to prioritize my work?"
+- "Route optimization tips?"
+
+**🛡️ Safety & Equipment:**
+- "Safety protocols for fiber work"
+- "Required PPE?"
+- "Equipment checklist?"
+- "Emergency procedures?"
+
+**⚡ Work Optimization:**
+- "How to work more efficiently?"
+- "Time management tips?"
+- "Best practices?"
+
+**Just ask me anything!** I'm here to make your work easier and safer. 💡
+
+Try the quick action buttons below for common questions!"""
 
 # Load sample data on startup
 load_sample_data()
