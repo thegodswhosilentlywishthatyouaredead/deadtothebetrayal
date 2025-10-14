@@ -316,15 +316,16 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
     // Today's active teams
     const todayActiveTeams = teams.filter(t => t.status === 'active').length;
     
-    // Update UI - Today's Tickets
+    // Update UI - Total Tickets
+    const totalTickets = tickets.length;
+    updateElement('total-tickets-count', totalTickets);
     updateElement('today-tickets', todayTickets.length);
     updateElement('monthly-tickets', monthlyTickets.length);
-    updateElement('active-tickets', activeTickets);
     
-    const ticketChange = monthlyTickets.length > 0 
-        ? ((todayTickets.length / (monthlyTickets.length / 30)) * 100 - 100).toFixed(2)
+    const totalTicketChange = monthlyTickets.length > 0 
+        ? ((monthlyTickets.length / totalTickets) * 100).toFixed(2)
         : 0;
-    updateTrendElement('today-tickets-trend', 'today-tickets-change', ticketChange, '% vs daily avg');
+    updateTrendElement('total-tickets-trend', 'total-tickets-change', totalTicketChange, '% this month');
     
     // Update UI - Productivity
     updateElement('productivity-score', `${productivityScore}%`);
@@ -389,10 +390,10 @@ function updateTrendElement(trendId, changeId, change, suffix) {
 
 function updateDashboardMetricsWithSampleData() {
     // Sample data for demonstration
+    updateElement('total-tickets-count', 150);
     updateElement('today-tickets', 8);
     updateElement('monthly-tickets', 75);
-    updateElement('active-tickets', 45);
-    updateTrendElement('today-tickets-trend', 'today-tickets-change', 12.50, '% vs daily avg');
+    updateTrendElement('total-tickets-trend', 'total-tickets-change', 50.00, '% this month');
     
     updateElement('productivity-score', '87.50%');
     updateElement('today-completed', 5);
