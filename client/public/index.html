@@ -2792,72 +2792,393 @@
 
                                 <!-- Performance Analysis View -->
                                 <div id="tickets-performance-analysis" style="display: none;">
-                                    <div class="row">
-                                        <!-- Ticket Information -->
-                                        <div class="col-md-6">
-                                            <div class="card mb-4">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">Ticket Information</h6>
-                                                </div>
-                                <div class="card-body">
-                                                    <div id="ticket-info">
-                                                        <!-- Ticket details will be loaded here -->
-                                        </div>
-                                        </div>
+                                    
+                                    <!-- Analysis Header -->
+                                    <div class="analysis-header mb-4">
+                                        <h3><i class="fas fa-chart-line me-2"></i>Comprehensive Performance Analysis</h3>
+                                        <p class="text-muted">Real-time insights, trends, and projections</p>
                                     </div>
-                                </div>
-                                        
-                                        <!-- Ticket Distribution -->
-                                        <div class="col-md-6">
-                                            <div class="card mb-4">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">Status Distribution</h6>
-                            </div>
-                                                <div class="card-body">
-                                                    <canvas id="ticketStatusChart" width="400" height="200"></canvas>
-                        </div>
+
+                                    <!-- Key Performance Indicators -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon blue">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="kpi-value" id="kpi-trend">+0.0%</div>
+                                                <div class="kpi-label">Ticket Growth</div>
+                                                <div class="kpi-sublabel">vs last month</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon green">
+                                                    <i class="fas fa-check-double"></i>
+                                                </div>
+                                                <div class="kpi-value" id="kpi-efficiency">0.0%</div>
+                                                <div class="kpi-label">Efficiency Rate</div>
+                                                <div class="kpi-sublabel">within SLA</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon orange">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                                <div class="kpi-value" id="kpi-avg-time">0.00h</div>
+                                                <div class="kpi-label">Avg Resolution</div>
+                                                <div class="kpi-sublabel">target: < 2h</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon red">
+                                                    <i class="fas fa-dollar-sign"></i>
+                                                </div>
+                                                <div class="kpi-value" id="kpi-cost">RM 0</div>
+                                                <div class="kpi-label">Monthly Cost</div>
+                                                <div class="kpi-sublabel">operational</div>
                                             </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row">
-                                        <!-- Zone Distribution -->
-                                        <div class="col-md-6">
-                                            <div class="card mb-4">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">Zone Distribution</h6>
+
+                                    <!-- Main Charts Row 1 -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-8">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h5>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-primary active" onclick="updateTrendPeriod('week')">Week</button>
+                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('month')">Month</button>
+                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('quarter')">Quarter</button>
+                                                    </div>
                                                 </div>
-                                <div class="card-body">
-                                                    <canvas id="zoneDistributionChart" width="400" height="200"></canvas>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="ticketTrendsChart" height="300"></canvas>
+                                                </div>
+                                            </div>
                                         </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-chart-pie me-2"></i>Status Distribution</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="statusDistChart" height="300"></canvas>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                        
-                                        <!-- Priority Distribution -->
+
+                                    <!-- Main Charts Row 2 -->
+                                    <div class="row mb-4">
                                         <div class="col-md-6">
-                                            <div class="card mb-4">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">Priority Distribution</h6>
-                                </div>
-                                                <div class="card-body">
-                                                    <canvas id="priorityDistributionChart" width="400" height="200"></canvas>
-                            </div>
-                        </div>
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-hourglass-half me-2"></i>Aging Analysis</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="agingAnalysisChart" height="250"></canvas>
+                                                    <div class="aging-stats mt-3">
+                                                        <div class="row text-center">
+                                                            <div class="col-4">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="aging-0-24">0</div>
+                                                                    <div class="aging-label">< 24h</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-4">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="aging-24-48">0</div>
+                                                                    <div class="aging-label">24-48h</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-4">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="aging-48plus">0</div>
+                                                                    <div class="aging-label">> 48h</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="zonePerformanceChart" height="250"></canvas>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                    
-                                    <div class="row">
-                                        <!-- Team Performance -->
+
+                                    <!-- Main Charts Row 3 -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="priorityBreakdownChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-tags me-2"></i>Category Distribution</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="categoryDistChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-users me-2"></i>Team Productivity</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="teamProductivityChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Financial Analysis -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-8">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-money-bill-trend-up me-2"></i>Cost Analysis & Financial Trends</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="costAnalysisChart" height="250"></canvas>
+                                                    <div class="cost-summary mt-3">
+                                                        <div class="row">
+                                                            <div class="col-3 text-center">
+                                                                <div class="cost-item">
+                                                                    <div class="cost-value" id="cost-today">RM 0</div>
+                                                                    <div class="cost-label">Today</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-3 text-center">
+                                                                <div class="cost-item">
+                                                                    <div class="cost-value" id="cost-week">RM 0</div>
+                                                                    <div class="cost-label">This Week</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-3 text-center">
+                                                                <div class="cost-item">
+                                                                    <div class="cost-value" id="cost-month">RM 0</div>
+                                                                    <div class="cost-label">This Month</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-3 text-center">
+                                                                <div class="cost-item">
+                                                                    <div class="cost-value" id="cost-projected">RM 0</div>
+                                                                    <div class="cost-label">Projected</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-trophy me-2"></i>Top Performers</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <div id="top-performers-list">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Productivity & Efficiency -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-gauge-high me-2"></i>Productivity Metrics</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="productivityMetricsChart" height="250"></canvas>
+                                                    <div class="productivity-summary mt-3">
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <div class="summary-item">
+                                                                    <span class="summary-label">Tickets/Day:</span>
+                                                                    <span class="summary-value" id="tickets-per-day">0</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="summary-item">
+                                                                    <span class="summary-label">Tickets/Team:</span>
+                                                                    <span class="summary-value" id="tickets-per-team">0</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-chart-line me-2"></i>Efficiency Trends</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="efficiencyTrendsChart" height="250"></canvas>
+                                                    <div class="efficiency-summary mt-3">
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <div class="summary-item">
+                                                                    <span class="summary-label">First-Time Fix:</span>
+                                                                    <span class="summary-value" id="first-time-fix">0%</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="summary-item">
+                                                                    <span class="summary-label">SLA Compliance:</span>
+                                                                    <span class="summary-value" id="sla-compliance">0%</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Forecasting & Projections -->
+                                    <div class="row mb-4">
                                         <div class="col-md-12">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">Team Performance by Zone</h6>
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-crystal-ball me-2"></i>AI-Powered Forecast Summary</h5>
                                                 </div>
-                                <div class="card-body">
-                                                    <canvas id="teamPerformanceChart" width="800" height="300"></canvas>
-                                        </div>
+                                                <div class="analysis-card-body">
+                                                    <div class="forecast-insights">
+                                                        <div class="row">
+                                                            <div class="col-md-3">
+                                                                <div class="insight-card">
+                                                                    <div class="insight-icon"><i class="fas fa-arrow-trend-up"></i></div>
+                                                                    <div class="insight-value" id="forecast-tickets">0</div>
+                                                                    <div class="insight-label">Projected Tickets (Next Week)</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="insight-card">
+                                                                    <div class="insight-icon"><i class="fas fa-users"></i></div>
+                                                                    <div class="insight-value" id="forecast-teams">0</div>
+                                                                    <div class="insight-label">Teams Needed</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="insight-card">
+                                                                    <div class="insight-icon"><i class="fas fa-dollar-sign"></i></div>
+                                                                    <div class="insight-value" id="forecast-cost">RM 0</div>
+                                                                    <div class="insight-label">Estimated Cost</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="insight-card">
+                                                                    <div class="insight-icon"><i class="fas fa-chart-line"></i></div>
+                                                                    <div class="insight-value" id="forecast-growth">0%</div>
+                                                                    <div class="insight-label">Growth Rate</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
+
+                                    <!-- Detailed Analysis Row -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-business-time me-2"></i>Peak Hours</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="peakHoursChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-calendar-week me-2"></i>Day of Week</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="dayOfWeekChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-star me-2"></i>Customer Ratings</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="customerRatingsChart" height="250"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bottom Row - Summary Tables -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-list-check me-2"></i>Performance Summary</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <table class="table table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Metric</th>
+                                                                <th>Current</th>
+                                                                <th>Target</th>
+                                                                <th>Status</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="performance-summary-table">
+                                                            <!-- Will be populated by JavaScript -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-lightbulb me-2"></i>AI Insights & Recommendations</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <div id="ai-insights">
+                                                        <!-- Will be populated by JavaScript -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                             </div>
