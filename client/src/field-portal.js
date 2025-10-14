@@ -7,7 +7,7 @@ let routeMarkers = [];
 let charts = {};
 
 // API Base URL
-const API_BASE = 'http://localhost:5001/api';
+const API_BASE = 'http://localhost:5002/api';
 
 // Initialize the field portal
 document.addEventListener('DOMContentLoaded', function() {
