@@ -1178,6 +1178,26 @@ function logout() {
 
 // AI Assistant Functions
 let fieldAIChatHistory = [];
+let isFieldAIVisible = true;
+
+function toggleFieldAIWidget() {
+    const widget = document.getElementById('field-ai-widget');
+    const toggleBtn = document.getElementById('field-ai-toggle-btn');
+    
+    isFieldAIVisible = !isFieldAIVisible;
+    
+    if (isFieldAIVisible) {
+        // Show widget, hide button
+        widget.classList.remove('minimized');
+        toggleBtn.classList.add('hidden');
+        console.log('🤖 AI Assistant opened');
+    } else {
+        // Hide widget, show button
+        widget.classList.add('minimized');
+        toggleBtn.classList.remove('hidden');
+        console.log('🤖 AI Assistant minimized');
+    }
+}
 
 function toggleFieldAI() {
     // For mobile - expand/collapse widget
