@@ -1638,8 +1638,13 @@
         }
 
         /* Performance Analysis Styles */
+        .analysis-header {
+            padding: 1.5rem 0;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
         .analysis-header h3 {
-            font-size: 1.75rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: var(--text-primary);
             margin: 0;
@@ -1648,33 +1653,47 @@
         .analysis-header p {
             color: var(--text-secondary);
             margin: 0.5rem 0 0 0;
+            font-size: 0.95rem;
+        }
+
+        /* Standardize row spacing in Performance Analysis */
+        #tickets-performance-analysis .row {
+            margin-bottom: 1.5rem;
+        }
+
+        #tickets-performance-analysis .row:last-child {
+            margin-bottom: 0;
         }
 
         .kpi-card {
             background: linear-gradient(135deg, #ffffff, #f8fafc);
             border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1.25rem;
             box-shadow: var(--card-shadow);
             border: 1px solid #f1f5f9;
             transition: all 0.3s ease;
             text-align: center;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .kpi-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
         }
 
         .kpi-icon {
-            width: 60px;
-            height: 60px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             color: white;
-            margin-bottom: 1rem;
+            margin: 0 auto 0.75rem auto;
         }
 
         .kpi-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
@@ -1683,21 +1702,22 @@
         .kpi-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
 
         .kpi-value {
-            font-size: 2.5rem;
+            font-size: 2rem;
             font-weight: 700;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
+            line-height: 1;
         }
 
         .kpi-label {
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.25rem;
         }
 
         .kpi-sublabel {
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             color: var(--text-secondary);
         }
 
@@ -1716,29 +1736,62 @@
         }
 
         .analysis-card-header {
-            padding: 1.25rem 1.5rem;
+            padding: 1rem 1.25rem;
             background: linear-gradient(to bottom, #f8fafc, #ffffff);
             border-bottom: 1px solid #e2e8f0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 60px;
         }
 
         .analysis-card-header h5 {
             margin: 0;
-            font-size: 1.125rem;
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
+            line-height: 1.4;
+        }
+
+        .analysis-card-header h5 i {
+            font-size: 0.9rem;
+            margin-right: 0.5rem;
+            color: var(--primary-color);
         }
 
         .analysis-card-body {
             padding: 1.5rem;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
         }
 
-        .aging-stats, .cost-summary, .productivity-summary, .efficiency-summary {
+        .analysis-card-body canvas {
+            max-height: 300px;
+            width: 100% !important;
+            height: auto !important;
+        }
+
+        /* Standardized chart heights for consistency */
+        #ticketTrendsChart { max-height: 350px; }
+        #statusDistChart { max-height: 350px; }
+        #productivityVsEfficiencyChart { max-height: 280px; }
+        #zonePerformanceChart { max-height: 280px; }
+        #priorityBreakdownChart { max-height: 280px; }
+        #categoryDistChart { max-height: 280px; }
+        #teamProductivityChart { max-height: 280px; }
+        #costAnalysisChart { max-height: 280px; }
+        #peakHoursChart { max-height: 280px; }
+        #dayOfWeekChart { max-height: 280px; }
+        #customerRatingsChart { max-height: 280px; }
+        #productivityMetricsChart { max-height: 280px; }
+        #efficiencyTrendsChart { max-height: 280px; }
+
+        .aging-stats, .cost-summary, .productivity-summary, .efficiency-summary, .forecast-insights {
             background: #f8fafc;
             border-radius: 8px;
             padding: 1rem;
+            margin-top: auto;
         }
 
         .aging-stat, .cost-item, .summary-item {
@@ -2856,7 +2909,7 @@
                                                     </div>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="ticketTrendsChart" height="300"></canvas>
+                                                    <canvas id="ticketTrendsChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2866,7 +2919,7 @@
                                                     <h5><i class="fas fa-chart-pie me-2"></i>Status Distribution</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="statusDistChart" height="300"></canvas>
+                                                    <canvas id="statusDistChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2880,7 +2933,7 @@
                                                     <h5><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency Trends</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="productivityVsEfficiencyChart" height="250"></canvas>
+                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
                                                     <div class="aging-stats mt-3">
                                                         <div class="row text-center">
                                                             <div class="col-6">
@@ -2906,7 +2959,7 @@
                                                     <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="zonePerformanceChart" height="250"></canvas>
+                                                    <canvas id="zonePerformanceChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2920,7 +2973,7 @@
                                                     <h5><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="priorityBreakdownChart" height="250"></canvas>
+                                                    <canvas id="priorityBreakdownChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2930,7 +2983,7 @@
                                                     <h5><i class="fas fa-tags me-2"></i>Category Distribution</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="categoryDistChart" height="250"></canvas>
+                                                    <canvas id="categoryDistChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2940,7 +2993,7 @@
                                                     <h5><i class="fas fa-users me-2"></i>Team Productivity</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="teamProductivityChart" height="250"></canvas>
+                                                    <canvas id="teamProductivityChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -2954,7 +3007,7 @@
                                                     <h5><i class="fas fa-money-bill-trend-up me-2"></i>Cost Analysis & Financial Trends</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="costAnalysisChart" height="250"></canvas>
+                                                    <canvas id="costAnalysisChart"></canvas>
                                                     <div class="cost-summary mt-3">
                                                         <div class="row">
                                                             <div class="col-3 text-center">
@@ -3008,7 +3061,7 @@
                                                     <h5><i class="fas fa-gauge-high me-2"></i>Productivity Metrics</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="productivityMetricsChart" height="250"></canvas>
+                                                    <canvas id="productivityMetricsChart"></canvas>
                                                     <div class="productivity-summary mt-3">
                                                         <div class="row">
                                                             <div class="col-6">
@@ -3034,7 +3087,7 @@
                                                     <h5><i class="fas fa-chart-line me-2"></i>Efficiency Trends</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="efficiencyTrendsChart" height="250"></canvas>
+                                                    <canvas id="efficiencyTrendsChart"></canvas>
                                                     <div class="efficiency-summary mt-3">
                                                         <div class="row">
                                                             <div class="col-6">
@@ -3109,7 +3162,7 @@
                                                     <h5><i class="fas fa-business-time me-2"></i>Peak Hours</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="peakHoursChart" height="250"></canvas>
+                                                    <canvas id="peakHoursChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -3119,7 +3172,7 @@
                                                     <h5><i class="fas fa-calendar-week me-2"></i>Day of Week</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="dayOfWeekChart" height="250"></canvas>
+                                                    <canvas id="dayOfWeekChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -3129,7 +3182,7 @@
                                                     <h5><i class="fas fa-star me-2"></i>Customer Ratings</h5>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="customerRatingsChart" height="250"></canvas>
+                                                    <canvas id="customerRatingsChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
