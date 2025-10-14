@@ -3731,6 +3731,8 @@ function createAgingAnalysisChart(tickets) {
         return;
     }
     
+    console.log('⏳ Creating Aging Analysis Chart...');
+    
     const now = new Date();
     const aging = {
         '0-24h': 0,
@@ -3738,12 +3740,16 @@ function createAgingAnalysisChart(tickets) {
         '48h+': 0
     };
     
-    tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').forEach(t => {
+    const activeTickets = tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed');
+    
+    activeTickets.forEach(t => {
         const hours = (now - new Date(t.createdAt)) / (1000 * 60 * 60);
         if (hours < 24) aging['0-24h']++;
         else if (hours < 48) aging['24-48h']++;
         else aging['48h+']++;
     });
+    
+    console.log('📊 Aging breakdown:', aging, `(${activeTickets.length} active tickets)`);
     
     updateElement('aging-0-24', aging['0-24h']);
     updateElement('aging-24-48', aging['24-48h']);
@@ -3752,24 +3758,70 @@ function createAgingAnalysisChart(tickets) {
     chartInstances['agingAnalysis'] = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['< 24h', '24-48h', '> 48h'],
+            labels: ['< 24 hours', '24-48 hours', '> 48 hours'],
             datasets: [{
                 label: 'Active Tickets',
                 data: [aging['0-24h'], aging['24-48h'], aging['48h+']],
-                backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                borderRadius: 8,
+                barThickness: 60
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 14,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = activeTickets.length;
+                            const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                            return `${context.parsed.y} tickets (${percentage}%)`;
+                        }
+                    }
+                }
             },
             scales: {
-                y: { beginAtZero: true }
+                y: { 
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        font: {
+                            size: 12
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Active Tickets',
+                        font: {
+                            size: 13,
+                            weight: '600'
+                        }
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                }
             }
         }
     });
+    
+    console.log('✅ Aging Analysis Chart created');
 }
 
 // Create Zone Performance Chart
