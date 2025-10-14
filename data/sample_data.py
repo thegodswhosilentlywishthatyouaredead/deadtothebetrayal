@@ -148,6 +148,14 @@ class SampleDataGenerator:
         """Generate realistic tickets with Malaysian locations"""
         tickets = []
         
+        # Ensure we have tickets from different time periods
+        # 25% today, 20% yesterday, 55% this month
+        today_count = max(int(count * 0.25), 10)  # At least 10 today
+        yesterday_count = max(int(count * 0.20), 8)  # At least 8 yesterday
+        month_count = count - today_count - yesterday_count
+        
+        print(f"Generating tickets: {today_count} today, {yesterday_count} yesterday, {month_count} this month")
+        
         for i in range(count):
             # Generate ticket number in format TT_001, TT_002, etc.
             ticket_number = f"TT_{str(i + 1).zfill(3)}"
@@ -171,9 +179,33 @@ class SampleDataGenerator:
             # Generate ticket description based on category
             description = self.generate_ticket_description(category, state)
             
-            # Generate timestamps
-            created_at = self.generate_random_date(days_ago=random.randint(1, 30))
-            status = self.determine_status(created_at)
+            # Generate timestamps based on distribution
+            if i < today_count:
+                # Today's tickets (0-23 hours ago)
+                hours_ago = random.randint(0, 23)
+                created_at = self.generate_random_date(days_ago=0, hours_ago=hours_ago)
+                # 40% of today's tickets should be resolved
+                if i < today_count * 0.4:
+                    status = "resolved"
+                else:
+                    status = random.choice(["open", "in_progress", "in_progress"])
+            elif i < today_count + yesterday_count:
+                # Yesterday's tickets (1 day ago, 0-23 hours)
+                hours_ago = random.randint(0, 23)
+                created_at = self.generate_random_date(days_ago=1, hours_ago=hours_ago)
+                # 60% of yesterday's tickets should be resolved
+                if i < today_count + (yesterday_count * 0.6):
+                    status = "resolved"
+                else:
+                    status = random.choice(["in_progress", "resolved"])
+            else:
+                # This month's tickets (2-30 days ago)
+                created_at = self.generate_random_date(days_ago=random.randint(2, 30))
+                # Most older tickets should be resolved or closed
+                status = random.choice(["resolved", "resolved", "closed"])
+            
+            # Override status with determine_status for consistency
+            # status = self.determine_status(created_at)
             
             ticket = {
                 "id": f"ticket_{str(uuid.uuid4())[:8]}",
@@ -446,13 +478,19 @@ class SampleDataGenerator:
                 return datetime.now().isoformat()
         return None
 
-    def generate_random_date(self, days_ago: int) -> str:
+    def generate_random_date(self, days_ago: int, hours_ago: int = None) -> str:
         """Generate random date within specified range"""
-        random_days = random.randint(0, days_ago)
-        random_hours = random.randint(0, 23)
-        random_minutes = random.randint(0, 59)
+        if hours_ago is not None:
+            # Use specific hours_ago for precise timing (today/yesterday)
+            random_minutes = random.randint(0, 59)
+            date = datetime.now() - timedelta(days=days_ago, hours=hours_ago, minutes=random_minutes)
+        else:
+            # Use random timing for older dates
+            random_days = random.randint(0, days_ago)
+            random_hours = random.randint(0, 23)
+            random_minutes = random.randint(0, 59)
+            date = datetime.now() - timedelta(days=random_days, hours=random_hours, minutes=random_minutes)
         
-        date = datetime.now() - timedelta(days=random_days, hours=random_hours, minutes=random_minutes)
         return date.isoformat()
 
     def generate_certifications(self, skills: List[str]) -> List[str]:

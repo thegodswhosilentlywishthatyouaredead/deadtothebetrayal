@@ -88,6 +88,7 @@ def load_sample_data():
                 "customerInfo": ticket["customer_info"],
                 "createdAt": ticket["created_at"],
                 "updatedAt": ticket["updated_at"],
+                "resolvedAt": ticket.get("resolved_at"),
                 "estimatedDuration": ticket.get("estimated_duration", 90)
             }
             tickets.append(converted_ticket)
