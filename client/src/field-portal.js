@@ -270,7 +270,9 @@ function createTicketCard(ticket) {
 
 // Get ticket actions based on status
 function getTicketActions(ticket) {
-    switch (ticket.status) {
+    const status = ticket.status.replace('_', '-'); // Handle both in_progress and in-progress
+    
+    switch (status) {
         case 'assigned':
             return `
                 <button class="btn btn-primary btn-sm" onclick="startTicket('${ticket._id}')">
@@ -402,16 +404,23 @@ async function loadRouteData() {
     console.log('🗺️ Loading route data...');
     
     try {
+        // Fetch all tickets for route planning
+        const response = await fetch(`${API_BASE}/tickets`);
+        const data = await response.json();
+        const allTickets = data.tickets || [];
+        
+        console.log('🗺️ Fetched', allTickets.length, 'total tickets');
+        
         // Clear existing markers
         routeMarkers.forEach(marker => routeMap.removeLayer(marker));
         routeMarkers = [];
         
-        // Add markers for assigned tickets
-        const assignedTickets = myTickets.filter(ticket => 
-            ticket.status === 'assigned' || ticket.status === 'in-progress' || ticket.status === 'open'
+        // Filter for tickets that need routing (open, assigned, in-progress)
+        const assignedTickets = allTickets.filter(ticket => 
+            ticket.status === 'assigned' || ticket.status === 'in_progress' || ticket.status === 'open'
         );
         
-        console.log('🗺️ Displaying', assignedTickets.length, 'tickets on map');
+        console.log('🗺️ Displaying', assignedTickets.length, 'active tickets on map');
         
         assignedTickets.forEach((ticket, index) => {
             // Handle backend data structure
@@ -1006,7 +1015,13 @@ function showFieldTab(tabName) {
             loadMyTickets();
             break;
         case 'route-planning':
-            loadRouteData();
+            // Invalidate map size when tab becomes visible
+            setTimeout(() => {
+                if (routeMap) {
+                    routeMap.invalidateSize();
+                }
+                loadRouteData();
+            }, 100);
             break;
         case 'performance':
             loadPerformanceData();
