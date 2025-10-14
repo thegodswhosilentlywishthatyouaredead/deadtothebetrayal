@@ -466,9 +466,9 @@ function completeTicketWork(ticketId) {
     }
 }
 
-// Load quick stats
+// Load quick stats with today vs yesterday vs monthly comparison
 async function loadQuickStats() {
-    console.log('📊 Loading quick stats...');
+    console.log('📊 Loading enhanced quick stats...');
     
     try {
         // Get tickets data
@@ -483,57 +483,162 @@ async function loadQuickStats() {
         
         console.log('📊 Stats data:', { tickets: allTickets.length, teams: allTeams.length });
         
-        // Calculate stats
-        const today = new Date().toDateString();
-        const todayTickets = allTickets.filter(ticket => {
-            try {
-                return new Date(ticket.createdAt).toDateString() === today;
-            } catch {
-                return false;
-            }
+        // Calculate date ranges
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        // Filter tickets by date
+        const todayTickets = allTickets.filter(t => {
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= today;
         });
         
-        const completedTickets = allTickets.filter(ticket => 
-            ticket.status === 'completed' || ticket.status === 'resolved' || ticket.status === 'closed'
-        );
+        const yesterdayTickets = allTickets.filter(t => {
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= yesterday && date < today;
+        });
         
-        // Calculate average rating from all teams
+        const monthlyTickets = allTickets.filter(t => {
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= monthStart;
+        });
+        
+        // Today's completed tickets
+        const todayCompleted = allTickets.filter(t => {
+            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+            if (!resolvedDate) return false;
+            const date = new Date(resolvedDate);
+            return date >= today;
+        }).length;
+        
+        // Yesterday's completed
+        const yesterdayCompleted = allTickets.filter(t => {
+            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+            if (!resolvedDate) return false;
+            const date = new Date(resolvedDate);
+            return date >= yesterday && date < today;
+        }).length;
+        
+        // Monthly completed
+        const monthlyCompleted = allTickets.filter(t => {
+            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+            if (!resolvedDate) return false;
+            const date = new Date(resolvedDate);
+            return date >= monthStart;
+        }).length;
+        
+        // Calculate efficiency
+        const resolvedTickets = allTickets.filter(t => t.resolved_at || t.resolvedAt);
+        let avgResolutionTime = 0;
+        let efficiencyRate = 0;
+        
+        if (resolvedTickets.length > 0) {
+            const totalTime = resolvedTickets.reduce((sum, t) => {
+                const created = new Date(t.created_at || t.createdAt);
+                const resolved = new Date(t.resolved_at || t.resolvedAt);
+                return sum + (resolved - created);
+            }, 0);
+            avgResolutionTime = (totalTime / resolvedTickets.length / (1000 * 60 * 60));
+            
+            const efficientTickets = resolvedTickets.filter(t => {
+                const created = new Date(t.created_at || t.createdAt);
+                const resolved = new Date(t.resolved_at || t.resolvedAt);
+                const hours = (resolved - created) / (1000 * 60 * 60);
+                return hours <= 2;
+            }).length;
+            
+            efficiencyRate = (efficientTickets / resolvedTickets.length * 100);
+        }
+        
+        // Calculate average rating
         const avgRating = allTeams.length > 0 
-            ? allTeams.reduce((sum, team) => sum + (team.productivity?.customerRating || 4.5), 0) / allTeams.length
+            ? allTeams.reduce((sum, team) => sum + (team.rating || 4.5), 0) / allTeams.length
             : 4.50;
         
-        // Calculate earnings (using first team's rate as reference)
+        // Calculate earnings
         const hourlyRate = allTeams[0]?.hourlyRate || 45.00;
-        const earningsToday = completedTickets.length * hourlyRate * 0.5;
+        const earningsToday = todayCompleted * hourlyRate * 1.5;
+        const earningsYesterday = yesterdayCompleted * hourlyRate * 1.5;
+        const earningsMonthly = monthlyCompleted * hourlyRate * 1.5;
         
-        // Update UI
-        if (document.getElementById('today-tickets')) {
-            document.getElementById('today-tickets').textContent = todayTickets.length || myTickets.length;
-        }
-        if (document.getElementById('completed-tickets')) {
-            document.getElementById('completed-tickets').textContent = completedTickets.length;
-        }
-        if (document.getElementById('avg-rating')) {
-            document.getElementById('avg-rating').textContent = avgRating.toFixed(2);
-        }
-        if (document.getElementById('earnings-today')) {
-            document.getElementById('earnings-today').textContent = `RM ${earningsToday.toFixed(2)}`;
-        }
+        // Update UI - Today's Tickets
+        updateFieldElement('today-tickets', todayTickets.length);
+        updateFieldElement('yesterday-tickets', yesterdayTickets.length);
+        updateFieldElement('monthly-tickets-stat', monthlyTickets.length);
         
-        console.log('✅ Quick stats updated:', {
-            todayTickets: todayTickets.length,
-            completed: completedTickets.length,
-            rating: avgRating.toFixed(2),
+        const ticketChange = yesterdayTickets.length > 0 
+            ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
+            : 0;
+        updateFieldTrend('today-tickets-trend', 'today-tickets-change', ticketChange, ' vs yesterday');
+        
+        // Update UI - Completed
+        updateFieldElement('completed-tickets', todayCompleted);
+        updateFieldElement('yesterday-completed', yesterdayCompleted);
+        updateFieldElement('monthly-completed-stat', monthlyCompleted);
+        
+        const completedChange = yesterdayCompleted > 0
+            ? ((todayCompleted - yesterdayCompleted) / yesterdayCompleted * 100)
+            : 0;
+        updateFieldTrend('completed-trend', 'completed-change', completedChange, ' vs yesterday');
+        
+        // Update UI - Performance
+        updateFieldElement('avg-rating', avgRating.toFixed(1));
+        updateFieldElement('efficiency-rate', `${efficiencyRate.toFixed(2)}%`);
+        updateFieldElement('avg-time', `${avgResolutionTime.toFixed(2)}h`);
+        
+        const ratingChange = 0.2; // Sample change
+        updateFieldTrend('rating-trend', 'rating-change', ratingChange, ' this month');
+        
+        // Update UI - Earnings
+        updateFieldElement('earnings-today', `RM ${earningsToday.toFixed(2)}`);
+        updateFieldElement('yesterday-earnings', `RM ${earningsYesterday.toFixed(2)}`);
+        updateFieldElement('monthly-earnings', `RM ${earningsMonthly.toFixed(2)}`);
+        
+        const earningsChange = earningsYesterday > 0
+            ? ((earningsToday - earningsYesterday) / earningsYesterday * 100)
+            : 0;
+        updateFieldTrend('earnings-trend', 'earnings-change', earningsChange, '% vs yesterday');
+        
+        console.log('✅ Enhanced quick stats updated:', {
+            today: todayTickets.length,
+            yesterday: yesterdayTickets.length,
+            monthly: monthlyTickets.length,
+            todayCompleted,
+            efficiency: efficiencyRate.toFixed(2),
             earnings: earningsToday.toFixed(2)
         });
         
     } catch (error) {
         console.error('❌ Error loading quick stats:', error);
         // Set fallback values
-        if (document.getElementById('today-tickets')) document.getElementById('today-tickets').textContent = myTickets.length;
-        if (document.getElementById('completed-tickets')) document.getElementById('completed-tickets').textContent = '0';
-        if (document.getElementById('avg-rating')) document.getElementById('avg-rating').textContent = '4.50';
-        if (document.getElementById('earnings-today')) document.getElementById('earnings-today').textContent = 'RM 0.00';
+        updateFieldElement('today-tickets', 0);
+        updateFieldElement('completed-tickets', 0);
+        updateFieldElement('avg-rating', '4.50');
+        updateFieldElement('earnings-today', 'RM 0.00');
+    }
+}
+
+function updateFieldElement(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+function updateFieldTrend(trendId, changeId, change, suffix) {
+    const trendElement = document.getElementById(trendId);
+    const changeElement = document.getElementById(changeId);
+    
+    if (trendElement && changeElement) {
+        const isPositive = change >= 0;
+        trendElement.className = `stat-change ${isPositive ? 'positive' : 'negative'}`;
+        trendElement.innerHTML = `
+            <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
+            <span id="${changeId}">${Math.abs(change).toFixed(2)}${suffix}</span>
+        `;
     }
 }
 
@@ -1522,4 +1627,258 @@ function removeFieldAITyping() {
     if (typingDiv) {
         typingDiv.remove();
     }
+}
+
+// ==================== TICKET REPORT FUNCTIONS ====================
+
+let currentReportTicket = null;
+
+// View ticket details (replaces viewTicketDetails)
+function viewTicketDetails(ticketId) {
+    console.log('📄 Opening ticket report for:', ticketId);
+    
+    const ticket = myTickets.find(t => t._id === ticketId);
+    if (!ticket) {
+        console.error('Ticket not found:', ticketId);
+        return;
+    }
+    
+    currentReportTicket = ticket;
+    showTicketReport(ticket);
+}
+
+// Show ticket report modal
+function showTicketReport(ticket) {
+    const modal = document.getElementById('ticketReportModal');
+    if (!modal) return;
+    
+    // Populate widgets
+    populateReportWidgets(ticket);
+    
+    // Populate details
+    populateReportDetails(ticket);
+    
+    // Populate timeline
+    populateReportTimeline(ticket);
+    
+    // Show modal
+    modal.classList.add('active');
+}
+
+// Populate report widgets
+function populateReportWidgets(ticket) {
+    const widgetsContainer = document.getElementById('reportWidgets');
+    if (!widgetsContainer) return;
+    
+    // Calculate metrics
+    const created = new Date(ticket.created_at || ticket.createdAt);
+    const resolved = ticket.resolved_at || ticket.resolvedAt ? new Date(ticket.resolved_at || ticket.resolvedAt) : null;
+    const duration = resolved ? ((resolved - created) / (1000 * 60 * 60)).toFixed(2) : 'In Progress';
+    
+    // Calculate distance (if location available)
+    const distance = ticket.distance || calculateTicketDistance(ticket);
+    
+    // Calculate cost
+    const hourlyRate = 45.00; // RM per hour
+    const estimatedCost = typeof duration === 'number' ? (duration * hourlyRate).toFixed(2) : '0.00';
+    
+    widgetsContainer.innerHTML = `
+        <div class="report-widget">
+            <div class="widget-icon blue" style="background: var(--primary-color);">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="widget-label">Duration</div>
+            <div class="widget-value">${duration}${typeof duration === 'number' ? 'h' : ''}</div>
+        </div>
+        
+        <div class="report-widget">
+            <div class="widget-icon green" style="background: var(--success-color);">
+                <i class="fas fa-route"></i>
+            </div>
+            <div class="widget-label">Distance</div>
+            <div class="widget-value">${distance} km</div>
+        </div>
+        
+        <div class="report-widget">
+            <div class="widget-icon orange" style="background: var(--warning-color);">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="widget-label">Cost</div>
+            <div class="widget-value">RM ${estimatedCost}</div>
+        </div>
+        
+        <div class="report-widget">
+            <div class="widget-icon red" style="background: ${ticket.priority === 'emergency' ? '#dc2626' : ticket.priority === 'high' ? '#f59e0b' : '#3b82f6'};">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="widget-label">Priority</div>
+            <div class="widget-value large">${ticket.priority.toUpperCase()}</div>
+        </div>
+    `;
+}
+
+// Populate report details
+function populateReportDetails(ticket) {
+    const detailsContainer = document.getElementById('reportDetails');
+    if (!detailsContainer) return;
+    
+    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+    const locationAddress = ticket.location?.address || 'N/A';
+    const created = new Date(ticket.created_at || ticket.createdAt).toLocaleString();
+    const resolved = ticket.resolved_at || ticket.resolvedAt ? new Date(ticket.resolved_at || ticket.resolvedAt).toLocaleString() : 'Not resolved';
+    
+    detailsContainer.innerHTML = `
+        <div class="detail-row">
+            <span class="detail-label">Ticket Number</span>
+            <span class="detail-value">${ticketNumber}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Title</span>
+            <span class="detail-value">${ticket.title}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Category</span>
+            <span class="detail-value">${ticket.category}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Customer</span>
+            <span class="detail-value">${customerName}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Location</span>
+            <span class="detail-value">${locationAddress}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Status</span>
+            <span class="detail-value">${formatStatus(ticket.status)}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Created</span>
+            <span class="detail-value">${created}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Resolved</span>
+            <span class="detail-value">${resolved}</span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">Description</span>
+            <span class="detail-value">${ticket.description || 'No description'}</span>
+        </div>
+    `;
+}
+
+// Populate report timeline
+function populateReportTimeline(ticket) {
+    const timelineContainer = document.getElementById('reportTimeline');
+    if (!timelineContainer) return;
+    
+    const created = new Date(ticket.created_at || ticket.createdAt);
+    const started = ticket.started_at || ticket.startedAt ? new Date(ticket.started_at || ticket.startedAt) : null;
+    const resolved = ticket.resolved_at || ticket.resolvedAt ? new Date(ticket.resolved_at || ticket.resolvedAt) : null;
+    
+    let timelineHTML = `
+        <div class="timeline-item">
+            <div class="timeline-time">${created.toLocaleString()}</div>
+            <div class="timeline-content">Ticket Created</div>
+        </div>
+    `;
+    
+    if (ticket.status === 'assigned' || ticket.status === 'in_progress' || ticket.status === 'resolved') {
+        timelineHTML += `
+            <div class="timeline-item">
+                <div class="timeline-time">${created.toLocaleString()}</div>
+                <div class="timeline-content">Assigned to Field Team</div>
+            </div>
+        `;
+    }
+    
+    if (started) {
+        timelineHTML += `
+            <div class="timeline-item">
+                <div class="timeline-time">${started.toLocaleString()}</div>
+                <div class="timeline-content">Work Started</div>
+            </div>
+        `;
+    }
+    
+    if (resolved) {
+        timelineHTML += `
+            <div class="timeline-item">
+                <div class="timeline-time">${resolved.toLocaleString()}</div>
+                <div class="timeline-content">Ticket Resolved</div>
+            </div>
+        `;
+    }
+    
+    timelineContainer.innerHTML = timelineHTML;
+}
+
+// Calculate ticket distance (placeholder)
+function calculateTicketDistance(ticket) {
+    // This would calculate distance from base to ticket location
+    // For now, return estimated distance based on coordinates
+    const lat = ticket.location?.coordinates?.lat || ticket.location?.latitude || 0;
+    const lng = ticket.location?.coordinates?.lng || ticket.location?.longitude || 0;
+    
+    // Simple estimation: distance from KL center
+    const klLat = 3.1390;
+    const klLng = 101.6869;
+    
+    const distance = calculateDistance(klLat, klLng, lat, lng);
+    return distance.toFixed(2);
+}
+
+// Close ticket report
+function closeTicketReport() {
+    const modal = document.getElementById('ticketReportModal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    currentReportTicket = null;
+}
+
+// Download ticket report
+function downloadTicketReport() {
+    if (!currentReportTicket) return;
+    
+    const ticket = currentReportTicket;
+    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    
+    // Create report content
+    const reportContent = `
+TICKET REPORT
+=============
+
+Ticket Number: ${ticketNumber}
+Title: ${ticket.title}
+Category: ${ticket.category}
+Priority: ${ticket.priority}
+Status: ${ticket.status}
+
+Customer: ${ticket.customer?.name || ticket.customerInfo?.name || 'N/A'}
+Location: ${ticket.location?.address || 'N/A'}
+
+Created: ${new Date(ticket.created_at || ticket.createdAt).toLocaleString()}
+Resolved: ${ticket.resolved_at || ticket.resolvedAt ? new Date(ticket.resolved_at || ticket.resolvedAt).toLocaleString() : 'Not resolved'}
+
+Description:
+${ticket.description || 'No description'}
+
+---
+Generated: ${new Date().toLocaleString()}
+    `.trim();
+    
+    // Create download
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ticket-report-${ticketNumber}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification(`Report downloaded: ${ticketNumber}`, 'success');
 }
