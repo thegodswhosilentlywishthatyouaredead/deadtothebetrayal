@@ -969,16 +969,16 @@
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h2 class="h4 mb-0">My Assigned Tickets</h2>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterTickets('all')">
+                                <button type="button" class="btn btn-outline-primary btn-sm active" id="filter-all" onclick="filterTickets('all')">
                                     All
                                 </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterTickets('assigned')">
-                                    Assigned
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="filter-open" onclick="filterTickets('open')">
+                                    Open
                                 </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterTickets('in-progress')">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="filter-in-progress" onclick="filterTickets('in-progress')">
                                     In Progress
                                 </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="filterTickets('completed')">
+                                <button type="button" class="btn btn-outline-primary btn-sm" id="filter-resolved" onclick="filterTickets('resolved')">
                                     Completed
                                 </button>
                             </div>

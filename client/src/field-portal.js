@@ -64,16 +64,17 @@ async function loadMyTickets() {
         
         // Get a mix of tickets with different statuses for demo
         const allTickets = data.tickets || [];
-        const openTickets = allTickets.filter(t => t.status === 'open').slice(0, 3);
-        const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').slice(0, 3);
-        const resolvedTickets = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').slice(0, 2);
+        const openTickets = allTickets.filter(t => t.status === 'open' || t.status === 'assigned').slice(0, 4);
+        const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').slice(0, 4);
+        const resolvedTickets = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').slice(0, 3);
         
         myTickets = [...openTickets, ...inProgressTickets, ...resolvedTickets];
         
         console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
             open: openTickets.length,
             inProgress: inProgressTickets.length,
-            resolved: resolvedTickets.length
+            resolved: resolvedTickets.length,
+            allStatuses: [...new Set(myTickets.map(t => t.status))]
         });
         
         if (myTickets.length === 0) {
@@ -213,18 +214,29 @@ function displayMyTickets(filter = 'all') {
     if (filter !== 'all') {
         filteredTickets = myTickets.filter(ticket => {
             const status = ticket.status.replace('_', '-');
+            
+            // Handle 'resolved' filter to include both resolved and closed
+            if (filter === 'resolved') {
+                return status === 'resolved' || status === 'closed' || status === 'completed';
+            }
+            
             return status === filter;
         });
     }
     
-    console.log(`📋 Displaying ${filteredTickets.length} tickets (filter: ${filter})`);
+    console.log(`📋 Displaying ${filteredTickets.length} tickets (filter: ${filter})`, {
+        total: myTickets.length,
+        filtered: filteredTickets.length,
+        statuses: myTickets.map(t => t.status)
+    });
     
     if (filteredTickets.length === 0) {
+        const filterLabel = filter === 'resolved' ? 'completed' : filter;
         container.innerHTML = `
             <div class="text-center py-5">
                 <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No ${filter === 'all' ? '' : filter} tickets</h5>
-                <p class="text-muted">You don't have any ${filter === 'all' ? 'tickets assigned' : filter + ' tickets'} at the moment.</p>
+                <h5 class="text-muted">No ${filterLabel === 'all' ? '' : filterLabel} tickets</h5>
+                <p class="text-muted">You don't have any ${filterLabel === 'all' ? 'tickets assigned' : filterLabel + ' tickets'} at the moment.</p>
             </div>
         `;
         return;
@@ -239,6 +251,17 @@ function displayMyTickets(filter = 'all') {
 function filterTickets(status) {
     console.log('🔍 Filtering tickets by:', status);
     currentTicketFilter = status;
+    
+    // Update filter button states
+    document.querySelectorAll('.btn-group button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    const activeBtn = document.getElementById(`filter-${status}`);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+    
     displayMyTickets(status);
 }
 
