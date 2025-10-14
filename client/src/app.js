@@ -984,11 +984,186 @@ function filterTickets() {
 }
 
 // Field Team functions
+function updateFieldTeamsMetrics(teams, tickets, zonesData) {
+    console.log('📊 Updating Field Teams metrics with:', {
+        teams: teams.length,
+        tickets: tickets.length,
+        zones: zonesData.zones ? Object.keys(zonesData.zones).length : 0
+    });
+    
+    // Calculate metrics
+    const totalTeams = teams.length;
+    const activeTeams = teams.filter(t => t.status === 'active' || t.status === 'available').length;
+    
+    // Calculate average productivity from zones
+    let totalProductivity = 0;
+    let zoneCount = 0;
+    if (zonesData.zones) {
+        Object.values(zonesData.zones).forEach(zone => {
+            if (zone.productivityScore) {
+                totalProductivity += zone.productivityScore;
+                zoneCount++;
+            }
+        });
+    }
+    const avgProductivity = zoneCount > 0 ? (totalProductivity / zoneCount).toFixed(2) : 0;
+    
+    // Count unique zones
+    const uniqueZones = new Set();
+    teams.forEach(team => {
+        if (team.zone) uniqueZones.add(team.zone);
+    });
+    const coverageZones = uniqueZones.size;
+    
+    // Calculate average rating
+    const avgRating = teams.length > 0
+        ? (teams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / teams.length).toFixed(2)
+        : 4.50;
+    
+    // Calculate average response time from resolved tickets
+    const resolvedTickets = tickets.filter(t => t.resolved_at || t.resolvedAt);
+    let avgResponseTime = 0;
+    if (resolvedTickets.length > 0) {
+        const totalTime = resolvedTickets.reduce((sum, t) => {
+            const created = new Date(t.created_at || t.createdAt);
+            const resolved = new Date(t.resolved_at || t.resolvedAt);
+            return sum + (resolved - created);
+        }, 0);
+        avgResponseTime = (totalTime / resolvedTickets.length / (1000 * 60 * 60)).toFixed(2);
+    }
+    
+    // Calculate completion rate
+    const completedTickets = tickets.filter(t => 
+        t.status === 'resolved' || t.status === 'closed' || t.status === 'completed'
+    ).length;
+    const completionRate = tickets.length > 0 
+        ? ((completedTickets / tickets.length) * 100).toFixed(2)
+        : 0;
+    
+    // Calculate daily cost (sum of hourly rates * 8 hours)
+    const dailyCost = teams.reduce((sum, t) => sum + ((t.hourlyRate || 150) * 8), 0).toFixed(2);
+    
+    // Update UI elements
+    updateElement('teams-total', totalTeams);
+    updateElement('teams-active', activeTeams);
+    updateElement('teams-productivity', `${avgProductivity}%`);
+    updateElement('teams-zones', coverageZones);
+    updateElement('teams-rating', avgRating);
+    updateElement('teams-response', `${avgResponseTime}h`);
+    updateElement('teams-completion', `${completionRate}%`);
+    updateElement('teams-cost', `RM ${dailyCost}`);
+    
+    console.log('✅ Field Teams metrics updated:', {
+        totalTeams,
+        activeTeams,
+        avgProductivity: `${avgProductivity}%`,
+        coverageZones,
+        avgRating,
+        avgResponseTime: `${avgResponseTime}h`
+    });
+    
+    // Populate zone performance list
+    populateTeamsZoneList(zonesData);
+    
+    // Populate top performers list
+    populateTopPerformers(teams);
+}
+
+function populateTeamsZoneList(zonesData) {
+    const container = document.getElementById('teams-zone-list');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (zonesData.zones && Object.keys(zonesData.zones).length > 0) {
+        // Convert zones object to array and sort by productivity
+        const zonesArray = Object.entries(zonesData.zones).map(([zoneName, zoneData]) => ({
+            zone: zoneName,
+            ...zoneData
+        }));
+        
+        const sortedZones = zonesArray.sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
+        
+        sortedZones.forEach(zone => {
+            const zoneItem = document.createElement('div');
+            zoneItem.className = 'zone-item';
+            
+            const productivity = parseFloat(zone.productivityScore || 0).toFixed(2);
+            const trendClass = productivity >= 70 ? 'trend-up' : productivity >= 50 ? 'trend-neutral' : 'trend-down';
+            const trendIcon = productivity >= 70 ? '↑' : productivity >= 50 ? '→' : '↓';
+            
+            zoneItem.innerHTML = `
+                <span class="zone-name">${zone.zoneName || zone.zone}</span>
+                <span class="zone-metric">${productivity}%</span>
+                <span class="zone-trend ${trendClass}">${trendIcon}</span>
+            `;
+            
+            container.appendChild(zoneItem);
+        });
+    }
+}
+
+function populateTopPerformers(teams) {
+    const container = document.getElementById('teams-top-performers');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (teams && teams.length > 0) {
+        // Sort teams by tickets completed (descending)
+        const sortedTeams = [...teams].sort((a, b) => 
+            (b.ticketsCompleted || 0) - (a.ticketsCompleted || 0)
+        );
+        
+        // Take top 5 performers
+        const topPerformers = sortedTeams.slice(0, 5);
+        
+        topPerformers.forEach(team => {
+            const performerItem = document.createElement('div');
+            performerItem.className = 'performer-item';
+            
+            const teamName = team.name || 'Unknown';
+            const teamState = team.state || 'Unknown';
+            const teamZone = team.zone || 'Unknown';
+            const ticketsCompleted = team.ticketsCompleted || 0;
+            const rating = parseFloat(team.rating || 4.5).toFixed(1);
+            
+            performerItem.innerHTML = `
+                <div class="performer-info">
+                    <span class="performer-name">${teamName} (${teamState})</span>
+                    <span class="performer-zone">${teamZone} Zone</span>
+                </div>
+                <div class="performer-stats">
+                    <span class="performer-tickets">${ticketsCompleted} tickets</span>
+                    <span class="performer-rating">${rating}★</span>
+                </div>
+            `;
+            
+            container.appendChild(performerItem);
+        });
+    }
+}
+
 async function loadFieldTeams() {
     try {
-        const response = await fetch(`${API_BASE}/field-teams`);
+        // Fetch teams data
+        const response = await fetch(`${API_BASE}/teams`);
         const data = await response.json();
-        fieldTeams = data.fieldTeams || [];
+        fieldTeams = data.teams || [];
+        
+        // Fetch tickets data for metrics calculation
+        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsData = await ticketsResponse.json();
+        const allTickets = ticketsData.tickets || [];
+        
+        // Fetch zone analytics
+        const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
+        const zonesData = await zonesResponse.json();
+        
+        // Update Field Teams tab metrics
+        updateFieldTeamsMetrics(fieldTeams, allTickets, zonesData);
+        
+        console.log('👥 Loaded field teams:', fieldTeams.length);
         
         if (fieldTeams.length === 0) {
             // Show sample data if no real data available
