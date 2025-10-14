@@ -181,26 +181,26 @@ function showTab(tabName) {
 // Dashboard functions
 async function loadDashboardData() {
     try {
-        const [ticketsResponse, teamsResponse, analyticsResponse, productivityResponse] = await Promise.all([
-            fetch(`${API_BASE}/tickets/analytics/overview`),
-            fetch(`${API_BASE}/field-teams`),
-            fetch(`${API_BASE}/assignments/analytics/overview`),
+        const [ticketsResponse, teamsResponse, agingResponse, productivityResponse] = await Promise.all([
+            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/teams`),
+            fetch(`${API_BASE}/analytics/tickets/aging`),
             fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
         
         const ticketsData = await ticketsResponse.json();
         const teamsData = await teamsResponse.json();
-        const analyticsData = await analyticsResponse.json();
+        const agingData = await agingResponse.json();
         const productivityData = await productivityResponse.json();
         
-        // Update metrics with new productivity and aging data
-        updateDashboardMetrics(ticketsData, teamsData, analyticsData, productivityData);
+        // Update metrics with correct data
+        updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData);
         
         // Load recent tickets
         await loadRecentTickets();
         
         // Load team status
-        await loadTeamStatus();
+        await loadTeamStatusOverview();
         
     } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -209,33 +209,49 @@ async function loadDashboardData() {
     }
 }
 
-function updateDashboardMetrics(ticketsData, teamsData, analyticsData, productivityData) {
-    // Active Tickets with aging info
-    const activeTickets = ticketsData.openTickets + ticketsData.inProgressTickets + ticketsData.assignedTickets;
-    document.getElementById('total-tickets').textContent = activeTickets;
+function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData) {
+    // Total Tickets
+    const totalTickets = ticketsData.total || ticketsData.tickets?.length || 0;
+    const activeTickets = ticketsData.tickets ? ticketsData.tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length : 0;
+    
+    if (document.getElementById('total-tickets')) {
+        document.getElementById('total-tickets').textContent = totalTickets;
+    }
     
     // Ticket aging metrics
-    if (ticketsData.agingMetrics) {
-        const avgAgeHours = (ticketsData.agingMetrics.averageAge / 60).toFixed(1);
-        document.getElementById('avg-ticket-age').textContent = `${avgAgeHours}h`;
+    if (agingData && agingData.averageAge) {
+        const avgAgeHours = agingData.averageAge.toFixed(2);
+        if (document.getElementById('avg-ticket-age')) {
+            document.getElementById('avg-ticket-age').textContent = `${avgAgeHours}h`;
+        }
     }
     
     // Team Productivity
-    if (productivityData.productivityScore) {
-        document.getElementById('productivity-score').textContent = `${productivityData.productivityScore}%`;
-        document.getElementById('tickets-handled').textContent = productivityData.totalTicketsHandled;
+    if (productivityData && productivityData.productivityScore) {
+        if (document.getElementById('productivity-score')) {
+            document.getElementById('productivity-score').textContent = `${productivityData.productivityScore.toFixed(2)}%`;
+        }
+        if (document.getElementById('tickets-handled')) {
+            document.getElementById('tickets-handled').textContent = productivityData.totalTicketsHandled;
+        }
     }
     
     // Efficiency Score
-    if (ticketsData.agingMetrics && ticketsData.agingMetrics.efficiencyScore) {
-        document.getElementById('efficiency-score').textContent = `${ticketsData.agingMetrics.efficiencyScore}%`;
+    if (agingData && agingData.efficiencyScore) {
+        if (document.getElementById('efficiency-score')) {
+            document.getElementById('efficiency-score').textContent = `${agingData.efficiencyScore.toFixed(2)}%`;
+        }
     }
     
-    // Team Performance
-    if (analyticsData.averageRating) {
-        document.getElementById('team-rating').textContent = analyticsData.averageRating.toFixed(1);
-        document.getElementById('avg-completion').textContent = `${analyticsData.averageCompletionTime}m`;
+    // Team count and rating
+    const totalTeams = teamsData.total || teamsData.teams?.length || 0;
+    if (document.getElementById('total-teams')) {
+        document.getElementById('total-teams').textContent = totalTeams;
     }
+    
+    // Store data globally for other functions
+    window.tickets = ticketsData.tickets || [];
+    window.fieldTeams = teamsData.teams || [];
 }
 
 function updateDashboardMetricsWithSampleData() {
