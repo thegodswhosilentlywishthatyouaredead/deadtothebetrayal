@@ -2076,72 +2076,72 @@
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <div class="metric-header">
-                                    <h3 class="metric-title">Active Tickets</h3>
+                                    <h3 class="metric-title">Today's Tickets</h3>
                                     <div class="metric-icon blue">
                                         <i class="fas fa-ticket-alt"></i>
-                            </div>
-                        </div>
-                                <div class="metric-value" id="total-tickets">12</div>
-                                <div class="metric-trend trend-up">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>12% from last week</span>
-                                        </div>
-                                <div class="metric-detail" id="ticket-aging-detail">
-                                    <small>Avg Age: <span id="avg-ticket-age">2.5h</span></small>
-                                        </div>
                                     </div>
-                            
-                            <div class="metric-card">
-                                <div class="metric-header">
-                                    <h3 class="metric-title">Team Productivity</h3>
-                                    <div class="metric-icon green">
-                                        <i class="fas fa-chart-line"></i>
+                                </div>
+                                <div class="metric-value" id="today-tickets">0</div>
+                                <div class="metric-trend trend-up" id="today-tickets-trend">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span id="today-tickets-change">Loading...</span>
+                                </div>
+                                <div class="metric-detail" id="today-tickets-detail">
+                                    <small>Monthly: <span id="monthly-tickets">0</span> | Active: <span id="active-tickets">0</span></small>
                                 </div>
                             </div>
-                                <div class="metric-value" id="productivity-score">87%</div>
-                                <div class="metric-trend trend-up">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>5% from last week</span>
-                        </div>
-                                <div class="metric-detail" id="productivity-detail">
-                                    <small>Tickets Handled: <span id="tickets-handled">621</span></small>
-                                        </div>
-                                        </div>
                             
                             <div class="metric-card">
                                 <div class="metric-header">
-                                    <h3 class="metric-title">Efficiency Score</h3>
+                                    <h3 class="metric-title">Productivity Score</h3>
+                                    <div class="metric-icon green">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                                <div class="metric-value" id="productivity-score">0%</div>
+                                <div class="metric-trend trend-up" id="productivity-trend">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span id="productivity-change">Loading...</span>
+                                </div>
+                                <div class="metric-detail" id="productivity-detail">
+                                    <small>Today: <span id="today-completed">0</span> | Monthly: <span id="monthly-completed">0</span></small>
+                                </div>
+                            </div>
+                            
+                            <div class="metric-card">
+                                <div class="metric-header">
+                                    <h3 class="metric-title">Efficiency Rate</h3>
                                     <div class="metric-icon orange">
                                         <i class="fas fa-tachometer-alt"></i>
                                     </div>
                                 </div>
-                                <div class="metric-value" id="efficiency-score">92%</div>
-                                <div class="metric-trend trend-up">
+                                <div class="metric-value" id="efficiency-score">0%</div>
+                                <div class="metric-trend trend-up" id="efficiency-trend">
                                     <i class="fas fa-arrow-up"></i>
-                                    <span>3% from last week</span>
-                            </div>
+                                    <span id="efficiency-change">Loading...</span>
+                                </div>
                                 <div class="metric-detail" id="efficiency-detail">
-                                    <small>Target: < 2h avg</small>
-                        </div>
-                                        </div>
+                                    <small>Avg Time: <span id="avg-resolution-time">0h</span> | Target: &lt; 2h</small>
+                                </div>
+                            </div>
                             
                             <div class="metric-card">
                                 <div class="metric-header">
                                     <h3 class="metric-title">Team Performance</h3>
                                     <div class="metric-icon red">
                                         <i class="fas fa-star"></i>
-                                        </div>
                                     </div>
-                                <div class="metric-value" id="team-rating">4.7</div>
-                                <div class="metric-trend trend-up">
+                                </div>
+                                <div class="metric-value" id="team-rating">0.0</div>
+                                <div class="metric-trend trend-up" id="performance-trend">
                                     <i class="fas fa-arrow-up"></i>
-                                    <span>0.2 from last week</span>
+                                    <span id="performance-change">Loading...</span>
                                 </div>
                                 <div class="metric-detail" id="team-performance-detail">
-                                    <small>Avg Completion: <span id="avg-completion">45m</span></small>
+                                    <small>Today: <span id="today-teams-active">0</span> | Total Teams: <span id="total-teams">0</span></small>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                     <!-- Main Dashboard Cards - Controlled by JavaScript -->
                     <div id="main-dashboard-cards" class="metrics-grid mb-4">

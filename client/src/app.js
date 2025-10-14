@@ -223,59 +223,190 @@ async function loadDashboardData() {
 }
 
 function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData) {
-    // Total Tickets
-    const totalTickets = ticketsData.total || ticketsData.tickets?.length || 0;
-    const activeTickets = ticketsData.tickets ? ticketsData.tickets.filter(t => t.status !== 'closed' && t.status !== 'resolved').length : 0;
+    const tickets = ticketsData.tickets || [];
+    const teams = teamsData.teams || [];
     
-    if (document.getElementById('total-tickets')) {
-        document.getElementById('total-tickets').textContent = totalTickets;
+    console.log('📊 Updating dashboard metrics with:', {
+        tickets: tickets.length,
+        teams: teams.length,
+        agingData,
+        productivityData
+    });
+    
+    // Calculate today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Calculate this month's date range
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+    
+    // Filter today's tickets
+    const todayTickets = tickets.filter(t => {
+        const createdDate = new Date(t.created_at || t.createdAt);
+        return createdDate >= today && createdDate < tomorrow;
+    });
+    
+    // Filter this month's tickets
+    const monthlyTickets = tickets.filter(t => {
+        const createdDate = new Date(t.created_at || t.createdAt);
+        return createdDate >= monthStart && createdDate <= monthEnd;
+    });
+    
+    // Active tickets (not closed/resolved)
+    const activeTickets = tickets.filter(t => 
+        t.status !== 'closed' && t.status !== 'resolved'
+    ).length;
+    
+    // Today's completed tickets
+    const todayCompleted = tickets.filter(t => {
+        const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+        if (!resolvedDate) return false;
+        const date = new Date(resolvedDate);
+        return date >= today && date < tomorrow;
+    }).length;
+    
+    // Monthly completed tickets
+    const monthlyCompleted = tickets.filter(t => {
+        const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+        if (!resolvedDate) return false;
+        const date = new Date(resolvedDate);
+        return date >= monthStart && date <= monthEnd;
+    }).length;
+    
+    // Calculate productivity score (completed / total * 100)
+    const productivityScore = monthlyTickets.length > 0 
+        ? (monthlyCompleted / monthlyTickets.length * 100).toFixed(2)
+        : 0;
+    
+    // Calculate efficiency rate (tickets resolved within target time)
+    const targetHours = 2;
+    const efficientTickets = tickets.filter(t => {
+        if (!t.resolved_at && !t.resolvedAt) return false;
+        const created = new Date(t.created_at || t.createdAt);
+        const resolved = new Date(t.resolved_at || t.resolvedAt);
+        const hours = (resolved - created) / (1000 * 60 * 60);
+        return hours <= targetHours;
+    }).length;
+    
+    const totalResolved = tickets.filter(t => t.resolved_at || t.resolvedAt).length;
+    const efficiencyRate = totalResolved > 0 
+        ? (efficientTickets / totalResolved * 100).toFixed(2)
+        : 0;
+    
+    // Calculate average resolution time
+    const resolvedTickets = tickets.filter(t => t.resolved_at || t.resolvedAt);
+    let avgResolutionTime = 0;
+    if (resolvedTickets.length > 0) {
+        const totalTime = resolvedTickets.reduce((sum, t) => {
+            const created = new Date(t.created_at || t.createdAt);
+            const resolved = new Date(t.resolved_at || t.resolvedAt);
+            return sum + (resolved - created);
+        }, 0);
+        avgResolutionTime = (totalTime / resolvedTickets.length / (1000 * 60 * 60)).toFixed(2);
     }
     
-    // Ticket aging metrics
-    if (agingData && agingData.averageAge) {
-        const avgAgeHours = agingData.averageAge.toFixed(2);
-        if (document.getElementById('avg-ticket-age')) {
-            document.getElementById('avg-ticket-age').textContent = `${avgAgeHours}h`;
-        }
-    }
+    // Calculate team performance rating
+    const avgRating = teams.length > 0
+        ? (teams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / teams.length).toFixed(1)
+        : 4.5;
     
-    // Team Productivity
-    if (productivityData && productivityData.productivityScore) {
-        if (document.getElementById('productivity-score')) {
-            document.getElementById('productivity-score').textContent = `${productivityData.productivityScore.toFixed(2)}%`;
-        }
-        if (document.getElementById('tickets-handled')) {
-            document.getElementById('tickets-handled').textContent = productivityData.totalTicketsHandled;
-        }
-    }
+    // Today's active teams
+    const todayActiveTeams = teams.filter(t => t.status === 'active').length;
     
-    // Efficiency Score
-    if (agingData && agingData.efficiencyScore) {
-        if (document.getElementById('efficiency-score')) {
-            document.getElementById('efficiency-score').textContent = `${agingData.efficiencyScore.toFixed(2)}%`;
-        }
-    }
+    // Update UI - Today's Tickets
+    updateElement('today-tickets', todayTickets.length);
+    updateElement('monthly-tickets', monthlyTickets.length);
+    updateElement('active-tickets', activeTickets);
     
-    // Team count and rating
-    const totalTeams = teamsData.total || teamsData.teams?.length || 0;
-    if (document.getElementById('total-teams')) {
-        document.getElementById('total-teams').textContent = totalTeams;
-    }
+    const ticketChange = monthlyTickets.length > 0 
+        ? ((todayTickets.length / (monthlyTickets.length / 30)) * 100 - 100).toFixed(2)
+        : 0;
+    updateTrendElement('today-tickets-trend', 'today-tickets-change', ticketChange, '% vs daily avg');
+    
+    // Update UI - Productivity
+    updateElement('productivity-score', `${productivityScore}%`);
+    updateElement('today-completed', todayCompleted);
+    updateElement('monthly-completed', monthlyCompleted);
+    
+    const productivityChange = productivityData?.productivityScore 
+        ? (productivityScore - productivityData.productivityScore).toFixed(2)
+        : 0;
+    updateTrendElement('productivity-trend', 'productivity-change', productivityChange, '% from last month');
+    
+    // Update UI - Efficiency
+    updateElement('efficiency-score', `${efficiencyRate}%`);
+    updateElement('avg-resolution-time', `${avgResolutionTime}h`);
+    
+    const efficiencyChange = agingData?.efficiencyScore 
+        ? (efficiencyRate - agingData.efficiencyScore).toFixed(2)
+        : 0;
+    updateTrendElement('efficiency-trend', 'efficiency-change', efficiencyChange, '% improvement');
+    
+    // Update UI - Team Performance
+    updateElement('team-rating', avgRating);
+    updateElement('today-teams-active', todayActiveTeams);
+    updateElement('total-teams', teams.length);
+    
+    const performanceChange = 0.2; // Sample change
+    updateTrendElement('performance-trend', 'performance-change', performanceChange, ' from last month');
     
     // Store data globally for other functions
-    window.tickets = ticketsData.tickets || [];
-    window.fieldTeams = teamsData.teams || [];
+    window.tickets = tickets;
+    window.fieldTeams = teams;
+    
+    console.log('✅ Dashboard metrics updated:', {
+        todayTickets: todayTickets.length,
+        monthlyTickets: monthlyTickets.length,
+        productivityScore,
+        efficiencyRate,
+        avgRating
+    });
+}
+
+function updateElement(id, value) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.textContent = value;
+    }
+}
+
+function updateTrendElement(trendId, changeId, change, suffix) {
+    const trendElement = document.getElementById(trendId);
+    const changeElement = document.getElementById(changeId);
+    
+    if (trendElement && changeElement) {
+        const isPositive = change >= 0;
+        trendElement.className = `metric-trend ${isPositive ? 'trend-up' : 'trend-down'}`;
+        trendElement.innerHTML = `
+            <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
+            <span id="${changeId}">${Math.abs(change).toFixed(2)}${suffix}</span>
+        `;
+    }
 }
 
 function updateDashboardMetricsWithSampleData() {
     // Sample data for demonstration
-    document.getElementById('total-tickets').textContent = '3';
-    document.getElementById('avg-ticket-age').textContent = '1.8h';
-    document.getElementById('productivity-score').textContent = '87%';
-    document.getElementById('tickets-handled').textContent = '621';
-    document.getElementById('efficiency-score').textContent = '92%';
-    document.getElementById('team-rating').textContent = '4.7';
-    document.getElementById('avg-completion').textContent = '45m';
+    updateElement('today-tickets', 8);
+    updateElement('monthly-tickets', 75);
+    updateElement('active-tickets', 45);
+    updateTrendElement('today-tickets-trend', 'today-tickets-change', 12.50, '% vs daily avg');
+    
+    updateElement('productivity-score', '87.50%');
+    updateElement('today-completed', 5);
+    updateElement('monthly-completed', 42);
+    updateTrendElement('productivity-trend', 'productivity-change', 5.20, '% from last month');
+    
+    updateElement('efficiency-score', '92.30%');
+    updateElement('avg-resolution-time', '1.80h');
+    updateTrendElement('efficiency-trend', 'efficiency-change', 3.50, '% improvement');
+    
+    updateElement('team-rating', 4.7);
+    updateElement('today-teams-active', 18);
+    updateElement('total-teams', 25);
+    updateTrendElement('performance-trend', 'performance-change', 0.20, ' from last month');
 }
 
 async function loadRecentTickets() {
