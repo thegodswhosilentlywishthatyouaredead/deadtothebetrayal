@@ -572,7 +572,7 @@ async function loadQuickStats() {
         const ticketChange = yesterdayTickets.length > 0 
             ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
             : 0;
-        updateFieldTrend('today-tickets-trend', 'today-tickets-change', ticketChange, ' vs yesterday');
+        updateFieldTrend('today-tickets-trend', 'today-tickets-change', ticketChange, '% vs yesterday');
         
         // Update UI - Completed
         updateFieldElement('completed-tickets', todayCompleted);
@@ -582,7 +582,7 @@ async function loadQuickStats() {
         const completedChange = yesterdayCompleted > 0
             ? ((todayCompleted - yesterdayCompleted) / yesterdayCompleted * 100)
             : 0;
-        updateFieldTrend('completed-trend', 'completed-change', completedChange, ' vs yesterday');
+        updateFieldTrend('completed-trend', 'completed-change', completedChange, '% vs yesterday');
         
         // Update UI - Performance
         updateFieldElement('avg-rating', avgRating.toFixed(1));
@@ -590,7 +590,7 @@ async function loadQuickStats() {
         updateFieldElement('avg-time', `${avgResolutionTime.toFixed(2)}h`);
         
         const ratingChange = 0.2; // Sample change
-        updateFieldTrend('rating-trend', 'rating-change', ratingChange, ' this month');
+        updateFieldTrend('rating-trend', 'rating-change', ratingChange, ' points this month');
         
         // Update UI - Earnings
         updateFieldElement('earnings-today', `RM ${earningsToday.toFixed(2)}`);
