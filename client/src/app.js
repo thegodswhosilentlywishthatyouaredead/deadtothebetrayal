@@ -3486,6 +3486,9 @@ async function getSystemDataForAI() {
 }
 // ==================== PERFORMANCE ANALYSIS FUNCTIONS ====================
 
+// Store chart instances globally to destroy them before recreating
+const chartInstances = {};
+
 // Show Performance Analysis view
 function showTicketsPerformanceAnalysis() {
     console.log('📊 Loading Performance Analysis...');
@@ -3495,8 +3498,18 @@ function showTicketsPerformanceAnalysis() {
     document.getElementById('tickets-performance-analysis').style.display = 'block';
     
     // Update button states
-    document.getElementById('tickets-list-btn').classList.remove('active');
-    document.getElementById('tickets-analysis-btn').classList.add('active');
+    const listBtn = document.getElementById('tickets-list-btn');
+    const analysisBtn = document.getElementById('tickets-analysis-btn');
+    if (listBtn) listBtn.classList.remove('active');
+    if (analysisBtn) analysisBtn.classList.add('active');
+    
+    // Destroy existing charts
+    Object.keys(chartInstances).forEach(key => {
+        if (chartInstances[key]) {
+            chartInstances[key].destroy();
+            delete chartInstances[key];
+        }
+    });
     
     // Load all analysis data
     loadPerformanceAnalysis();
@@ -3586,7 +3599,12 @@ function updatePerformanceKPIs(tickets, teams) {
 // Create Ticket Trends Chart with projections
 function createTicketTrendsChart(tickets) {
     const ctx = document.getElementById('ticketTrendsChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('⚠️ ticketTrendsChart canvas not found');
+        return;
+    }
+    
+    console.log('📈 Creating Ticket Trends Chart...');
     
     // Get last 30 days of data
     const days = [];
@@ -3620,7 +3638,7 @@ function createTicketTrendsChart(tickets) {
         projections.push(recentAvg * (1 + Math.random() * 0.2 - 0.1)); // ±10% variance
     }
     
-    new Chart(ctx, {
+    chartInstances['ticketTrends'] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: days,
@@ -3672,7 +3690,12 @@ function createTicketTrendsChart(tickets) {
 // Create Status Distribution Chart
 function createStatusDistributionChart(tickets) {
     const ctx = document.getElementById('statusDistChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn('⚠️ statusDistChart canvas not found');
+        return;
+    }
+    
+    console.log('📊 Creating Status Distribution Chart...');
     
     const statusCounts = {
         open: tickets.filter(t => t.status === 'open').length,
@@ -3681,7 +3704,7 @@ function createStatusDistributionChart(tickets) {
         closed: tickets.filter(t => t.status === 'closed').length
     };
     
-    new Chart(ctx, {
+    chartInstances['statusDist'] = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
@@ -3703,7 +3726,10 @@ function createStatusDistributionChart(tickets) {
 // Create Aging Analysis Chart
 function createAgingAnalysisChart(tickets) {
     const ctx = document.getElementById('agingAnalysisChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const now = new Date();
     const aging = {
@@ -3723,7 +3749,7 @@ function createAgingAnalysisChart(tickets) {
     updateElement('aging-24-48', aging['24-48h']);
     updateElement('aging-48plus', aging['48h+']);
     
-    new Chart(ctx, {
+    chartInstances['agingAnalysis'] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['< 24h', '24-48h', '> 48h'],
@@ -3749,7 +3775,10 @@ function createAgingAnalysisChart(tickets) {
 // Create Zone Performance Chart
 function createZonePerformanceChart(tickets) {
     const ctx = document.getElementById('zonePerformanceChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const zones = {};
     tickets.forEach(t => {
@@ -3757,7 +3786,7 @@ function createZonePerformanceChart(tickets) {
         zones[zone] = (zones[zone] || 0) + 1;
     });
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Object.keys(zones),
@@ -3781,7 +3810,10 @@ function createZonePerformanceChart(tickets) {
 // Create Priority Breakdown Chart
 function createPriorityBreakdownChart(tickets) {
     const ctx = document.getElementById('priorityBreakdownChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const priorities = {
         emergency: tickets.filter(t => t.priority === 'emergency').length,
@@ -3790,7 +3822,7 @@ function createPriorityBreakdownChart(tickets) {
         low: tickets.filter(t => t.priority === 'low').length
     };
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: ['Emergency', 'High', 'Medium', 'Low'],
@@ -3812,14 +3844,17 @@ function createPriorityBreakdownChart(tickets) {
 // Create Category Distribution Chart
 function createCategoryDistributionChart(tickets) {
     const ctx = document.getElementById('categoryDistChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const categories = {};
     tickets.forEach(t => {
         categories[t.category] = (categories[t.category] || 0) + 1;
     });
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: Object.keys(categories),
@@ -3841,11 +3876,14 @@ function createCategoryDistributionChart(tickets) {
 // Create Team Productivity Chart
 function createTeamProductivityChart(teams) {
     const ctx = document.getElementById('teamProductivityChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const topTeams = teams.slice(0, 10);
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: topTeams.map(t => t.name),
@@ -3869,7 +3907,10 @@ function createTeamProductivityChart(teams) {
 // Create Cost Analysis Chart
 function createCostAnalysisChart(tickets, teams) {
     const ctx = document.getElementById('costAnalysisChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const hourlyRate = teams[0]?.hourlyRate || 45;
     const dailyCosts = [];
@@ -3905,7 +3946,7 @@ function createCostAnalysisChart(tickets, teams) {
     updateElement('cost-month', `RM ${costMonth.toFixed(2)}`);
     updateElement('cost-projected', `RM ${costProjected.toFixed(2)}`);
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -3934,7 +3975,10 @@ function createCostAnalysisChart(tickets, teams) {
 // Create Peak Hours Chart
 function createPeakHoursChart(tickets) {
     const ctx = document.getElementById('peakHoursChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const hours = Array(24).fill(0);
     tickets.forEach(t => {
@@ -3942,7 +3986,7 @@ function createPeakHoursChart(tickets) {
         hours[hour]++;
     });
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: hours.map((_, i) => `${i}:00`),
@@ -3968,7 +4012,10 @@ function createPeakHoursChart(tickets) {
 // Create Day of Week Chart
 function createDayOfWeekChart(tickets) {
     const ctx = document.getElementById('dayOfWeekChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const counts = Array(7).fill(0);
@@ -3978,7 +4025,7 @@ function createDayOfWeekChart(tickets) {
         counts[day]++;
     });
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: days,
@@ -4004,7 +4051,10 @@ function createDayOfWeekChart(tickets) {
 // Create Customer Ratings Chart
 function createCustomerRatingsChart(teams) {
     const ctx = document.getElementById('customerRatingsChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const ratings = [0, 0, 0, 0, 0];
     teams.forEach(t => {
@@ -4014,7 +4064,7 @@ function createCustomerRatingsChart(teams) {
         }
     });
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
@@ -4040,7 +4090,10 @@ function createCustomerRatingsChart(teams) {
 // Create Productivity Metrics Chart
 function createProductivityMetricsChart(tickets, teams) {
     const ctx = document.getElementById('productivityMetricsChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const monthStart = new Date();
     monthStart.setDate(1);
@@ -4069,7 +4122,7 @@ function createProductivityMetricsChart(tickets, teams) {
         weeklyData.push(count);
     }
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -4098,7 +4151,10 @@ function createProductivityMetricsChart(tickets, teams) {
 // Create Efficiency Trends Chart
 function createEfficiencyTrendsChart(tickets) {
     const ctx = document.getElementById('efficiencyTrendsChart');
-    if (!ctx) return;
+    if (!ctx) {
+        console.warn(`⚠️ Canvas not found for chart`);
+        return;
+    }
     
     const weeklyEfficiency = [];
     const labels = [];
@@ -4132,7 +4188,7 @@ function createEfficiencyTrendsChart(tickets) {
     updateElement('first-time-fix', `${firstTimeFix}%`);
     updateElement('sla-compliance', `${slaCompliance}%`);
     
-    new Chart(ctx, {
+    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
