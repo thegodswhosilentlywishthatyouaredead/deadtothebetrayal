@@ -72,6 +72,7 @@ def load_sample_data():
         for ticket in data['tickets']:
             converted_ticket = {
                 "_id": ticket["id"],
+                "ticketNumber": ticket.get("ticketNumber", ticket["id"][:8]),
                 "title": ticket["title"],
                 "description": ticket["description"],
                 "priority": ticket["priority"],
@@ -86,7 +87,8 @@ def load_sample_data():
                 "assignedTeam": ticket.get("assigned_team"),
                 "customerInfo": ticket["customer_info"],
                 "createdAt": ticket["created_at"],
-                "updatedAt": ticket["updated_at"]
+                "updatedAt": ticket["updated_at"],
+                "estimatedDuration": ticket.get("estimated_duration", 90)
             }
             tickets.append(converted_ticket)
         

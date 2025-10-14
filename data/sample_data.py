@@ -149,6 +149,9 @@ class SampleDataGenerator:
         tickets = []
         
         for i in range(count):
+            # Generate ticket number in format TT_001, TT_002, etc.
+            ticket_number = f"TT_{str(i + 1).zfill(3)}"
+            
             # Generate ticket details
             category = random.choice(self.ticket_categories)
             priority = self.determine_priority(category)
@@ -174,6 +177,7 @@ class SampleDataGenerator:
             
             ticket = {
                 "id": f"ticket_{str(uuid.uuid4())[:8]}",
+                "ticketNumber": ticket_number,
                 "title": category,
                 "description": description,
                 "priority": priority,
