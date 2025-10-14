@@ -1637,6 +1637,283 @@
             color: var(--danger-color);
         }
 
+        /* Performance Analysis Styles */
+        .analysis-header h3 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .analysis-header p {
+            color: var(--text-secondary);
+            margin: 0.5rem 0 0 0;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .kpi-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .kpi-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+        .kpi-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
+        .kpi-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        .kpi-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-sublabel {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .analysis-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #f1f5f9;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color);
+        }
+
+        .analysis-card-header {
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(to bottom, #f8fafc, #ffffff);
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .analysis-card-header h5 {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .analysis-card-body {
+            padding: 1.5rem;
+        }
+
+        .aging-stats, .cost-summary, .productivity-summary, .efficiency-summary {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .aging-stat, .cost-item, .summary-item {
+            padding: 0.5rem;
+        }
+
+        .aging-value, .cost-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .aging-label, .cost-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .summary-value {
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .insight-card {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .insight-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .insight-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        #top-performers-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .performer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+        }
+
+        .performer-item:hover {
+            background: #f8fafc;
+        }
+
+        .performer-item:last-child {
+            border-bottom: none;
+        }
+
+        .performer-rank {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 1rem;
+        }
+
+        .performer-info {
+            flex: 1;
+        }
+
+        .performer-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .performer-zone {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .performer-metrics {
+            text-align: right;
+        }
+
+        .performer-tickets {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .performer-rating {
+            font-size: 0.875rem;
+            color: var(--warning-color);
+        }
+
+        #ai-insights {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .insight-item {
+            padding: 1rem;
+            border-left: 3px solid var(--primary-color);
+            background: #f8fafc;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .insight-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .insight-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .insight-badge.high { background: #fef2f2; color: #dc2626; }
+        .insight-badge.medium { background: #fef3c7; color: #d97706; }
+        .insight-badge.low { background: #eff6ff; color: #2563eb; }
+
         /* Performance Summary Styles */
         .performance-summary {
             margin-bottom: 2rem;
@@ -2458,14 +2735,11 @@
                                 <!-- Tickets View Controls -->
                                 <div class="view-controls">
                                     <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-primary active" onclick="showTicketsListView()">
+                                        <button type="button" class="btn btn-outline-primary active" id="tickets-list-btn" onclick="showTicketsListView()">
                                             <i class="fas fa-list me-2"></i>List View
                                         </button>
-                                        <button type="button" class="btn btn-outline-info" onclick="showTicketsAnalyticsView()">
-                                            <i class="fas fa-chart-bar me-2"></i>Analytics
-                                        </button>
-                                        <button type="button" class="btn btn-outline-success" onclick="showTicketsPerformanceView()">
-                                            <i class="fas fa-chart-line me-2"></i>Performance
+                                        <button type="button" class="btn btn-outline-info" id="tickets-analysis-btn" onclick="showTicketsPerformanceAnalysis()">
+                                            <i class="fas fa-chart-line me-2"></i>Performance Analysis
                                         </button>
                                     </div>
                                 </div>
@@ -2516,8 +2790,8 @@
                                     </div>
                                 </div>
 
-                                <!-- Analytics View -->
-                                <div id="tickets-analytics-view" style="display: none;">
+                                <!-- Performance Analysis View -->
+                                <div id="tickets-performance-analysis" style="display: none;">
                                     <div class="row">
                                         <!-- Ticket Information -->
                                         <div class="col-md-6">
@@ -2586,106 +2860,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Performance View -->
-                                <div id="tickets-performance-view" style="display: none;">
-                                    <div class="performance-grid">
-                                        <div class="performance-chart">
-                                            <h5 class="mb-3">
-                                                <i class="fas fa-chart-line me-2"></i>Ticket Resolution Trends
-                                            </h5>
-                                            <canvas id="ticketResolutionChart" width="600" height="300"></canvas>
-                                        </div>
-                                        <div class="performance-stats">
-                                            <div class="stat-item">
-                                                <div class="stat-value" id="avg-resolution-time">2.4h</div>
-                                                <div class="stat-label">Avg Resolution Time</div>
-                                                <div class="stat-trend trend-up">
-                                                    <i class="fas fa-arrow-down"></i> 15% faster
-                                                </div>
-                                            </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value" id="first-call-resolution">78%</div>
-                                                <div class="stat-label">First Call Resolution</div>
-                                                <div class="stat-trend trend-up">
-                                                    <i class="fas fa-arrow-up"></i> +5%
-                                                </div>
-                                            </div>
-                                            <div class="stat-item">
-                                                <div class="stat-value" id="customer-satisfaction">4.7</div>
-                                                <div class="stat-label">Customer Satisfaction</div>
-                                                <div class="stat-trend trend-up">
-                                                    <i class="fas fa-arrow-up"></i> +0.2
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
-                                                        <i class="fas fa-clock me-2"></i>SLA Performance
-                                                    </h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="sla-metrics">
-                                                        <div class="sla-item">
-                                                            <span class="sla-label">Critical (1h):</span>
-                                                            <span class="sla-value text-success">95%</span>
-                                                        </div>
-                                                        <div class="sla-item">
-                                                            <span class="sla-label">High (4h):</span>
-                                                            <span class="sla-value text-success">92%</span>
-                                                        </div>
-                                                        <div class="sla-item">
-                                                            <span class="sla-label">Medium (24h):</span>
-                                                            <span class="sla-value text-warning">88%</span>
-                                                        </div>
-                                                        <div class="sla-item">
-                                                            <span class="sla-label">Low (72h):</span>
-                                                            <span class="sla-value text-success">96%</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
-                                                        <i class="fas fa-trophy me-2"></i>Top Performers
-                                                    </h6>
-                                                </div>
-                                                <div class="card-body">
-                                                    <div class="top-performers">
-                                                        <div class="performer-item">
-                                                            <div class="performer-name">Ali (KL)</div>
-                                                            <div class="performer-stats">
-                                                                <span class="stat">24 tickets</span>
-                                                                <span class="stat">98% success</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="performer-item">
-                                                            <div class="performer-name">Muthu (Penang)</div>
-                                                            <div class="performer-stats">
-                                                                <span class="stat">18 tickets</span>
-                                                                <span class="stat">95% success</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="performer-item">
-                                                            <div class="performer-name">Ah-Hock (Johor)</div>
-                                                            <div class="performer-stats">
-                                                                <span class="stat">22 tickets</span>
-                                                                <span class="stat">94% success</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         </div>
 

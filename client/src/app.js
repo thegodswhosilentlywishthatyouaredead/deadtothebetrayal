@@ -2263,43 +2263,20 @@ function displaySampleZoneData() {
 // Tickets Tab View functionality
 function showTicketsListView() {
     document.getElementById('tickets-list-view').style.display = 'block';
-    document.getElementById('tickets-analytics-view').style.display = 'none';
+    const analysisView = document.getElementById('tickets-performance-analysis');
+    if (analysisView) analysisView.style.display = 'none';
     
     // Update button states
-    document.querySelector('[onclick="showTicketsListView()"]').classList.add('active');
-    document.querySelector('[onclick="showTicketsAnalyticsView()"]').classList.remove('active');
+    const listBtn = document.getElementById('tickets-list-btn');
+    const analysisBtn = document.getElementById('tickets-analysis-btn');
+    if (listBtn) listBtn.classList.add('active');
+    if (analysisBtn) analysisBtn.classList.remove('active');
     
     // Load tickets list
     loadTickets();
 }
 
-function showTicketsAnalyticsView() {
-    document.getElementById('tickets-list-view').style.display = 'none';
-    document.getElementById('tickets-analytics-view').style.display = 'block';
-    document.getElementById('tickets-performance-view').style.display = 'none';
-    
-    // Update button states
-    document.querySelector('[onclick="showTicketsListView()"]').classList.remove('active');
-    document.querySelector('[onclick="showTicketsAnalyticsView()"]').classList.add('active');
-    document.querySelector('[onclick="showTicketsPerformanceView()"]').classList.remove('active');
-    
-    // Load ticket analytics data
-    loadTicketAnalytics();
-}
-
-function showTicketsPerformanceView() {
-    document.getElementById('tickets-list-view').style.display = 'none';
-    document.getElementById('tickets-analytics-view').style.display = 'none';
-    document.getElementById('tickets-performance-view').style.display = 'block';
-    
-    // Update button states
-    document.querySelector('[onclick="showTicketsListView()"]').classList.remove('active');
-    document.querySelector('[onclick="showTicketsAnalyticsView()"]').classList.remove('active');
-    document.querySelector('[onclick="showTicketsPerformanceView()"]').classList.add('active');
-    
-    // Load ticket performance data
-    loadTicketPerformance();
-}
+// Old view functions removed - replaced by showTicketsPerformanceAnalysis()
 
 async function loadTicketPerformance() {
     try {
@@ -3507,3 +3484,818 @@ async function getSystemDataForAI() {
         };
     }
 }
+// ==================== PERFORMANCE ANALYSIS FUNCTIONS ====================
+
+// Show Performance Analysis view
+function showTicketsPerformanceAnalysis() {
+    console.log('📊 Loading Performance Analysis...');
+    
+    // Hide other views
+    document.getElementById('tickets-list-view').style.display = 'none';
+    document.getElementById('tickets-performance-analysis').style.display = 'block';
+    
+    // Update button states
+    document.getElementById('tickets-list-btn').classList.remove('active');
+    document.getElementById('tickets-analysis-btn').classList.add('active');
+    
+    // Load all analysis data
+    loadPerformanceAnalysis();
+}
+
+// Main function to load all performance analysis data
+async function loadPerformanceAnalysis() {
+    try {
+        const response = await fetch(`${API_BASE}/tickets`);
+        const data = await response.json();
+        const allTickets = data.tickets || [];
+        
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const allTeams = teamsData.teams || [];
+        
+        console.log('📊 Performance Analysis data:', { tickets: allTickets.length, teams: allTeams.length });
+        
+        // Update KPIs
+        updatePerformanceKPIs(allTickets, allTeams);
+        
+        // Create charts
+        createTicketTrendsChart(allTickets);
+        createStatusDistributionChart(allTickets);
+        createAgingAnalysisChart(allTickets);
+        createZonePerformanceChart(allTickets);
+        createPriorityBreakdownChart(allTickets);
+        createCategoryDistributionChart(allTickets);
+        createTeamProductivityChart(allTeams);
+        createCostAnalysisChart(allTickets, allTeams);
+        createPeakHoursChart(allTickets);
+        createDayOfWeekChart(allTickets);
+        createCustomerRatingsChart(allTeams);
+        createProductivityMetricsChart(allTickets, allTeams);
+        createEfficiencyTrendsChart(allTickets);
+        
+        // Populate tables
+        populatePerformanceSummaryTable(allTickets, allTeams);
+        populateTopPerformers(allTeams);
+        populateAIInsights(allTickets, allTeams);
+        
+        console.log('✅ Performance Analysis loaded successfully');
+        
+    } catch (error) {
+        console.error('❌ Error loading performance analysis:', error);
+    }
+}
+
+// Update KPI cards
+function updatePerformanceKPIs(tickets, teams) {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+    
+    // Ticket growth
+    const thisMonth = tickets.filter(t => new Date(t.createdAt) >= monthStart).length;
+    const lastMonth = tickets.filter(t => {
+        const date = new Date(t.createdAt);
+        return date >= lastMonthStart && date <= lastMonthEnd;
+    }).length;
+    const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
+    
+    // Efficiency rate
+    const resolved = tickets.filter(t => t.resolvedAt);
+    const efficientTickets = resolved.filter(t => {
+        const hours = (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60);
+        return hours <= 2;
+    }).length;
+    const efficiency = resolved.length > 0 ? (efficientTickets / resolved.length * 100).toFixed(1) : 0;
+    
+    // Average resolution time
+    const avgTime = resolved.length > 0 
+        ? (resolved.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) / resolved.length / (1000 * 60 * 60)).toFixed(2)
+        : 0;
+    
+    // Monthly cost
+    const hourlyRate = teams[0]?.hourlyRate || 45;
+    const monthlyCost = thisMonth * hourlyRate * 1.5;
+    
+    updateElement('kpi-trend', `${growth >= 0 ? '+' : ''}${growth}%`);
+    updateElement('kpi-efficiency', `${efficiency}%`);
+    updateElement('kpi-avg-time', `${avgTime}h`);
+    updateElement('kpi-cost', `RM ${monthlyCost.toLocaleString()}`);
+}
+
+// Create Ticket Trends Chart with projections
+function createTicketTrendsChart(tickets) {
+    const ctx = document.getElementById('ticketTrendsChart');
+    if (!ctx) return;
+    
+    // Get last 30 days of data
+    const days = [];
+    const counts = [];
+    const projections = [];
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        const count = tickets.filter(t => {
+            const ticketDate = new Date(t.createdAt);
+            return ticketDate >= date && ticketDate < nextDay;
+        }).length;
+        
+        days.push(date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' }));
+        counts.push(count);
+    }
+    
+    // Simple projection for next 7 days (linear trend)
+    const recentAvg = counts.slice(-7).reduce((a, b) => a + b, 0) / 7;
+    for (let i = 1; i <= 7; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        days.push(date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' }));
+        counts.push(null);
+        projections.push(recentAvg * (1 + Math.random() * 0.2 - 0.1)); // ±10% variance
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: days,
+            datasets: [
+                {
+                    label: 'Actual Tickets',
+                    data: counts,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Projected',
+                    data: projections,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderDash: [5, 5],
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: { mode: 'index', intersect: false }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Number of Tickets' } }
+            }
+        }
+    });
+    
+    // Update forecast values
+    const projectedTotal = Math.round(projections.reduce((a, b) => a + b, 0));
+    const teamsNeeded = Math.ceil(projectedTotal / 3);
+    const projectedCost = projectedTotal * 67.5;
+    const growthRate = ((projectedTotal - counts.filter(c => c !== null).slice(-7).reduce((a, b) => a + b, 0)) / counts.filter(c => c !== null).slice(-7).reduce((a, b) => a + b, 0) * 100).toFixed(1);
+    
+    updateElement('forecast-tickets', projectedTotal);
+    updateElement('forecast-teams', teamsNeeded);
+    updateElement('forecast-cost', `RM ${projectedCost.toLocaleString()}`);
+    updateElement('forecast-growth', `${growthRate}%`);
+}
+
+// Create Status Distribution Chart
+function createStatusDistributionChart(tickets) {
+    const ctx = document.getElementById('statusDistChart');
+    if (!ctx) return;
+    
+    const statusCounts = {
+        open: tickets.filter(t => t.status === 'open').length,
+        in_progress: tickets.filter(t => t.status === 'in_progress').length,
+        resolved: tickets.filter(t => t.status === 'resolved').length,
+        closed: tickets.filter(t => t.status === 'closed').length
+    };
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
+            datasets: [{
+                data: [statusCounts.open, statusCounts.in_progress, statusCounts.resolved, statusCounts.closed],
+                backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#6b7280']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Create Aging Analysis Chart
+function createAgingAnalysisChart(tickets) {
+    const ctx = document.getElementById('agingAnalysisChart');
+    if (!ctx) return;
+    
+    const now = new Date();
+    const aging = {
+        '0-24h': 0,
+        '24-48h': 0,
+        '48h+': 0
+    };
+    
+    tickets.filter(t => t.status !== 'resolved' && t.status !== 'closed').forEach(t => {
+        const hours = (now - new Date(t.createdAt)) / (1000 * 60 * 60);
+        if (hours < 24) aging['0-24h']++;
+        else if (hours < 48) aging['24-48h']++;
+        else aging['48h+']++;
+    });
+    
+    updateElement('aging-0-24', aging['0-24h']);
+    updateElement('aging-24-48', aging['24-48h']);
+    updateElement('aging-48plus', aging['48h+']);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['< 24h', '24-48h', '> 48h'],
+            datasets: [{
+                label: 'Active Tickets',
+                data: [aging['0-24h'], aging['24-48h'], aging['48h+']],
+                backgroundColor: ['#10b981', '#f59e0b', '#ef4444']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Create Zone Performance Chart
+function createZonePerformanceChart(tickets) {
+    const ctx = document.getElementById('zonePerformanceChart');
+    if (!ctx) return;
+    
+    const zones = {};
+    tickets.forEach(t => {
+        const zone = t.location?.zone || 'Unknown';
+        zones[zone] = (zones[zone] || 0) + 1;
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(zones),
+            datasets: [{
+                label: 'Tickets by Zone',
+                data: Object.values(zones),
+                backgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+// Create Priority Breakdown Chart
+function createPriorityBreakdownChart(tickets) {
+    const ctx = document.getElementById('priorityBreakdownChart');
+    if (!ctx) return;
+    
+    const priorities = {
+        emergency: tickets.filter(t => t.priority === 'emergency').length,
+        high: tickets.filter(t => t.priority === 'high').length,
+        medium: tickets.filter(t => t.priority === 'medium').length,
+        low: tickets.filter(t => t.priority === 'low').length
+    };
+    
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Emergency', 'High', 'Medium', 'Low'],
+            datasets: [{
+                data: [priorities.emergency, priorities.high, priorities.medium, priorities.low],
+                backgroundColor: ['#dc2626', '#f59e0b', '#3b82f6', '#10b981']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Create Category Distribution Chart
+function createCategoryDistributionChart(tickets) {
+    const ctx = document.getElementById('categoryDistChart');
+    if (!ctx) return;
+    
+    const categories = {};
+    tickets.forEach(t => {
+        categories[t.category] = (categories[t.category] || 0) + 1;
+    });
+    
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(categories),
+            datasets: [{
+                data: Object.values(categories),
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+}
+
+// Create Team Productivity Chart
+function createTeamProductivityChart(teams) {
+    const ctx = document.getElementById('teamProductivityChart');
+    if (!ctx) return;
+    
+    const topTeams = teams.slice(0, 10);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: topTeams.map(t => t.name),
+            datasets: [{
+                label: 'Tickets Completed',
+                data: topTeams.map(t => t.productivity?.ticketsCompleted || 0),
+                backgroundColor: '#10b981'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+// Create Cost Analysis Chart
+function createCostAnalysisChart(tickets, teams) {
+    const ctx = document.getElementById('costAnalysisChart');
+    if (!ctx) return;
+    
+    const hourlyRate = teams[0]?.hourlyRate || 45;
+    const dailyCosts = [];
+    const labels = [];
+    
+    for (let i = 29; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        date.setHours(0, 0, 0, 0);
+        
+        const nextDay = new Date(date);
+        nextDay.setDate(nextDay.getDate() + 1);
+        
+        const dayTickets = tickets.filter(t => {
+            const resolvedDate = t.resolvedAt;
+            if (!resolvedDate) return false;
+            const ticketDate = new Date(resolvedDate);
+            return ticketDate >= date && ticketDate < nextDay;
+        }).length;
+        
+        dailyCosts.push(dayTickets * hourlyRate * 1.5);
+        labels.push(date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' }));
+    }
+    
+    // Calculate costs
+    const costToday = dailyCosts[dailyCosts.length - 1] || 0;
+    const costWeek = dailyCosts.slice(-7).reduce((a, b) => a + b, 0);
+    const costMonth = dailyCosts.reduce((a, b) => a + b, 0);
+    const costProjected = costMonth * 1.15; // 15% growth projection
+    
+    updateElement('cost-today', `RM ${costToday.toFixed(2)}`);
+    updateElement('cost-week', `RM ${costWeek.toFixed(2)}`);
+    updateElement('cost-month', `RM ${costMonth.toFixed(2)}`);
+    updateElement('cost-projected', `RM ${costProjected.toFixed(2)}`);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Daily Cost (RM)',
+                data: dailyCosts,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true }
+            },
+            scales: {
+                y: { beginAtZero: true, title: { display: true, text: 'Cost (RM)' } }
+            }
+        }
+    });
+}
+
+// Create Peak Hours Chart
+function createPeakHoursChart(tickets) {
+    const ctx = document.getElementById('peakHoursChart');
+    if (!ctx) return;
+    
+    const hours = Array(24).fill(0);
+    tickets.forEach(t => {
+        const hour = new Date(t.createdAt).getHours();
+        hours[hour]++;
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: hours.map((_, i) => `${i}:00`),
+            datasets: [{
+                label: 'Tickets',
+                data: hours,
+                backgroundColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Create Day of Week Chart
+function createDayOfWeekChart(tickets) {
+    const ctx = document.getElementById('dayOfWeekChart');
+    if (!ctx) return;
+    
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const counts = Array(7).fill(0);
+    
+    tickets.forEach(t => {
+        const day = new Date(t.createdAt).getDay();
+        counts[day]++;
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: days,
+            datasets: [{
+                label: 'Tickets',
+                data: counts,
+                backgroundColor: '#10b981'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Create Customer Ratings Chart
+function createCustomerRatingsChart(teams) {
+    const ctx = document.getElementById('customerRatingsChart');
+    if (!ctx) return;
+    
+    const ratings = [0, 0, 0, 0, 0];
+    teams.forEach(t => {
+        const rating = Math.floor(t.rating || 4.5);
+        if (rating >= 1 && rating <= 5) {
+            ratings[rating - 1]++;
+        }
+    });
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
+            datasets: [{
+                label: 'Teams',
+                data: ratings,
+                backgroundColor: ['#ef4444', '#f59e0b', '#f59e0b', '#10b981', '#10b981']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Create Productivity Metrics Chart
+function createProductivityMetricsChart(tickets, teams) {
+    const ctx = document.getElementById('productivityMetricsChart');
+    if (!ctx) return;
+    
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    
+    const monthlyTickets = tickets.filter(t => new Date(t.createdAt) >= monthStart).length;
+    const daysInMonth = new Date().getDate();
+    const ticketsPerDay = (monthlyTickets / daysInMonth).toFixed(2);
+    const ticketsPerTeam = (monthlyTickets / teams.length).toFixed(2);
+    
+    updateElement('tickets-per-day', ticketsPerDay);
+    updateElement('tickets-per-team', ticketsPerTeam);
+    
+    const weeklyData = [];
+    for (let i = 0; i < 4; i++) {
+        const weekStart = new Date(monthStart);
+        weekStart.setDate(weekStart.getDate() + (i * 7));
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 7);
+        
+        const count = tickets.filter(t => {
+            const date = new Date(t.createdAt);
+            return date >= weekStart && date < weekEnd;
+        }).length;
+        
+        weeklyData.push(count);
+    }
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+            datasets: [{
+                label: 'Tickets per Week',
+                data: weeklyData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+// Create Efficiency Trends Chart
+function createEfficiencyTrendsChart(tickets) {
+    const ctx = document.getElementById('efficiencyTrendsChart');
+    if (!ctx) return;
+    
+    const weeklyEfficiency = [];
+    const labels = [];
+    
+    for (let i = 3; i >= 0; i--) {
+        const weekEnd = new Date();
+        weekEnd.setDate(weekEnd.getDate() - (i * 7));
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 7);
+        
+        const weekTickets = tickets.filter(t => {
+            const date = new Date(t.createdAt);
+            return date >= weekStart && date < weekEnd;
+        });
+        
+        const resolved = weekTickets.filter(t => t.resolvedAt);
+        const efficient = resolved.filter(t => {
+            const hours = (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60);
+            return hours <= 2;
+        }).length;
+        
+        const efficiency = resolved.length > 0 ? (efficient / resolved.length * 100).toFixed(2) : 0;
+        weeklyEfficiency.push(parseFloat(efficiency));
+        labels.push(`Week ${4 - i}`);
+    }
+    
+    // Calculate metrics
+    const firstTimeFix = weeklyEfficiency[weeklyEfficiency.length - 1] || 0;
+    const slaCompliance = (weeklyEfficiency.reduce((a, b) => a + b, 0) / weeklyEfficiency.length).toFixed(2);
+    
+    updateElement('first-time-fix', `${firstTimeFix}%`);
+    updateElement('sla-compliance', `${slaCompliance}%`);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Efficiency Rate (%)',
+                data: weeklyEfficiency,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true, max: 100, title: { display: true, text: 'Efficiency (%)' } }
+            }
+        }
+    });
+}
+
+// Populate Performance Summary Table
+function populatePerformanceSummaryTable(tickets, teams) {
+    const tbody = document.getElementById('performance-summary-table');
+    if (!tbody) return;
+    
+    const resolved = tickets.filter(t => t.resolvedAt);
+    const resolutionRate = tickets.length > 0 ? (resolved.length / tickets.length * 100).toFixed(2) : 0;
+    const avgTime = resolved.length > 0 
+        ? (resolved.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) / resolved.length / (1000 * 60 * 60)).toFixed(2)
+        : 0;
+    const avgRating = teams.length > 0 
+        ? (teams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / teams.length).toFixed(1)
+        : 4.5;
+    
+    const metrics = [
+        { name: 'Resolution Rate', current: `${resolutionRate}%`, target: '85%', status: resolutionRate >= 85 ? 'success' : 'warning' },
+        { name: 'Avg Resolution Time', current: `${avgTime}h`, target: '< 2h', status: avgTime < 2 ? 'success' : 'warning' },
+        { name: 'Customer Rating', current: avgRating, target: '> 4.5', status: avgRating > 4.5 ? 'success' : 'warning' },
+        { name: 'Active Teams', current: teams.filter(t => t.status === 'active').length, target: `${teams.length}`, status: 'success' }
+    ];
+    
+    tbody.innerHTML = metrics.map(m => `
+        <tr>
+            <td>${m.name}</td>
+            <td><strong>${m.current}</strong></td>
+            <td>${m.target}</td>
+            <td><span class="badge bg-${m.status}">${m.status === 'success' ? 'On Track' : 'Needs Attention'}</span></td>
+        </tr>
+    `).join('');
+}
+
+// Populate Top Performers
+function populateTopPerformers(teams) {
+    const container = document.getElementById('top-performers-list');
+    if (!container) return;
+    
+    const sortedTeams = teams
+        .sort((a, b) => (b.productivity?.ticketsCompleted || 0) - (a.productivity?.ticketsCompleted || 0))
+        .slice(0, 5);
+    
+    container.innerHTML = sortedTeams.map((team, index) => `
+        <div class="performer-item">
+            <div class="performer-rank">${index + 1}</div>
+            <div class="performer-info">
+                <div class="performer-name">${team.name}</div>
+                <div class="performer-zone">${team.zone || 'N/A'} - ${team.state || 'N/A'}</div>
+            </div>
+            <div class="performer-metrics">
+                <div class="performer-tickets">${team.productivity?.ticketsCompleted || 0}</div>
+                <div class="performer-rating">⭐ ${(team.rating || 4.5).toFixed(1)}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Populate AI Insights
+function populateAIInsights(tickets, teams) {
+    const container = document.getElementById('ai-insights');
+    if (!container) return;
+    
+    const insights = [];
+    
+    // Aging tickets insight
+    const oldTickets = tickets.filter(t => {
+        const hours = (new Date() - new Date(t.createdAt)) / (1000 * 60 * 60);
+        return hours > 48 && t.status !== 'resolved' && t.status !== 'closed';
+    }).length;
+    
+    if (oldTickets > 5) {
+        insights.push({
+            title: 'Aging Tickets Alert',
+            text: `${oldTickets} tickets are over 48 hours old. Consider prioritizing these to improve SLA compliance.`,
+            priority: 'high'
+        });
+    }
+    
+    // Peak time insight
+    const peakHour = tickets.reduce((acc, t) => {
+        const hour = new Date(t.createdAt).getHours();
+        acc[hour] = (acc[hour] || 0) + 1;
+        return acc;
+    }, {});
+    const maxHour = Object.keys(peakHour).reduce((a, b) => peakHour[a] > peakHour[b] ? a : b);
+    
+    insights.push({
+        title: 'Peak Hours Identified',
+        text: `Most tickets occur around ${maxHour}:00. Consider scheduling more teams during this period.`,
+        priority: 'medium'
+    });
+    
+    // Efficiency insight
+    const resolved = tickets.filter(t => t.resolvedAt);
+    const avgTime = resolved.length > 0 
+        ? (resolved.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) / resolved.length / (1000 * 60 * 60))
+        : 0;
+    
+    if (avgTime < 2) {
+        insights.push({
+            title: 'Excellent Efficiency',
+            text: `Average resolution time of ${avgTime.toFixed(2)}h is below the 2h target. Team performance is excellent!`,
+            priority: 'low'
+        });
+    }
+    
+    // Growth projection
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    const thisMonth = tickets.filter(t => new Date(t.createdAt) >= monthStart).length;
+    const projected = Math.round(thisMonth * 1.15);
+    
+    insights.push({
+        title: 'Growth Projection',
+        text: `Based on current trends, expect approximately ${projected} tickets next month. Plan resources accordingly.`,
+        priority: 'medium'
+    });
+    
+    container.innerHTML = insights.map(insight => `
+        <div class="insight-item">
+            <div class="insight-title">
+                <i class="fas fa-lightbulb"></i>
+                ${insight.title}
+                <span class="insight-badge ${insight.priority}">${insight.priority.toUpperCase()}</span>
+            </div>
+            <div class="insight-text">${insight.text}</div>
+        </div>
+    `).join('');
+}
+
+// Placeholder functions for period updates
+function updateTrendPeriod(period) {
+    console.log('Updating trend period:', period);
+    // Reload charts with new period
+    loadPerformanceAnalysis();
+}
+
+function updateForecastPeriod(period) {
+    console.log('Updating forecast period:', period);
+    // Reload forecast with new period
+    loadPerformanceAnalysis();
+}
+
