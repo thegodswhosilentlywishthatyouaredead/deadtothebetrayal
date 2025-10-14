@@ -21,3 +21,99 @@ Generating analytics...
  * Debugger PIN: 113-506-992
 127.0.0.1 - - [15/Oct/2025 00:16:09] "GET /api/tickets HTTP/1.1" 200 -
 127.0.0.1 - - [15/Oct/2025 00:16:20] "GET /api/tickets HTTP/1.1" 200 -
+ * Detected change in '/Users/thegods/intelligent-field-assignment/data/sample_data.py', reloading
+🔄 Generating modular sample data...
+Generating field teams...
+Generating tickets...
+Generating assignments...
+Generating analytics...
+✅ Generated 25 teams, 75 tickets, 9 assignments
+🚀 Starting AIFF Backend Server...
+📊 Sample data loaded successfully
+📈 Loaded: 25 teams, 75 tickets
+🌐 Server will be available at: http://localhost:5002
+🔗 API endpoints ready for frontend integration
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 113-506-992
+ * Detected change in '/Users/thegods/intelligent-field-assignment/data/sample_data.py', reloading
+🔄 Generating modular sample data...
+Generating field teams...
+Generating tickets...
+Generating assignments...
+Generating analytics...
+✅ Generated 25 teams, 75 tickets, 18 assignments
+🚀 Starting AIFF Backend Server...
+📊 Sample data loaded successfully
+📈 Loaded: 25 teams, 75 tickets
+🌐 Server will be available at: http://localhost:5002
+🔗 API endpoints ready for frontend integration
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 113-506-992
+ * Detected change in '/Users/thegods/intelligent-field-assignment/data/sample_data.py', reloading
+🔄 Generating modular sample data...
+Generating field teams...
+Generating tickets...
+Generating assignments...
+Generating analytics...
+✅ Generated 25 teams, 75 tickets, 18 assignments
+🚀 Starting AIFF Backend Server...
+📊 Sample data loaded successfully
+📈 Loaded: 25 teams, 75 tickets
+🌐 Server will be available at: http://localhost:5002
+🔗 API endpoints ready for frontend integration
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 113-506-992
+127.0.0.1 - - [15/Oct/2025 00:17:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:17:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:17:59] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:17:59] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:17:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:06] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:11] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:12] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:18] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:33] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:33] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:36] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:42] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:18:43] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/analytics/tickets/aging HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [15/Oct/2025 00:19:12] "GET /api/teams/analytics/zones HTTP/1.1" 200 -

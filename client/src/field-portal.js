@@ -469,22 +469,31 @@ function updateRouteList(tickets) {
     tickets.forEach((ticket, index) => {
         const routeItem = document.createElement('div');
         routeItem.className = 'route-item';
+        routeItem.style.cursor = 'pointer';
         const duration = ticket.estimatedDuration || 90;
+        const ticketNum = ticket.ticketNumber || ticket._id.substring(0, 8);
         
         routeItem.innerHTML = `
+            <div class="route-number">${index + 1}</div>
             <div class="route-info">
-                <h6>${ticket.title}</h6>
-                <small>${ticket.location?.address || 'N/A'}</small>
+                <h6>${ticketNum} - ${ticket.title}</h6>
+                <small><i class="fas fa-map-marker-alt"></i> ${ticket.location?.address || 'N/A'}</small>
             </div>
             <div class="route-time">
-                ${duration}m
+                <i class="fas fa-clock"></i> ${duration}m
             </div>
         `;
+        
+        // Add click handler to show route to this ticket
+        routeItem.addEventListener('click', () => {
+            showRouteToTicket(ticket, index);
+        });
+        
         container.appendChild(routeItem);
     });
     
     // Update totals
-    const totalDistance = tickets.length * 2.5; // Estimated km per ticket
+    const totalDistance = calculateTotalDistance(tickets);
     const totalTime = tickets.reduce((sum, ticket) => sum + (ticket.estimatedDuration || 90), 0);
     
     if (document.getElementById('total-distance')) {
@@ -493,6 +502,228 @@ function updateRouteList(tickets) {
     if (document.getElementById('total-time')) {
         document.getElementById('total-time').textContent = `${Math.floor(totalTime / 60)}h ${totalTime % 60}m`;
     }
+}
+
+// Calculate total distance between tickets
+function calculateTotalDistance(tickets) {
+    if (tickets.length === 0) return 0;
+    
+    let totalDistance = 0;
+    
+    // Start from current location (Kuala Lumpur as default)
+    let prevLat = 3.1390;
+    let prevLng = 101.6869;
+    
+    tickets.forEach(ticket => {
+        const lat = ticket.location?.coordinates?.lat || ticket.location?.latitude || 3.1390;
+        const lng = ticket.location?.coordinates?.lng || ticket.location?.longitude || 101.6869;
+        
+        // Calculate distance using Haversine formula
+        const distance = calculateDistance(prevLat, prevLng, lat, lng);
+        totalDistance += distance;
+        
+        prevLat = lat;
+        prevLng = lng;
+    });
+    
+    return totalDistance;
+}
+
+// Haversine formula for distance calculation
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// Show route to specific ticket
+let currentRouteLayer = null;
+
+function showRouteToTicket(ticket, index) {
+    console.log('🗺️ Showing route to ticket:', ticket.ticketNumber || ticket._id);
+    
+    // Get coordinates
+    const lat = ticket.location?.coordinates?.lat || ticket.location?.latitude || 3.1390;
+    const lng = ticket.location?.coordinates?.lng || ticket.location?.longitude || 101.6869;
+    
+    // Remove previous route layer if exists
+    if (currentRouteLayer) {
+        routeMap.removeLayer(currentRouteLayer);
+    }
+    
+    // Current location (start point - Kuala Lumpur as default)
+    const startLat = 3.1390;
+    const startLng = 101.6869;
+    
+    // Create route line
+    const routeLine = L.polyline([
+        [startLat, startLng],
+        [lat, lng]
+    ], {
+        color: '#3b82f6',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '10, 10'
+    }).addTo(routeMap);
+    
+    currentRouteLayer = routeLine;
+    
+    // Add start marker
+    const startMarker = L.marker([startLat, startLng], {
+        icon: L.divIcon({
+            className: 'custom-marker',
+            html: '<div style="background: #10b981; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">START</div>',
+            iconSize: [30, 30]
+        })
+    }).addTo(routeMap);
+    
+    // Add to route layer for cleanup
+    currentRouteLayer = L.layerGroup([routeLine, startMarker]).addTo(routeMap);
+    
+    // Calculate distance and time
+    const distance = calculateDistance(startLat, startLng, lat, lng);
+    const travelTime = Math.round(distance / 40 * 60); // Assuming 40 km/h average speed
+    const duration = ticket.estimatedDuration || 90;
+    const ticketNum = ticket.ticketNumber || ticket._id.substring(0, 8);
+    
+    // Fit map to show route
+    routeMap.fitBounds([
+        [startLat, startLng],
+        [lat, lng]
+    ], { padding: [50, 50] });
+    
+    // Highlight the selected marker and show detailed popup
+    routeMarkers.forEach((marker, i) => {
+        if (i === index) {
+            marker.openPopup();
+            marker.setIcon(L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background: #ef4444; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 3px 10px rgba(0,0,0,0.4);">${index + 1}</div>`,
+                iconSize: [40, 40]
+            }));
+        }
+    });
+    
+    // Show route details in a notification/alert
+    showRouteDetails({
+        ticketNumber: ticketNum,
+        title: ticket.title,
+        address: ticket.location?.address || 'N/A',
+        distance: distance.toFixed(2),
+        travelTime: travelTime,
+        workDuration: duration,
+        totalTime: travelTime + duration
+    });
+}
+
+// Show route details
+function showRouteDetails(routeInfo) {
+    // Create or update route details panel
+    let detailsPanel = document.getElementById('route-details-panel');
+    
+    if (!detailsPanel) {
+        detailsPanel = document.createElement('div');
+        detailsPanel.id = 'route-details-panel';
+        detailsPanel.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            max-width: 300px;
+        `;
+        document.getElementById('route-map').appendChild(detailsPanel);
+    }
+    
+    detailsPanel.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h6 style="margin: 0; color: #1e293b;">
+                <i class="fas fa-route"></i> Route Details
+            </h6>
+            <button onclick="closeRouteDetails()" style="border: none; background: none; cursor: pointer; font-size: 18px; color: #64748b;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <hr style="margin: 10px 0;">
+        <div style="margin-bottom: 8px;">
+            <strong style="color: #3b82f6;">${routeInfo.ticketNumber}</strong>
+        </div>
+        <div style="margin-bottom: 8px; font-size: 14px;">
+            <strong>${routeInfo.title}</strong>
+        </div>
+        <div style="margin-bottom: 12px; font-size: 13px; color: #64748b;">
+            <i class="fas fa-map-marker-alt"></i> ${routeInfo.address}
+        </div>
+        <hr style="margin: 10px 0;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+            <div>
+                <div style="color: #64748b;">Distance</div>
+                <strong style="color: #1e293b;">${routeInfo.distance} km</strong>
+            </div>
+            <div>
+                <div style="color: #64748b;">Travel Time</div>
+                <strong style="color: #1e293b;">${routeInfo.travelTime} min</strong>
+            </div>
+            <div>
+                <div style="color: #64748b;">Work Duration</div>
+                <strong style="color: #1e293b;">${routeInfo.workDuration} min</strong>
+            </div>
+            <div>
+                <div style="color: #64748b;">Total Time</div>
+                <strong style="color: #10b981;">${routeInfo.totalTime} min</strong>
+            </div>
+        </div>
+        <button onclick="startNavigation('${routeInfo.ticketNumber}')" style="
+            width: 100%;
+            margin-top: 12px;
+            padding: 8px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        ">
+            <i class="fas fa-navigation"></i> Start Navigation
+        </button>
+    `;
+}
+
+// Close route details panel
+function closeRouteDetails() {
+    const detailsPanel = document.getElementById('route-details-panel');
+    if (detailsPanel) {
+        detailsPanel.remove();
+    }
+    
+    // Remove route layer
+    if (currentRouteLayer) {
+        routeMap.removeLayer(currentRouteLayer);
+        currentRouteLayer = null;
+    }
+    
+    // Reset all markers to normal
+    routeMarkers.forEach((marker, i) => {
+        marker.setIcon(L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="background: #3b82f6; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">${i + 1}</div>`,
+            iconSize: [30, 30]
+        }));
+    });
+}
+
+// Start navigation to ticket
+function startNavigation(ticketNumber) {
+    console.log('🧭 Starting navigation to:', ticketNumber);
+    alert(`Navigation started to ${ticketNumber}!\n\nIn a production system, this would:\n- Open GPS navigation app\n- Provide turn-by-turn directions\n- Track real-time progress\n- Update ticket status to "En Route"`);
 }
 
 // Initialize charts

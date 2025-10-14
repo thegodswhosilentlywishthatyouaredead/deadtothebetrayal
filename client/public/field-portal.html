@@ -328,25 +328,57 @@
             border-radius: 8px;
             margin-bottom: 0.75rem;
             background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .route-item:hover {
+            background: #e0f2fe;
+            border-color: var(--primary-color);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
         }
 
         .route-item:last-child {
             margin-bottom: 0;
         }
 
+        .route-number {
+            background: var(--primary-color);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .route-info {
+            flex: 1;
+        }
+
         .route-info h6 {
-            margin: 0;
+            margin: 0 0 4px 0;
             font-weight: 600;
             color: var(--text-primary);
+            font-size: 14px;
         }
 
         .route-info small {
             color: var(--text-secondary);
+            font-size: 12px;
         }
 
         .route-time {
             font-weight: 600;
             color: var(--primary-color);
+            font-size: 14px;
+            white-space: nowrap;
         }
 
         /* Performance Charts */
