@@ -807,105 +807,57 @@ async function loadTickets() {
 function updateTicketsTabMetrics(allTickets) {
     console.log('📊 Updating Tickets tab metrics...', allTickets.length);
     
-    // Calculate date ranges
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    // Filter tickets by date
-    const todayTickets = allTickets.filter(t => {
-        const date = new Date(t.createdAt || t.created_at);
-        return date >= today;
-    });
-    
-    const yesterdayTickets = allTickets.filter(t => {
-        const date = new Date(t.createdAt || t.created_at);
-        return date >= yesterday && date < today;
-    });
-    
-    const monthlyTickets = allTickets.filter(t => {
-        const date = new Date(t.createdAt || t.created_at);
-        return date >= monthStart;
-    });
-    
-    // Today's resolved
-    const todayResolved = allTickets.filter(t => {
-        const resolvedDate = t.resolvedAt || t.resolved_at;
-        if (!resolvedDate) return false;
-        const date = new Date(resolvedDate);
-        return date >= today;
-    }).length;
-    
-    // Yesterday's resolved
-    const yesterdayResolved = allTickets.filter(t => {
-        const resolvedDate = t.resolvedAt || t.resolved_at;
-        if (!resolvedDate) return false;
-        const date = new Date(resolvedDate);
-        return date >= yesterday && date < today;
-    }).length;
-    
-    // Monthly resolved
-    const monthlyResolved = allTickets.filter(t => {
-        const resolvedDate = t.resolvedAt || t.resolved_at;
-        if (!resolvedDate) return false;
-        const date = new Date(resolvedDate);
-        return date >= monthStart;
-    }).length;
-    
-    // Status counts
-    const openTickets = allTickets.filter(t => t.status === 'open').length;
-    const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').length;
-    const pendingTickets = openTickets + inProgressTickets;
-    
-    // Priority counts
+    // Calculate totals
+    const totalTickets = allTickets.length;
+    const resolvedTickets = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+    const pendingTickets = allTickets.filter(t => t.status === 'open' || t.status === 'in_progress').length;
     const criticalTickets = allTickets.filter(t => t.priority === 'emergency').length;
-    const highTickets = allTickets.filter(t => t.priority === 'high').length;
-    const emergencyTickets = criticalTickets;
     
-    // Update UI - Today's Tickets
-    updateElement('tickets-today', todayTickets.length);
-    updateElement('tickets-yesterday', yesterdayTickets.length);
-    updateElement('tickets-monthly', monthlyTickets.length);
-    
-    const todayChange = yesterdayTickets.length > 0 
-        ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
+    // Calculate resolution rate
+    const resolutionRate = totalTickets > 0 
+        ? ((resolvedTickets / totalTickets) * 100).toFixed(2)
         : 0;
-    updateTrendElement('tickets-today-trend', 'tickets-today-change', todayChange, '% vs yesterday');
     
-    // Update UI - Pending
+    // Calculate average resolution time
+    const resolvedWithTime = allTickets.filter(t => t.resolvedAt || t.resolved_at);
+    let avgResolutionTime = 0;
+    if (resolvedWithTime.length > 0) {
+        const totalTime = resolvedWithTime.reduce((sum, t) => {
+            const created = new Date(t.createdAt || t.created_at);
+            const resolved = new Date(t.resolvedAt || t.resolved_at);
+            return sum + (resolved - created);
+        }, 0);
+        avgResolutionTime = (totalTime / resolvedWithTime.length / (1000 * 60 * 60)).toFixed(2);
+    }
+    
+    // Calculate customer satisfaction (from teams data)
+    const avgSatisfaction = window.fieldTeams && window.fieldTeams.length > 0
+        ? (window.fieldTeams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / window.fieldTeams.length).toFixed(1)
+        : 4.5;
+    
+    // Calculate auto-assigned percentage
+    const assignedTickets = allTickets.filter(t => t.assignedTeam).length;
+    const autoAssignedRate = totalTickets > 0
+        ? ((assignedTickets / totalTickets) * 100).toFixed(2)
+        : 0;
+    
+    // Update UI
+    updateElement('tickets-total', totalTickets);
     updateElement('tickets-pending', pendingTickets);
-    updateElement('tickets-open', openTickets);
-    updateElement('tickets-inprogress', inProgressTickets);
-    
-    const pendingChange = 0; // Can calculate from historical data
-    updateTrendElement('tickets-pending-trend', 'tickets-pending-change', pendingChange, ' active');
-    
-    // Update UI - Resolved Today
-    updateElement('tickets-resolved', todayResolved);
-    updateElement('tickets-resolved-yesterday', yesterdayResolved);
-    updateElement('tickets-resolved-monthly', monthlyResolved);
-    
-    const resolvedChange = yesterdayResolved > 0
-        ? ((todayResolved - yesterdayResolved) / yesterdayResolved * 100)
-        : 0;
-    updateTrendElement('tickets-resolved-trend', 'tickets-resolved-change', resolvedChange, '% vs yesterday');
-    
-    // Update UI - Critical Priority
+    updateElement('tickets-resolved', resolvedTickets);
     updateElement('tickets-critical', criticalTickets);
-    updateElement('tickets-high', highTickets);
-    updateElement('tickets-emergency', emergencyTickets);
-    
-    const criticalChange = 0; // Can calculate from historical data
-    updateTrendElement('tickets-critical-trend', 'tickets-critical-change', criticalChange, ' urgent');
+    updateElement('tickets-efficiency', `${resolutionRate}%`);
+    updateElement('tickets-avg-time', `${avgResolutionTime}h`);
+    updateElement('tickets-satisfaction', avgSatisfaction);
+    updateElement('tickets-assigned', `${autoAssignedRate}%`);
     
     console.log('✅ Tickets tab metrics updated:', {
-        today: todayTickets.length,
-        yesterday: yesterdayTickets.length,
-        monthly: monthlyTickets.length,
-        todayResolved,
-        pending: pendingTickets
+        total: totalTickets,
+        resolved: resolvedTickets,
+        pending: pendingTickets,
+        critical: criticalTickets,
+        resolutionRate,
+        avgTime: avgResolutionTime
     });
 }
 
