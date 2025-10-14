@@ -180,6 +180,8 @@ function showTab(tabName) {
 
 // Dashboard functions
 async function loadDashboardData() {
+    console.log('🔄 Loading dashboard data from', API_BASE);
+    
     try {
         const [ticketsResponse, teamsResponse, agingResponse, productivityResponse] = await Promise.all([
             fetch(`${API_BASE}/tickets`),
@@ -188,10 +190,19 @@ async function loadDashboardData() {
             fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
         
+        console.log('✅ API responses received');
+        
         const ticketsData = await ticketsResponse.json();
         const teamsData = await teamsResponse.json();
         const agingData = await agingResponse.json();
         const productivityData = await productivityResponse.json();
+        
+        console.log('📊 Data parsed:', {
+            tickets: ticketsData.total || ticketsData.tickets?.length,
+            teams: teamsData.total || teamsData.teams?.length,
+            aging: agingData.efficiencyScore,
+            productivity: productivityData.productivityScore
+        });
         
         // Update metrics with correct data
         updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData);
@@ -202,8 +213,10 @@ async function loadDashboardData() {
         // Load team status
         await loadTeamStatusOverview();
         
+        console.log('✅ Dashboard data loaded successfully');
+        
     } catch (error) {
-        console.error('Error loading dashboard data:', error);
+        console.error('❌ Error loading dashboard data:', error);
         // Show sample data on error
         updateDashboardMetricsWithSampleData();
     }
@@ -267,14 +280,25 @@ function updateDashboardMetricsWithSampleData() {
 
 async function loadRecentTickets() {
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=5`);
+        const response = await fetch(`${API_BASE}/tickets`);
         const data = await response.json();
         
+        console.log('📋 Loaded tickets:', data.tickets ? data.tickets.length : 0);
+        
         const container = document.getElementById('recent-tickets');
+        if (!container) {
+            console.error('❌ Element "recent-tickets" not found in DOM');
+            return;
+        }
+        
         container.innerHTML = '';
         
         if (data.tickets && data.tickets.length > 0) {
-            data.tickets.forEach(ticket => {
+            // Show first 5 tickets
+            const recentTickets = data.tickets.slice(0, 5);
+            console.log('📋 Displaying', recentTickets.length, 'recent tickets');
+            
+            recentTickets.forEach(ticket => {
                 const ticketElement = createTicketElement(ticket, true);
                 container.appendChild(ticketElement);
             });
@@ -418,7 +442,14 @@ async function loadTeamStatusOverview() {
         const response = await fetch(`${API_BASE}/teams/analytics/zones`);
         const data = await response.json();
         
+        console.log('👥 Loaded zones:', data.zones ? Object.keys(data.zones).length : 0);
+        
         const container = document.getElementById('team-status-overview');
+        if (!container) {
+            console.error('❌ Element "team-status-overview" not found in DOM');
+            return;
+        }
+        
         container.innerHTML = '';
         
         if (data.zones && Object.keys(data.zones).length > 0) {
@@ -428,18 +459,20 @@ async function loadTeamStatusOverview() {
                 ...zoneData
             }));
             
-            const sortedZones = zonesArray.sort((a, b) => b.productivityScore - a.productivityScore);
+            const sortedZones = zonesArray.sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
+            
+            console.log('👥 Displaying', sortedZones.length, 'zones');
             
             sortedZones.forEach((zone, index) => {
                 const zoneElement = createZonePerformanceElement(zone, index + 1);
                 container.appendChild(zoneElement);
             });
         } else {
-            // Show sample data if no real data available
+            console.log('⚠️  No zones data, showing sample data');
             displaySampleZonePerformance();
         }
     } catch (error) {
-        console.error('Error loading zone performance overview:', error);
+        console.error('❌ Error loading zone performance overview:', error);
         // Show sample data on error
         displaySampleZonePerformance();
     }
@@ -449,23 +482,25 @@ function createZonePerformanceElement(zone, rank) {
     const zoneCard = document.createElement('div');
     zoneCard.className = `zone-performance-card rank-${rank}`;
     
-    const productivityPercentage = Math.round(zone.productivityScore);
-    const efficiencyPercentage = Math.round(zone.efficiency || 85);
+    const productivityPercentage = Math.round(zone.productivityScore || 0);
+    const activeTeams = zone.teams ? zone.teams.filter(t => t.status === 'active').length : 0;
+    const totalTeams = zone.teams ? zone.teams.length : 0;
+    const efficiencyPercentage = Math.round(zone.averageRating ? zone.averageRating * 20 : 85);
     
     zoneCard.innerHTML = `
         <div class="zone-header">
-            <div class="zone-name">${zone.zone}</div>
+            <div class="zone-name">${zone.zoneName || zone.zone}</div>
             <div class="zone-rank rank-${rank}">#${rank}</div>
         </div>
         
         <div class="zone-metrics">
             <div class="zone-metric">
-                <span class="zone-metric-value">${(zone.openTickets || 0) + (zone.closedTickets || 0)}</span>
+                <span class="zone-metric-value">${zone.totalTickets || 0}</span>
                 <div class="zone-metric-label">Total Tickets</div>
             </div>
             <div class="zone-metric">
-                <span class="zone-metric-value">${zone.activeTeams || 0}</span>
-                <div class="zone-metric-label">Active Teams</div>
+                <span class="zone-metric-value">${totalTeams}</span>
+                <div class="zone-metric-label">Teams</div>
             </div>
         </div>
         
@@ -475,12 +510,12 @@ function createZonePerformanceElement(zone, rank) {
         </div>
         
         <div class="productivity-bar">
-            <div class="productivity-fill" style="width: ${productivityPercentage}%"></div>
+            <div class="productivity-fill" style="width: ${Math.min(100, Math.max(0, productivityPercentage))}%"></div>
         </div>
         
         <div class="mt-2">
             <small class="text-muted">
-                ${zone.openTickets || 0} open • ${zone.closedTickets || 0} closed • ${efficiencyPercentage}% efficiency
+                ${zone.openTickets || 0} open • ${zone.closedTickets || 0} closed • ${zone.averageRating ? zone.averageRating.toFixed(2) : '0.00'}★ rating
             </small>
         </div>
     `;
@@ -650,22 +685,27 @@ function displayTickets(ticketsToShow) {
 function createTicketElement(ticket, isCompact = false) {
     const div = document.createElement('div');
     
+    // Handle different data structures from backend
+    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+    const locationAddress = ticket.location?.address || 'N/A';
+    
     if (isCompact) {
         div.className = 'ticket-card';
         div.innerHTML = `
             <div class="ticket-header">
-                <h3 class="ticket-title">${ticket.ticketNumber} - ${ticket.title}</h3>
+                <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
                 <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
             </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
                     <i class="fas fa-user"></i>
-                    <span>${ticket.customer.name}</span>
+                    <span>${customerName}</span>
                 </div>
                 <div class="ticket-detail">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span>${ticket.location.address}</span>
+                    <span>${locationAddress}</span>
                 </div>
             </div>
         `;
@@ -673,18 +713,18 @@ function createTicketElement(ticket, isCompact = false) {
         div.className = 'ticket-card';
         div.innerHTML = `
             <div class="ticket-header">
-                <h3 class="ticket-title">${ticket.ticketNumber} - ${ticket.title}</h3>
+                <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
                 <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
             </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
                     <i class="fas fa-user"></i>
-                    <span>${ticket.customer.name}</span>
+                    <span>${customerName}</span>
                 </div>
                 <div class="ticket-detail">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span>${ticket.location.address}</span>
+                    <span>${locationAddress}</span>
                 </div>
                 <div class="ticket-detail">
                     <i class="fas fa-tag"></i>

@@ -54,11 +54,18 @@ async function loadFieldPortalData() {
 
 // Load my assigned tickets
 async function loadMyTickets() {
+    console.log('🎫 Loading field portal tickets from', API_BASE);
+    
     try {
         const response = await fetch(`${API_BASE}/tickets`);
         const data = await response.json();
+        
+        console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
+        
         // Show first 5 tickets as demo for field portal
         myTickets = (data.tickets || []).slice(0, 5);
+        
+        console.log('🎫 Field portal displaying:', myTickets.length, 'tickets');
         
         if (myTickets.length === 0) {
             // Show sample data
@@ -210,6 +217,12 @@ function createTicketCard(ticket) {
     const card = document.createElement('div');
     card.className = 'ticket-card';
     
+    // Handle different data structures from backend
+    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+    const locationAddress = ticket.location?.address || 'N/A';
+    const estimatedDuration = ticket.estimatedDuration || 90;
+    
     const priorityClass = `priority-${ticket.priority}`;
     const statusClass = `status-${ticket.status.replace('-', '-')}`;
     
@@ -217,7 +230,7 @@ function createTicketCard(ticket) {
         <div class="ticket-header">
             <div>
                 <div class="ticket-title">${ticket.title}</div>
-                <div class="ticket-number">${ticket.ticketNumber}</div>
+                <div class="ticket-number">${ticketNumber}</div>
             </div>
             <div class="ticket-priority ${priorityClass}">${ticket.priority}</div>
         </div>
@@ -225,15 +238,15 @@ function createTicketCard(ticket) {
         <div class="ticket-details">
             <div class="ticket-detail">
                 <i class="fas fa-user"></i>
-                <span>${ticket.customer.name}</span>
+                <span>${customerName}</span>
             </div>
             <div class="ticket-detail">
                 <i class="fas fa-map-marker-alt"></i>
-                <span>${ticket.location.address}</span>
+                <span>${locationAddress}</span>
             </div>
             <div class="ticket-detail">
                 <i class="fas fa-clock"></i>
-                <span>${ticket.estimatedDuration} min</span>
+                <span>${estimatedDuration} min</span>
             </div>
             <div class="ticket-detail">
                 <i class="fas fa-tag"></i>
