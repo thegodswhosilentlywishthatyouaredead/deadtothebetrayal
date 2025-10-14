@@ -316,27 +316,79 @@ function getTicketActions(ticket) {
 
 // Load quick stats
 async function loadQuickStats() {
+    console.log('📊 Loading quick stats...');
+    
     try {
-        const today = new Date().toDateString();
-        const todayTickets = myTickets.filter(ticket => 
-            new Date(ticket.createdAt).toDateString() === today
-        );
-        const completedTickets = myTickets.filter(ticket => ticket.status === 'completed');
-        const avgRating = 4.8; // This would come from API
-        const earningsToday = completedTickets.length * currentUser.hourlyRate * 0.5; // Assuming 30 min average
+        // Get tickets data
+        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsData = await ticketsResponse.json();
+        const allTickets = ticketsData.tickets || [];
         
-        document.getElementById('today-tickets').textContent = todayTickets.length;
-        document.getElementById('completed-tickets').textContent = completedTickets.length;
-        document.getElementById('avg-rating').textContent = avgRating.toFixed(1);
-        document.getElementById('earnings-today').textContent = `$${earningsToday.toFixed(0)}`;
+        // Get teams data for ratings
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const allTeams = teamsData.teams || [];
+        
+        console.log('📊 Stats data:', { tickets: allTickets.length, teams: allTeams.length });
+        
+        // Calculate stats
+        const today = new Date().toDateString();
+        const todayTickets = allTickets.filter(ticket => {
+            try {
+                return new Date(ticket.createdAt).toDateString() === today;
+            } catch {
+                return false;
+            }
+        });
+        
+        const completedTickets = allTickets.filter(ticket => 
+            ticket.status === 'completed' || ticket.status === 'resolved' || ticket.status === 'closed'
+        );
+        
+        // Calculate average rating from all teams
+        const avgRating = allTeams.length > 0 
+            ? allTeams.reduce((sum, team) => sum + (team.productivity?.customerRating || 4.5), 0) / allTeams.length
+            : 4.50;
+        
+        // Calculate earnings (using first team's rate as reference)
+        const hourlyRate = allTeams[0]?.hourlyRate || 45.00;
+        const earningsToday = completedTickets.length * hourlyRate * 0.5;
+        
+        // Update UI
+        if (document.getElementById('today-tickets')) {
+            document.getElementById('today-tickets').textContent = todayTickets.length || myTickets.length;
+        }
+        if (document.getElementById('completed-tickets')) {
+            document.getElementById('completed-tickets').textContent = completedTickets.length;
+        }
+        if (document.getElementById('avg-rating')) {
+            document.getElementById('avg-rating').textContent = avgRating.toFixed(2);
+        }
+        if (document.getElementById('earnings-today')) {
+            document.getElementById('earnings-today').textContent = `RM ${earningsToday.toFixed(2)}`;
+        }
+        
+        console.log('✅ Quick stats updated:', {
+            todayTickets: todayTickets.length,
+            completed: completedTickets.length,
+            rating: avgRating.toFixed(2),
+            earnings: earningsToday.toFixed(2)
+        });
+        
     } catch (error) {
-        console.error('Error loading quick stats:', error);
+        console.error('❌ Error loading quick stats:', error);
+        // Set fallback values
+        if (document.getElementById('today-tickets')) document.getElementById('today-tickets').textContent = myTickets.length;
+        if (document.getElementById('completed-tickets')) document.getElementById('completed-tickets').textContent = '0';
+        if (document.getElementById('avg-rating')) document.getElementById('avg-rating').textContent = '4.50';
+        if (document.getElementById('earnings-today')) document.getElementById('earnings-today').textContent = 'RM 0.00';
     }
 }
 
 // Initialize route map
 function initializeRouteMap() {
-    routeMap = L.map('route-map').setView([40.7128, -74.0060], 12);
+    // Center on Kuala Lumpur, Malaysia
+    routeMap = L.map('route-map').setView([3.1390, 101.6869], 11);
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -347,6 +399,8 @@ function initializeRouteMap() {
 
 // Load route data
 async function loadRouteData() {
+    console.log('🗺️ Loading route data...');
+    
     try {
         // Clear existing markers
         routeMarkers.forEach(marker => routeMap.removeLayer(marker));
@@ -354,18 +408,25 @@ async function loadRouteData() {
         
         // Add markers for assigned tickets
         const assignedTickets = myTickets.filter(ticket => 
-            ticket.status === 'assigned' || ticket.status === 'in-progress'
+            ticket.status === 'assigned' || ticket.status === 'in-progress' || ticket.status === 'open'
         );
         
+        console.log('🗺️ Displaying', assignedTickets.length, 'tickets on map');
+        
         assignedTickets.forEach((ticket, index) => {
-            const marker = L.marker([ticket.location.latitude, ticket.location.longitude])
+            // Handle backend data structure
+            const lat = ticket.location?.coordinates?.lat || ticket.location?.latitude || 3.1390;
+            const lng = ticket.location?.coordinates?.lng || ticket.location?.longitude || 101.6869;
+            const duration = ticket.estimatedDuration || 90;
+            
+            const marker = L.marker([lat, lng])
                 .addTo(routeMap)
                 .bindPopup(`
                     <div>
                         <h6>${ticket.title}</h6>
                         <p><strong>Priority:</strong> ${ticket.priority}</p>
-                        <p><strong>Duration:</strong> ${ticket.estimatedDuration} min</p>
-                        <p><strong>Address:</strong> ${ticket.location.address}</p>
+                        <p><strong>Duration:</strong> ${duration} min</p>
+                        <p><strong>Address:</strong> ${ticket.location?.address || 'N/A'}</p>
                     </div>
                 `);
             
@@ -380,14 +441,19 @@ async function loadRouteData() {
             const group = new L.featureGroup(routeMarkers);
             routeMap.fitBounds(group.getBounds().pad(0.1));
         }
+        
+        console.log('✅ Route data loaded');
+        
     } catch (error) {
-        console.error('Error loading route data:', error);
+        console.error('❌ Error loading route data:', error);
     }
 }
 
 // Update route list
 function updateRouteList(tickets) {
     const container = document.getElementById('route-list');
+    if (!container) return;
+    
     container.innerHTML = '';
     
     if (tickets.length === 0) {
@@ -403,24 +469,30 @@ function updateRouteList(tickets) {
     tickets.forEach((ticket, index) => {
         const routeItem = document.createElement('div');
         routeItem.className = 'route-item';
+        const duration = ticket.estimatedDuration || 90;
+        
         routeItem.innerHTML = `
             <div class="route-info">
                 <h6>${ticket.title}</h6>
-                <small>${ticket.location.address}</small>
+                <small>${ticket.location?.address || 'N/A'}</small>
             </div>
             <div class="route-time">
-                ${ticket.estimatedDuration}m
+                ${duration}m
             </div>
         `;
         container.appendChild(routeItem);
     });
     
     // Update totals
-    const totalDistance = tickets.length * 2.5; // Estimated
-    const totalTime = tickets.reduce((sum, ticket) => sum + ticket.estimatedDuration, 0);
+    const totalDistance = tickets.length * 2.5; // Estimated km per ticket
+    const totalTime = tickets.reduce((sum, ticket) => sum + (ticket.estimatedDuration || 90), 0);
     
-    document.getElementById('total-distance').textContent = `${totalDistance.toFixed(1)} km`;
-    document.getElementById('total-time').textContent = `${Math.floor(totalTime / 60)}h ${totalTime % 60}m`;
+    if (document.getElementById('total-distance')) {
+        document.getElementById('total-distance').textContent = `${totalDistance.toFixed(2)} km`;
+    }
+    if (document.getElementById('total-time')) {
+        document.getElementById('total-time').textContent = `${Math.floor(totalTime / 60)}h ${totalTime % 60}m`;
+    }
 }
 
 // Initialize charts
@@ -562,63 +634,117 @@ function initializeCharts() {
 
 // Load performance data
 async function loadPerformanceData() {
-    // Performance data would be loaded from API
-    // For now, using sample data in charts
+    console.log('📈 Loading performance data...');
+    
+    try {
+        // Get teams data for performance metrics
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const allTeams = teamsData.teams || [];
+        
+        if (allTeams.length > 0) {
+            // Calculate average performance metrics
+            const avgEfficiency = allTeams.reduce((sum, team) => 
+                sum + (team.productivity?.efficiencyScore || 85), 0) / allTeams.length;
+            const avgRating = allTeams.reduce((sum, team) => 
+                sum + (team.productivity?.customerRating || 4.5), 0) / allTeams.length;
+            const totalTickets = allTeams.reduce((sum, team) => 
+                sum + (team.productivity?.totalTicketsCompleted || 0), 0);
+            
+            console.log('📈 Performance metrics:', {
+                efficiency: avgEfficiency.toFixed(2),
+                rating: avgRating.toFixed(2),
+                totalTickets
+            });
+        }
+        
+        console.log('✅ Performance data loaded');
+    } catch (error) {
+        console.error('❌ Error loading performance data:', error);
+    }
 }
 
 // Load expense data
 async function loadExpenseData() {
+    console.log('💰 Loading expense data...');
+    
     try {
+        // Get teams data for hourly rates
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const allTeams = teamsData.teams || [];
+        
+        // Calculate expenses based on completed tickets
+        const completedCount = myTickets.filter(t => 
+            t.status === 'completed' || t.status === 'resolved' || t.status === 'closed'
+        ).length;
+        
+        const hourlyRate = allTeams[0]?.hourlyRate || 45.00;
+        const monthlyExpenses = completedCount * hourlyRate * 2; // Estimate
+        const lastMonthExpenses = monthlyExpenses * 0.9;
+        const dailyAvg = monthlyExpenses / 30;
+        const reimbursed = monthlyExpenses * 0.95;
+        
         // Load expense summary
         const expenseSummary = document.getElementById('expense-summary');
-        expenseSummary.innerHTML = `
-            <div class="d-flex justify-content-between mb-2">
-                <span>This Month:</span>
-                <strong>$335</strong>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span>Last Month:</span>
-                <strong>$298</strong>
-            </div>
-            <div class="d-flex justify-content-between mb-2">
-                <span>Average/Day:</span>
-                <strong>$11.2</strong>
-            </div>
-            <div class="d-flex justify-content-between">
-                <span>Reimbursed:</span>
-                <strong class="text-success">$320</strong>
-            </div>
-        `;
+        if (expenseSummary) {
+            expenseSummary.innerHTML = `
+                <div class="d-flex justify-content-between mb-2">
+                    <span>This Month:</span>
+                    <strong>RM ${monthlyExpenses.toFixed(2)}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Last Month:</span>
+                    <strong>RM ${lastMonthExpenses.toFixed(2)}</strong>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span>Average/Day:</span>
+                    <strong>RM ${dailyAvg.toFixed(2)}</strong>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span>Reimbursed:</span>
+                    <strong class="text-success">RM ${reimbursed.toFixed(2)}</strong>
+                </div>
+            `;
+        }
         
-        // Load recent expenses
+        // Load recent expenses with Malaysian context
         const recentExpenses = document.getElementById('recent-expenses');
-        recentExpenses.innerHTML = `
-            <div class="list-group">
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">Fuel - Gas Station</h6>
-                        <small class="text-muted">Today, 2:30 PM</small>
+        if (recentExpenses) {
+            recentExpenses.innerHTML = `
+                <div class="list-group">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Fuel - Petrol Station</h6>
+                            <small class="text-muted">Today, 2:30 PM</small>
+                        </div>
+                        <span class="badge bg-danger">RM 65.00</span>
                     </div>
-                    <span class="badge bg-danger">$45.20</span>
-                </div>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">Materials - Hardware Store</h6>
-                        <small class="text-muted">Yesterday, 4:15 PM</small>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Materials - Fiber Supplies</h6>
+                            <small class="text-muted">Yesterday, 4:15 PM</small>
+                        </div>
+                        <span class="badge bg-primary">RM 128.50</span>
                     </div>
-                    <span class="badge bg-primary">$28.50</span>
-                </div>
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">Lunch - Restaurant</h6>
-                        <small class="text-muted">Yesterday, 12:30 PM</small>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Meals - Lunch</h6>
+                            <small class="text-muted">Yesterday, 12:30 PM</small>
+                        </div>
+                        <span class="badge bg-warning">RM 25.00</span>
                     </div>
-                    <span class="badge bg-warning">$12.75</span>
                 </div>
-            </div>
-        `;
+            `;
+        }
+        
+        console.log('✅ Expense data loaded:', {
+            monthly: monthlyExpenses.toFixed(2),
+            daily: dailyAvg.toFixed(2)
+        });
+        
     } catch (error) {
-        console.error('Error loading expense data:', error);
+        console.error('❌ Error loading expense data:', error);
     }
 }
 
