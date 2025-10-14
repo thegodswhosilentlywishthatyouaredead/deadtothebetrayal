@@ -710,6 +710,11 @@ async function loadTickets() {
         const data = await response.json();
         tickets = data.tickets || [];
         
+        console.log('🎫 Loading tickets tab data:', tickets.length);
+        
+        // Update Tickets tab metrics
+        updateTicketsTabMetrics(tickets);
+        
         if (tickets.length === 0) {
             // Show sample data if no real data available
             tickets = [
@@ -796,6 +801,112 @@ async function loadTickets() {
         ];
         displayTickets(tickets);
     }
+}
+
+// Update Tickets tab metrics with real data
+function updateTicketsTabMetrics(allTickets) {
+    console.log('📊 Updating Tickets tab metrics...', allTickets.length);
+    
+    // Calculate date ranges
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    // Filter tickets by date
+    const todayTickets = allTickets.filter(t => {
+        const date = new Date(t.createdAt || t.created_at);
+        return date >= today;
+    });
+    
+    const yesterdayTickets = allTickets.filter(t => {
+        const date = new Date(t.createdAt || t.created_at);
+        return date >= yesterday && date < today;
+    });
+    
+    const monthlyTickets = allTickets.filter(t => {
+        const date = new Date(t.createdAt || t.created_at);
+        return date >= monthStart;
+    });
+    
+    // Today's resolved
+    const todayResolved = allTickets.filter(t => {
+        const resolvedDate = t.resolvedAt || t.resolved_at;
+        if (!resolvedDate) return false;
+        const date = new Date(resolvedDate);
+        return date >= today;
+    }).length;
+    
+    // Yesterday's resolved
+    const yesterdayResolved = allTickets.filter(t => {
+        const resolvedDate = t.resolvedAt || t.resolved_at;
+        if (!resolvedDate) return false;
+        const date = new Date(resolvedDate);
+        return date >= yesterday && date < today;
+    }).length;
+    
+    // Monthly resolved
+    const monthlyResolved = allTickets.filter(t => {
+        const resolvedDate = t.resolvedAt || t.resolved_at;
+        if (!resolvedDate) return false;
+        const date = new Date(resolvedDate);
+        return date >= monthStart;
+    }).length;
+    
+    // Status counts
+    const openTickets = allTickets.filter(t => t.status === 'open').length;
+    const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').length;
+    const pendingTickets = openTickets + inProgressTickets;
+    
+    // Priority counts
+    const criticalTickets = allTickets.filter(t => t.priority === 'emergency').length;
+    const highTickets = allTickets.filter(t => t.priority === 'high').length;
+    const emergencyTickets = criticalTickets;
+    
+    // Update UI - Today's Tickets
+    updateElement('tickets-today', todayTickets.length);
+    updateElement('tickets-yesterday', yesterdayTickets.length);
+    updateElement('tickets-monthly', monthlyTickets.length);
+    
+    const todayChange = yesterdayTickets.length > 0 
+        ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
+        : 0;
+    updateTrendElement('tickets-today-trend', 'tickets-today-change', todayChange, '% vs yesterday');
+    
+    // Update UI - Pending
+    updateElement('tickets-pending', pendingTickets);
+    updateElement('tickets-open', openTickets);
+    updateElement('tickets-inprogress', inProgressTickets);
+    
+    const pendingChange = 0; // Can calculate from historical data
+    updateTrendElement('tickets-pending-trend', 'tickets-pending-change', pendingChange, ' active');
+    
+    // Update UI - Resolved Today
+    updateElement('tickets-resolved', todayResolved);
+    updateElement('tickets-resolved-yesterday', yesterdayResolved);
+    updateElement('tickets-resolved-monthly', monthlyResolved);
+    
+    const resolvedChange = yesterdayResolved > 0
+        ? ((todayResolved - yesterdayResolved) / yesterdayResolved * 100)
+        : 0;
+    updateTrendElement('tickets-resolved-trend', 'tickets-resolved-change', resolvedChange, '% vs yesterday');
+    
+    // Update UI - Critical Priority
+    updateElement('tickets-critical', criticalTickets);
+    updateElement('tickets-high', highTickets);
+    updateElement('tickets-emergency', emergencyTickets);
+    
+    const criticalChange = 0; // Can calculate from historical data
+    updateTrendElement('tickets-critical-trend', 'tickets-critical-change', criticalChange, ' urgent');
+    
+    console.log('✅ Tickets tab metrics updated:', {
+        today: todayTickets.length,
+        yesterday: yesterdayTickets.length,
+        monthly: monthlyTickets.length,
+        todayResolved,
+        pending: pendingTickets
+    });
 }
 
 function displayTickets(ticketsToShow) {

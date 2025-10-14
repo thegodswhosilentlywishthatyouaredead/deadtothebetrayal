@@ -2280,100 +2280,70 @@
                                 <!-- Tickets Dashboard Metrics -->
                                 <div class="domain-metrics">
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-ticket-alt"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-total">127</h3>
-                                            <p class="metric-label">Total Tickets</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+12%</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Today's Tickets</h3>
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-ticket-alt"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="tickets-today">0</div>
+                                        <div class="metric-trend trend-up" id="tickets-today-trend">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="tickets-today-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail">
+                                            <small>Yesterday: <span id="tickets-yesterday">0</span> | Monthly: <span id="tickets-monthly">0</span></small>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-pending">23</h3>
-                                            <p class="metric-label">Pending</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative">-5%</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Pending</h3>
+                                            <div class="metric-icon orange">
+                                                <i class="fas fa-clock"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="tickets-pending">0</div>
+                                        <div class="metric-trend trend-up" id="tickets-pending-trend">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="tickets-pending-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail">
+                                            <small>Open: <span id="tickets-open">0</span> | In Progress: <span id="tickets-inprogress">0</span></small>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-check-circle"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-resolved">104</h3>
-                                            <p class="metric-label">Resolved</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+8%</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Resolved Today</h3>
+                                            <div class="metric-icon green">
+                                                <i class="fas fa-check-circle"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="tickets-resolved">0</div>
+                                        <div class="metric-trend trend-up" id="tickets-resolved-trend">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="tickets-resolved-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail">
+                                            <small>Yesterday: <span id="tickets-resolved-yesterday">0</span> | Monthly: <span id="tickets-resolved-monthly">0</span></small>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-critical">5</h3>
-                                            <p class="metric-label">Critical</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative">+2</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Critical Priority</h3>
+                                            <div class="metric-icon red">
+                                                <i class="fas fa-exclamation-triangle"></i>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-tachometer-alt"></i>
+                                        <div class="metric-value" id="tickets-critical">0</div>
+                                        <div class="metric-trend trend-up" id="tickets-critical-trend">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="tickets-critical-change">Loading...</span>
                                         </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-efficiency">87%</h3>
-                                            <p class="metric-label">Resolution Rate</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+3%</span>
-                                                <span class="trend-text">vs last week</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-stopwatch"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-avg-time">2.4h</h3>
-                                            <p class="metric-label">Avg Resolution</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">-15%</span>
-                                                <span class="trend-text">faster</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-star"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="tickets-satisfaction">4.7</h3>
-                                            <p class="metric-label">Satisfaction</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+0.2</span>
-                                                <span class="trend-text">vs last week</span>
-                                            </div>
+                                        <div class="metric-detail">
+                                            <small>High: <span id="tickets-high">0</span> | Emergency: <span id="tickets-emergency">0</span></small>
                                         </div>
                                     </div>
 
