@@ -55,9 +55,10 @@ async function loadFieldPortalData() {
 // Load my assigned tickets
 async function loadMyTickets() {
     try {
-        const response = await fetch(`${API_BASE}/tickets?assignedTo=${currentUser.id}`);
+        const response = await fetch(`${API_BASE}/tickets`);
         const data = await response.json();
-        myTickets = data.tickets || [];
+        // Show first 5 tickets as demo for field portal
+        myTickets = (data.tickets || []).slice(0, 5);
         
         if (myTickets.length === 0) {
             // Show sample data

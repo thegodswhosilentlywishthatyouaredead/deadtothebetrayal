@@ -1,4 +1,124 @@
-  File "/Users/thegods/intelligent-field-assignment/backend_server.py", line 1705
-    except Exception as e:
-                          ^
-IndentationError: unindent does not match any outer indentation level
+🔄 Generating modular sample data...
+Generating field teams...
+Generating tickets...
+Generating assignments...
+Generating analytics...
+✅ Generated 25 teams, 75 tickets, 19 assignments
+🚀 Starting AIFF Backend Server...
+📊 Sample data loaded successfully
+📈 Loaded: 25 teams, 75 tickets
+🌐 Server will be available at: http://localhost:5002
+🔗 API endpoints ready for frontend integration
+ * Serving Flask app 'backend_server'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5002
+ * Running on http://192.168.68.101:5002
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 113-506-992
+127.0.0.1 - - [14/Oct/2025 23:43:07] "GET /health HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:45:43] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:45:53] "[33mGET / HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:45:53] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:00] "[33mGET / HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "GET /api/tickets?limit=5 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:39] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:48] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:53] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:53] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:53] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:53] "OPTIONS /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:53] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:46:57] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:57] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:57] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:46:57] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:04] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:04] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:04] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:04] "OPTIONS /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:04] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:09] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:20] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:21] "[33mGET /api/planning/forecast HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:27] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:31] "GET /api/tickets?limit=5 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:34] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:35] "GET /api/tickets?assignedTo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:37] "GET /api/tickets?assignedTo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:38] "GET /api/tickets?assignedTo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:47:40] "GET /api/tickets?assignedTo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:48:12] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "GET /api/tickets?limit=5 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:28] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:32] "GET /api/tickets?assignedTo=1 HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:38] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:38] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:38] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:38] "OPTIONS /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:38] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:43] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:43] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:43] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:43] "OPTIONS /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:43] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:49] "[33mGET /api/planning/forecast HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:51] "GET /api/teams/analytics/zones HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:49:58] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:58] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:58] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:49:58] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:00] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:00] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:00] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:00] "OPTIONS /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:00] "POST /api/ai/query HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:28] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:28] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:28] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:28] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:46] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:54] "GET /api/tickets HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:58] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:58] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:50:58] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:50:58] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:28] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:28] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:28] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:28] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:51:58] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:58] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:58] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:51:58] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:52:28] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:28] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:28] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:28] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
+127.0.0.1 - - [14/Oct/2025 23:52:58] "[33mGET /api/tickets/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:58] "[33mGET /api/field-teams HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:58] "[33mGET /api/assignments/analytics/overview HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/Oct/2025 23:52:58] "GET /api/teams/analytics/productivity HTTP/1.1" 200 -
