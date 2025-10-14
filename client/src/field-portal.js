@@ -62,10 +62,19 @@ async function loadMyTickets() {
         
         console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
         
-        // Show first 5 tickets as demo for field portal
-        myTickets = (data.tickets || []).slice(0, 5);
+        // Get a mix of tickets with different statuses for demo
+        const allTickets = data.tickets || [];
+        const openTickets = allTickets.filter(t => t.status === 'open').slice(0, 3);
+        const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').slice(0, 3);
+        const resolvedTickets = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed').slice(0, 2);
         
-        console.log('🎫 Field portal displaying:', myTickets.length, 'tickets');
+        myTickets = [...openTickets, ...inProgressTickets, ...resolvedTickets];
+        
+        console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
+            open: openTickets.length,
+            inProgress: inProgressTickets.length,
+            resolved: resolvedTickets.length
+        });
         
         if (myTickets.length === 0) {
             // Show sample data
@@ -191,25 +200,46 @@ async function loadMyTickets() {
 }
 
 // Display my tickets
-function displayMyTickets() {
+let currentTicketFilter = 'all';
+
+function displayMyTickets(filter = 'all') {
     const container = document.getElementById('my-tickets-list');
+    if (!container) return;
+    
     container.innerHTML = '';
     
-    if (myTickets.length === 0) {
+    // Filter tickets based on status
+    let filteredTickets = myTickets;
+    if (filter !== 'all') {
+        filteredTickets = myTickets.filter(ticket => {
+            const status = ticket.status.replace('_', '-');
+            return status === filter;
+        });
+    }
+    
+    console.log(`📋 Displaying ${filteredTickets.length} tickets (filter: ${filter})`);
+    
+    if (filteredTickets.length === 0) {
         container.innerHTML = `
             <div class="text-center py-5">
                 <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets assigned</h5>
-                <p class="text-muted">You don't have any tickets assigned at the moment.</p>
+                <h5 class="text-muted">No ${filter === 'all' ? '' : filter} tickets</h5>
+                <p class="text-muted">You don't have any ${filter === 'all' ? 'tickets assigned' : filter + ' tickets'} at the moment.</p>
             </div>
         `;
         return;
     }
     
-    myTickets.forEach(ticket => {
+    filteredTickets.forEach(ticket => {
         const ticketElement = createTicketCard(ticket);
         container.appendChild(ticketElement);
     });
+}
+
+function filterTickets(status) {
+    console.log('🔍 Filtering tickets by:', status);
+    currentTicketFilter = status;
+    displayMyTickets(status);
 }
 
 // Create ticket card
@@ -224,7 +254,10 @@ function createTicketCard(ticket) {
     const estimatedDuration = ticket.estimatedDuration || 90;
     
     const priorityClass = `priority-${ticket.priority}`;
-    const statusClass = `status-${ticket.status.replace('-', '-')}`;
+    const statusClass = `status-${ticket.status.replace('_', '-')}`;
+    
+    // Determine traffic light color
+    const trafficLight = getTrafficLightColor(ticket.status);
     
     card.innerHTML = `
         <div class="ticket-header">
@@ -254,13 +287,13 @@ function createTicketCard(ticket) {
             </div>
         </div>
         
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mt-3">
             <div class="status-indicator ${statusClass}">
-                <i class="fas fa-circle"></i>
-                <span>${ticket.status.replace('-', ' ')}</span>
+                <span class="traffic-light ${trafficLight}"></span>
+                <span>${formatStatus(ticket.status)}</span>
             </div>
             <div class="ticket-actions">
-                ${getTicketActions(ticket)}
+                ${getTicketActionButtons(ticket)}
             </div>
         </div>
     `;
@@ -268,51 +301,145 @@ function createTicketCard(ticket) {
     return card;
 }
 
-// Get ticket actions based on status
-function getTicketActions(ticket) {
-    const status = ticket.status.replace('_', '-'); // Handle both in_progress and in-progress
+// Get traffic light color based on status
+function getTrafficLightColor(status) {
+    const normalizedStatus = status.replace('_', '-');
+    
+    switch (normalizedStatus) {
+        case 'open':
+        case 'assigned':
+            return 'yellow'; // Yellow = Pending/Assigned
+        case 'in-progress':
+            return 'green'; // Green = In Progress/Active
+        case 'completed':
+        case 'resolved':
+            return 'green'; // Green = Completed
+        case 'closed':
+            return 'gray'; // Gray = Closed
+        default:
+            return 'red'; // Red = Problem/Unknown
+    }
+}
+
+// Format status for display
+function formatStatus(status) {
+    return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
+// Get ticket action buttons based on status
+function getTicketActionButtons(ticket) {
+    const status = ticket.status.replace('_', '-');
+    const ticketId = ticket._id;
     
     switch (status) {
+        case 'open':
         case 'assigned':
             return `
-                <button class="btn btn-primary btn-sm" onclick="startTicket('${ticket._id}')">
-                    <i class="fas fa-play me-1"></i>
-                    Start
+                <button class="ticket-action-btn start" onclick="startTicketWork('${ticketId}')">
+                    <i class="fas fa-play"></i>
+                    Start Work
                 </button>
-                <button class="btn btn-outline-secondary btn-sm" onclick="viewTicketDetails('${ticket._id}')">
-                    <i class="fas fa-eye me-1"></i>
+                <button class="ticket-action-btn view" onclick="viewTicketDetails('${ticketId}')">
+                    <i class="fas fa-eye"></i>
                     View
                 </button>
             `;
         case 'in-progress':
             return `
-                <button class="btn btn-success btn-sm" onclick="completeTicket('${ticket._id}')">
-                    <i class="fas fa-check me-1"></i>
+                <button class="ticket-action-btn complete" onclick="completeTicketWork('${ticketId}')">
+                    <i class="fas fa-check"></i>
                     Complete
                 </button>
-                <button class="btn btn-outline-warning btn-sm" onclick="pauseTicket('${ticket._id}')">
-                    <i class="fas fa-pause me-1"></i>
-                    Pause
+                <button class="ticket-action-btn view" onclick="viewTicketDetails('${ticketId}')">
+                    <i class="fas fa-eye"></i>
+                    View
                 </button>
             `;
         case 'completed':
+        case 'resolved':
             return `
-                <button class="btn btn-outline-primary btn-sm" onclick="viewTicketDetails('${ticket._id}')">
-                    <i class="fas fa-eye me-1"></i>
+                <button class="ticket-action-btn view" onclick="viewTicketDetails('${ticketId}')">
+                    <i class="fas fa-eye"></i>
                     View Details
                 </button>
-                <button class="btn btn-outline-success btn-sm" onclick="addExpenseForTicket('${ticket._id}')">
-                    <i class="fas fa-receipt me-1"></i>
-                    Add Expense
+            `;
+        case 'closed':
+            return `
+                <button class="ticket-action-btn view" onclick="viewTicketDetails('${ticketId}')">
+                    <i class="fas fa-file-alt"></i>
+                    View Report
                 </button>
             `;
         default:
             return `
-                <button class="btn btn-outline-primary btn-sm" onclick="viewTicketDetails('${ticket._id}')">
-                    <i class="fas fa-eye me-1"></i>
+                <button class="ticket-action-btn view" onclick="viewTicketDetails('${ticketId}')">
+                    <i class="fas fa-eye"></i>
                     View
                 </button>
             `;
+    }
+}
+
+// Get ticket actions based on status
+// Start ticket work
+function startTicketWork(ticketId) {
+    console.log('▶️ Starting work on ticket:', ticketId);
+    
+    const ticket = myTickets.find(t => t._id === ticketId);
+    if (!ticket) {
+        console.error('Ticket not found:', ticketId);
+        return;
+    }
+    
+    const ticketNum = ticket.ticketNumber || ticketId.substring(0, 8);
+    
+    // Confirm start
+    if (confirm(`Start work on ${ticketNum}?\n\n${ticket.title}\n${ticket.location?.address || ''}`)) {
+        // Update ticket status
+        ticket.status = 'in_progress';
+        ticket.startedAt = new Date().toISOString();
+        
+        // Show notification
+        showNotification(`✅ Started work on ${ticketNum}`, 'success');
+        
+        // Refresh display
+        displayMyTickets(currentTicketFilter);
+        
+        // Reload quick stats
+        loadQuickStats();
+        
+        console.log('✅ Ticket status updated to in_progress');
+    }
+}
+
+// Complete ticket work
+function completeTicketWork(ticketId) {
+    console.log('✅ Completing ticket:', ticketId);
+    
+    const ticket = myTickets.find(t => t._id === ticketId);
+    if (!ticket) {
+        console.error('Ticket not found:', ticketId);
+        return;
+    }
+    
+    const ticketNum = ticket.ticketNumber || ticketId.substring(0, 8);
+    
+    // Confirm completion
+    if (confirm(`Mark ${ticketNum} as complete?\n\n${ticket.title}\n\nThis will update the ticket status to resolved.`)) {
+        // Update ticket status
+        ticket.status = 'resolved';
+        ticket.completedAt = new Date().toISOString();
+        
+        // Show success notification
+        showNotification(`🎉 Completed ${ticketNum}! Great work!`, 'success');
+        
+        // Refresh display
+        displayMyTickets(currentTicketFilter);
+        
+        // Reload quick stats
+        loadQuickStats();
+        
+        console.log('✅ Ticket marked as resolved');
     }
 }
 

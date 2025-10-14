@@ -769,8 +769,91 @@
         .status-busy { background: #fef3c7; color: #d97706; }
         .status-offline { background: #fef2f2; color: #dc2626; }
         .status-completed { background: #f0fdf4; color: #16a34a; }
+        .status-resolved { background: #f0fdf4; color: #16a34a; }
+        .status-closed { background: #e5e7eb; color: #6b7280; }
         .status-in-progress { background: #eff6ff; color: #2563eb; }
+        .status-in_progress { background: #eff6ff; color: #2563eb; }
         .status-assigned { background: #f3e8ff; color: #7c3aed; }
+        .status-open { background: #fef3c7; color: #d97706; }
+
+        /* Traffic Light Status */
+        .traffic-light {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            border: 2px solid rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .traffic-light.red {
+            background: #ef4444;
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+
+        .traffic-light.yellow {
+            background: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+        }
+
+        .traffic-light.green {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        .traffic-light.gray {
+            background: #9ca3af;
+        }
+
+        /* Ticket Action Buttons */
+        .ticket-action-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .ticket-action-btn.start {
+            background: #10b981;
+            color: white;
+        }
+
+        .ticket-action-btn.start:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .ticket-action-btn.complete {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .ticket-action-btn.complete:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .ticket-action-btn.view {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .ticket-action-btn.view:hover {
+            background: #e5e7eb;
+        }
+
+        .ticket-action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
