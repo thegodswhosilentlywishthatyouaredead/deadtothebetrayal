@@ -7,42 +7,46 @@ A comprehensive field service management platform designed for Malaysian telecom
 ### Prerequisites
 - Python 3.9 or higher
 - pip3 (Python package manager)
+- Modern web browser (Chrome, Firefox, Safari, Edge)
 
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+```bash
    git clone https://github.com/thegodswhosilentlywishthatyouaredead/deadtothebetrayal.git
-   cd deadtothebetrayal
-   ```
+cd intelligent-field-assignment
+```
 
 2. **Install Python dependencies**
    ```bash
    pip3 install flask flask-cors python-docx markdown2
    ```
 
-3. **Start the system**
+3. **Start the backend server**
    ```bash
-   ./start_system.sh
+   python3 backend_server.py
    ```
-   
-   Or manually:
-   ```bash
-   # Start backend (port 5002)
-   python3 backend_server.py &
-   
-   # Start frontend (port 8080)
-   python3 -m http.server 8080 --directory client &
-   ```
+   Backend will run on **port 5002**
 
-4. **Access the application**
+4. **Start the frontend server** (in a new terminal)
+   ```bash
+   cd client
+   python3 -m http.server 8080
+   ```
+   Frontend will run on **port 8080**
+
+5. **Access the application**
    - **Main Dashboard**: http://localhost:8080/public/index.html
    - **Field Portal**: http://localhost:8080/public/field-portal.html
-   - **Backend API**: http://localhost:5002
+   - **Backend API**: http://localhost:5002/api
 
-### Stop the system
+### Quick Test
 ```bash
-./stop_system.sh
+# Test backend health
+curl http://localhost:5002/health
+
+# View teams data
+curl http://localhost:5002/api/teams | python3 -m json.tool
 ```
 
 ---
@@ -50,11 +54,25 @@ A comprehensive field service management platform designed for Malaysian telecom
 ## 📊 System Overview
 
 ### Current System Metrics
-- **Field Teams**: 25 Malaysian field technicians
-- **Active Tickets**: 75 network service tickets
+- **Field Teams**: 25 Malaysian field technicians across 6 zones
+- **Active Tickets**: 75 network service tickets with TT_XXX numbering
 - **Coverage Zones**: 6 Malaysian zones (Central, Northern, Southern, Eastern, Sabah, Sarawak)
 - **States Covered**: All 15 Malaysian states and territories
-- **Smart Assignments**: 20+ intelligent team-ticket matches
+- **Smart Assignments**: Real-time intelligent team-ticket matching
+- **Currency**: All costs displayed in Malaysian Ringgit (RM)
+- **Data Precision**: All metrics display with 2 decimal points
+
+### Latest Updates (2025)
+- ✅ **Modern UI/UX**: Smooth edges, gradients, animations, responsive design
+- ✅ **Real-time Data Sync**: All tabs synchronized with backend
+- ✅ **Performance Analysis**: 13 advanced charts with AI insights
+- ✅ **Zone Performance**: Color-coded productivity tracking
+- ✅ **Field Portal**: Dedicated interface with route planning
+- ✅ **AI Assistant**: ChatGPT-style widget for both portals
+- ✅ **Mobile Optimized**: PWA features, touch-friendly, responsive
+- ✅ **Ticket Management**: Start/end work, traffic light status indicators
+- ✅ **Interactive Maps**: Malaysian state boundaries, real-time markers
+- ✅ **Comprehensive Docs**: Full technical documentation in Markdown and Word
 
 ---
 
@@ -130,12 +148,28 @@ A comprehensive field service management platform designed for Malaysian telecom
 - **Fullscreen Support**: Enhanced viewing experience
 
 ### 8️⃣ Field Team Portal
-- **Dedicated Interface**: For field technicians
-- **My Tickets**: View assigned tasks
-- **Route Optimization**: Plan efficient routes
-- **Performance Dashboard**: Personal metrics and trends
-- **Expense Tracking**: Record and submit expenses
-- **AI Assistant**: Field-specific guidance and troubleshooting
+- **Dedicated Interface**: Separate portal for field technicians
+- **My Tickets**: View and manage assigned tasks with status filters
+  - All, Open, In Progress, Completed tabs
+  - Traffic light status indicators (🔴 Red, 🟡 Yellow, 🟢 Green)
+  - Start/End work functionality
+- **Route Optimization**: Interactive route planning with:
+  - Haversine distance calculation
+  - Route drawing on map
+  - Total distance and estimated time
+  - Waypoint markers
+- **Performance Dashboard**: Real-time metrics
+  - Today vs Yesterday vs Monthly comparisons
+  - Tickets completed, efficiency rate, customer rating
+  - Earnings tracking in RM
+- **Detailed Reports**: Ticket report modal with:
+  - Duration, distance, cost widgets
+  - Activity timeline
+  - Download report functionality
+- **AI Assistant**: Minimizable ChatGPT-style widget
+  - Field-specific guidance
+  - Performance queries
+  - Troubleshooting assistance
 
 ### 9️⃣ Mobile-Responsive Design
 - **PWA Features**: Progressive Web App capabilities
@@ -143,6 +177,51 @@ A comprehensive field service management platform designed for Malaysian telecom
 - **Responsive Grid**: Adapts to all screen sizes
 - **Collapsible Sidebar**: Mobile-first navigation
 - **Swipeable Tabs**: Enhanced mobile UX
+
+### 🔟 Main Dashboard Tabs
+Each tab provides domain-specific analytics and management:
+
+**Overview Tab:**
+- 4 main metric cards (Total Tickets, Productivity, Efficiency, Team Performance)
+- Recent tickets list with real-time updates
+- Zone Performance rankings with productivity scores
+- Modern gradient cards with smooth edges
+
+**Tickets Tab:**
+- 8 key metrics (Total, Pending, Resolved, Critical, Resolution Rate, Avg Time, Satisfaction, Auto Assigned)
+- List view with filtering and search
+- Performance Analysis with 13 advanced charts:
+  - Ticket Trends & Projections
+  - Status Distribution
+  - Productivity vs Efficiency Trends
+  - Zone Performance
+  - Priority/Category Breakdown
+  - Team Productivity
+  - Cost Analysis
+  - Peak Hours & Day of Week
+  - Customer Ratings
+- AI-powered insights and forecasting
+
+**Field Teams Tab:**
+- 8 team metrics (Total, Active, Avg Productivity, Zones, Rating, Response, Completion, Cost)
+- Zone Performance list with trend indicators
+- Top 5 Performers ranking
+- Real-time data synchronized with backend
+
+**Predictive Planning Tab:**
+- Material usage tracking
+- AI-powered demand forecasting
+- Inventory management
+- Reorder alerts (critical and warning levels)
+- Zone-based material consumption
+
+**Map View Tab:**
+- Interactive Leaflet map centered on Malaysia
+- Team location markers
+- Ticket distribution visualization
+- Malaysian state boundaries
+- Network infrastructure nodes
+- Fullscreen mode support
 
 ---
 
@@ -227,26 +306,41 @@ http://localhost:5002/api
 
 **Health & Status:**
 - `GET /health` - System health check
+  - Returns: `{"status": "healthy", "timestamp": "..."}`
 
 **Teams:**
 - `GET /api/teams` - Get all field teams (25 teams)
+  - Returns: `{"teams": [...], "count": 25}`
 - `GET /api/teams/analytics/zones` - Zone-based analytics
+  - Returns: Zone performance, productivity scores, team distribution
 - `GET /api/teams/analytics/productivity` - Team productivity metrics
+  - Returns: Individual team performance data
 
 **Tickets:**
 - `GET /api/tickets` - Get all tickets (75 tickets)
+  - Returns: `{"tickets": [...], "count": 75}`
+  - Includes: TT_XXX numbering, status, priority, location, timestamps
 - `GET /api/analytics/tickets/aging` - Ticket aging analytics
+  - Returns: Aging buckets, efficiency metrics
 
 **Assignments:**
 - `GET /api/assignments` - Get all assignments
+  - Returns: Team-ticket assignments with scores
+
+**Predictive Planning:**
+- `GET /api/predictive/material-forecast` - Material demand forecast
+- `GET /api/predictive/zone-material-usage` - Zone-based material usage
+- `GET /api/predictive/inventory` - Current inventory levels
+- `GET /api/predictive/reorder-alerts` - Critical and warning alerts
 
 **AI Assistant:**
 - `POST /api/ai/query` - Query AI assistant
   ```json
   {
-    "query": "How many teams do we have?"
+    "query": "Show team performance in Central zone"
   }
   ```
+  - Returns: Natural language response with system insights
 
 ---
 
