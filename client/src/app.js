@@ -2154,37 +2154,48 @@ function createStateElement(state) {
 }
 
 function createTeamCard(team) {
-    const statusClass = team.status === 'active' ? 'active' : 
-                       team.status === 'busy' ? 'busy' : 'offline';
-    
+    const normalizedStatus = (team.status || '').toLowerCase();
+    const statusClass = normalizedStatus === 'active' || normalizedStatus === 'available' ? 'active'
+        : normalizedStatus === 'busy' || normalizedStatus === 'in_progress' ? 'busy'
+        : 'offline';
+
+    const teamId = team._id || team.id || '';
+    const hourlyRate = typeof team.hourlyRate === 'number' ? team.hourlyRate.toFixed(2) : (parseFloat(team.hourlyRate || 0).toFixed(2));
+    const skills = Array.isArray(team.skills) ? team.skills : [];
+
+    const totalTicketsCompleted = team.productivity?.totalTicketsCompleted ?? team.ticketsCompleted ?? 0;
+    const customerRating = team.productivity?.customerRating ?? team.rating ?? 0;
+    const ticketsThisMonth = team.productivity?.ticketsThisMonth ?? team.ticketsThisMonth ?? 0;
+    const efficiencyScore = team.productivity?.efficiencyScore ?? team.efficiency ?? 0;
+
     return `
-        <div class="team-card" onclick="showTeamProfile('${team._id}')">
+        <div class="team-card" onclick="showTeamProfile('${teamId}')">
             <div class="team-card-header">
-                <h5 class="team-name">${team.name}</h5>
-                <span class="team-status ${statusClass}">${team.status}</span>
+                <h5 class="team-name">${team.name || 'Unknown'}</h5>
+                <span class="team-status ${statusClass}">${team.status || 'offline'}</span>
             </div>
             
             <div class="team-details">
-                <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>${team.state}</p>
-                <p class="mb-1"><i class="fas fa-dollar-sign me-2"></i>RM${team.hourlyRate}/hour</p>
-                <p class="mb-2"><i class="fas fa-tools me-2"></i>${team.skills.join(', ')}</p>
+                <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>${team.state || team.zone || '-'}</p>
+                <p class="mb-1"><i class="fas fa-dollar-sign me-2"></i>RM${hourlyRate}/hour</p>
+                <p class="mb-2"><i class="fas fa-tools me-2"></i>${skills.join(', ')}</p>
             </div>
             
             <div class="team-performance">
                 <div class="performance-item">
-                    <span class="performance-value">${team.productivity.totalTicketsCompleted}</span>
+                    <span class="performance-value">${totalTicketsCompleted}</span>
                     <div class="performance-label">Tickets</div>
                 </div>
                 <div class="performance-item">
-                    <span class="performance-value">${team.productivity.customerRating}</span>
+                    <span class="performance-value">${Number(customerRating).toFixed(1)}</span>
                     <div class="performance-label">Rating</div>
                 </div>
                 <div class="performance-item">
-                    <span class="performance-value">${team.productivity.ticketsThisMonth}</span>
+                    <span class="performance-value">${ticketsThisMonth}</span>
                     <div class="performance-label">This Month</div>
                 </div>
                 <div class="performance-item">
-                    <span class="performance-value">${team.productivity.efficiencyScore}%</span>
+                    <span class="performance-value">${Number(efficiencyScore).toFixed(2)}%</span>
                     <div class="performance-label">Efficiency</div>
                 </div>
             </div>
