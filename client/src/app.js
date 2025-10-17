@@ -550,14 +550,16 @@ async function loadRecentTickets() {
 
 async function loadTeamStatus() {
     try {
-        const response = await fetch(`${API_BASE}/field-teams`);
+        const response = await fetch(`${API_BASE}/teams`);
         const data = await response.json();
+        const teams = data.teams || data.fieldTeams || [];
         
         const container = document.getElementById('team-status');
+        if (!container) return;
         container.innerHTML = '';
         
-        if (data.fieldTeams && data.fieldTeams.length > 0) {
-            data.fieldTeams.forEach(team => {
+        if (teams.length > 0) {
+            teams.forEach(team => {
                 const teamElement = createTeamStatusElement(team);
                 container.appendChild(teamElement);
             });
@@ -3389,7 +3391,7 @@ async function createTeamMember() {
     };
     
     try {
-        const response = await fetch(`${API_BASE}/field-teams`, {
+        const response = await fetch(`${API_BASE}/teams`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -3634,34 +3636,26 @@ function hideAITyping() {
 
 async function getSystemDataForAI() {
     try {
-        const [ticketsResponse, teamsResponse, assignmentsResponse] = await Promise.all([
-            fetch(`${API_BASE}/tickets/analytics/overview`),
-            fetch(`${API_BASE}/field-teams`),
-            fetch(`${API_BASE}/assignments/analytics/overview`)
+        const [ticketsResponse, teamsResponse] = await Promise.all([
+            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/teams`)
         ]);
         
         const ticketsData = await ticketsResponse.json();
         const teamsData = await teamsResponse.json();
-        const assignmentsData = await assignmentsResponse.json();
         
         return {
             tickets: {
-                total: ticketsData.totalTickets || 0,
-                completed: ticketsData.completedTickets || 0,
-                open: ticketsData.openTickets || 0,
-                categories: ticketsData.categoryBreakdown || []
+                total: (ticketsData.tickets || []).length,
+                completed: (ticketsData.tickets || []).filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length,
+                open: (ticketsData.tickets || []).filter(t => t.status !== 'resolved' && t.status !== 'closed' && t.status !== 'completed').length,
+                categories: []
             },
             teams: {
-                total: teamsData.fieldTeams?.length || 0,
-                active: teamsData.fieldTeams?.filter(team => team.status === 'active').length || 0,
-                busy: teamsData.fieldTeams?.filter(team => team.status === 'busy').length || 0,
-                offline: teamsData.fieldTeams?.filter(team => team.status === 'offline').length || 0
-            },
-            assignments: {
-                total: assignmentsData.totalAssignments || 0,
-                completed: assignmentsData.completedAssignments || 0,
-                averageRating: assignmentsData.averageRating || 0,
-                averageCompletionTime: assignmentsData.averageCompletionTime || 0
+                total: (teamsData.teams || teamsData.fieldTeams || []).length,
+                active: (teamsData.teams || teamsData.fieldTeams || []).filter(team => team.status === 'active' || team.status === 'available').length,
+                busy: (teamsData.teams || teamsData.fieldTeams || []).filter(team => team.status === 'busy' || team.status === 'in_progress').length,
+                offline: (teamsData.teams || teamsData.fieldTeams || []).filter(team => team.status === 'offline').length
             },
             timestamp: new Date().toISOString()
         };
