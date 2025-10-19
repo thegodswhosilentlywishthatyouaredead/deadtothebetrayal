@@ -2139,8 +2139,8 @@ function displayFieldTeams(teamsToShow) {
 }
 
 function createTeamCard(team) {
-    // Validate team object
-    if (!team || typeof team !== 'object') {
+    // Validate team object - be more lenient
+    if (!team || typeof team !== 'object' || !team.name) {
         console.error('Invalid team object:', team);
         return null;
     }
@@ -2160,27 +2160,27 @@ function createTeamCard(team) {
                     <span class="badge bg-${statusClass}">${team.status}</span>
                 </div>
                 <p class="text-muted mb-2">
-                    <i class="fas fa-envelope me-1"></i>${team.email}<br>
-                    <i class="fas fa-phone me-1"></i>${team.phone}
+                    <i class="fas fa-envelope me-1"></i>${team.email || 'N/A'}<br>
+                    <i class="fas fa-phone me-1"></i>${team.phone || 'N/A'}
                 </p>
                 <div class="mb-3">
                     <strong>Skills:</strong>
                     <div class="mt-1">
-                        ${team.skills.map(skill => `<span class="badge bg-light text-dark me-1">${skill}</span>`).join('')}
+                        ${(team.skills || []).map(skill => `<span class="badge bg-light text-dark me-1">${skill}</span>`).join('')}
                     </div>
                 </div>
                 <div class="row text-center">
                     <div class="col-4">
                         <div class="text-muted small">Tickets</div>
-                        <div class="fw-bold">${team.productivity.totalTicketsCompleted}</div>
+                        <div class="fw-bold">${team.productivity?.totalTicketsCompleted || 0}</div>
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Rating</div>
-                        <div class="fw-bold">${team.productivity.customerRating.toFixed(1)}</div>
+                        <div class="fw-bold">${(team.productivity?.customerRating || 0).toFixed(1)}</div>
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Rate</div>
-                        <div class="fw-bold">$${team.cost.hourlyRate}/hr</div>
+                        <div class="fw-bold">RM${team.cost?.hourlyRate || team.hourlyRate || 0}/hr</div>
                     </div>
                 </div>
             </div>
@@ -4987,7 +4987,7 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
 
 // Create Zone Performance Chart
 function createZonePerformanceChart(tickets) {
-    const ctx = document.getElementById('zonePerformanceChart');
+    const ctx = document.getElementById('teamsZonePerformanceChart');
     if (!ctx) {
         console.warn(`⚠️ Canvas not found for chart`);
         return;
