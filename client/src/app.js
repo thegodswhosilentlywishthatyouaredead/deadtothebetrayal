@@ -4,6 +4,31 @@ let map;
 let tickets = [];
 let fieldTeams = [];
 let assignments = [];
+let chartInstances = {};
+
+// Standardized view control functions
+function setActiveViewButton(containerClass, activeButton) {
+    const container = document.querySelector(`.${containerClass}`);
+    if (container) {
+        const buttons = container.querySelectorAll('.view-btn');
+        buttons.forEach(btn => btn.classList.remove('active'));
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+    }
+}
+
+function initializeViewControls() {
+    // Initialize all view controls with standardized behavior
+    document.querySelectorAll('.view-controls').forEach(container => {
+        const buttons = container.querySelectorAll('.view-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                setActiveViewButton('view-controls', this);
+            });
+        });
+    });
+}
 let currentProfileTeam = null;
 
 // API Base URL
@@ -23,6 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeSocket();
     loadDashboardData();
     initializeMap();
+    initializeViewControls(); // Initialize standardized view controls
     
     // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
@@ -3356,11 +3382,9 @@ function showTicketsListView() {
     const analysisView = document.getElementById('tickets-performance-analysis');
     if (analysisView) analysisView.style.display = 'none';
     
-    // Update button states
+    // Update button states using standardized approach
     const listBtn = document.getElementById('tickets-list-btn');
-    const analysisBtn = document.getElementById('tickets-analysis-btn');
-    if (listBtn) listBtn.classList.add('active');
-    if (analysisBtn) analysisBtn.classList.remove('active');
+    setActiveViewButton('view-controls', listBtn);
     
     // Load tickets list
     loadTickets();
@@ -4579,11 +4603,9 @@ function showTicketsPerformanceAnalysis() {
     document.getElementById('tickets-list-view').style.display = 'none';
     document.getElementById('tickets-performance-analysis').style.display = 'block';
     
-    // Update button states
-    const listBtn = document.getElementById('tickets-list-btn');
+    // Update button states using standardized approach
     const analysisBtn = document.getElementById('tickets-analysis-btn');
-    if (listBtn) listBtn.classList.remove('active');
-    if (analysisBtn) analysisBtn.classList.add('active');
+    setActiveViewButton('view-controls', analysisBtn);
     
     // Destroy existing charts
     Object.keys(chartInstances).forEach(key => {
