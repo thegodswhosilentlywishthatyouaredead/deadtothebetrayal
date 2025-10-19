@@ -29,6 +29,122 @@ function initializeViewControls() {
         });
     });
 }
+
+// Standardized chart configuration
+const STANDARD_CHART_COLORS = {
+    primary: '#3b82f6',
+    secondary: '#8b5cf6',
+    success: '#10b981',
+    warning: '#f59e0b',
+    danger: '#ef4444',
+    info: '#06b6d4',
+    light: '#e5e7eb',
+    dark: '#374151'
+};
+
+const STANDARD_CHART_GRADIENTS = [
+    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+];
+
+function getStandardChartConfig(type = 'line') {
+    const baseConfig = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: true,
+                    padding: 20,
+                    font: {
+                        size: 12,
+                        family: 'Inter, system-ui, sans-serif'
+                    }
+                }
+            },
+            tooltip: {
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                titleColor: '#fff',
+                bodyColor: '#fff',
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
+                cornerRadius: 8,
+                displayColors: true,
+                intersect: false,
+                mode: 'index'
+            }
+        },
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                },
+                ticks: {
+                    font: {
+                        size: 11,
+                        family: 'Inter, system-ui, sans-serif'
+                    },
+                    color: '#6b7280'
+                }
+            },
+            y: {
+                grid: {
+                    color: '#f3f4f6',
+                    drawBorder: false
+                },
+                ticks: {
+                    font: {
+                        size: 11,
+                        family: 'Inter, system-ui, sans-serif'
+                    },
+                    color: '#6b7280'
+                }
+            }
+        }
+    };
+
+    if (type === 'doughnut' || type === 'pie') {
+        baseConfig.scales = {};
+        baseConfig.plugins.legend.position = 'right';
+    }
+
+    return baseConfig;
+}
+
+function getStandardColorPalette(count) {
+    const colors = [
+        STANDARD_CHART_COLORS.primary,
+        STANDARD_CHART_COLORS.secondary,
+        STANDARD_CHART_COLORS.success,
+        STANDARD_CHART_COLORS.warning,
+        STANDARD_CHART_COLORS.danger,
+        STANDARD_CHART_COLORS.info
+    ];
+    
+    // If we need more colors, generate variations
+    while (colors.length < count) {
+        const baseColor = colors[colors.length % 6];
+        const variation = Math.floor(colors.length / 6) * 0.2;
+        colors.push(adjustColorBrightness(baseColor, variation));
+    }
+    
+    return colors.slice(0, count);
+}
+
+function adjustColorBrightness(color, amount) {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * amount);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+        (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+        (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+}
 let currentProfileTeam = null;
 
 // API Base URL

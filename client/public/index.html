@@ -551,6 +551,101 @@
             font-size: 0.875rem;
         }
 
+        /* Standardized Chart Colors */
+        :root {
+            --chart-primary: #3b82f6;
+            --chart-secondary: #8b5cf6;
+            --chart-success: #10b981;
+            --chart-warning: #f59e0b;
+            --chart-danger: #ef4444;
+            --chart-info: #06b6d4;
+            --chart-light: #e5e7eb;
+            --chart-dark: #374151;
+            
+            --chart-gradient-1: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --chart-gradient-2: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --chart-gradient-3: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --chart-gradient-4: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --chart-gradient-5: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        /* Standardized Chart Styling */
+        .chart-container canvas {
+            max-height: 400px;
+            width: 100% !important;
+        }
+
+        .chart-container .chart-header {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .chart-container .chart-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-container .chart-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        /* Standardized Chart Legend */
+        .chart-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .chart-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Standardized Chart Summary Stats */
+        .chart-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .chart-summary-item {
+            text-align: center;
+        }
+
+        .chart-summary-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .chart-summary-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         .tabs-nav {
             display: flex;
             gap: 0.25rem;
