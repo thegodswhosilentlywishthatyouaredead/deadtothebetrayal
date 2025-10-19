@@ -1259,7 +1259,7 @@ async function loadTeamsPerformanceAnalytics() {
         
         // Create charts with error handling
         try {
-            createZonePerformanceChart(zones);
+            createZonePerformanceChart(tickets); // Pass tickets array, not zones object
             createStatePerformanceChart(teams);
             createTeamProductivityChart(teams);
             createRatingDistributionChart(teams);
@@ -2130,11 +2130,21 @@ function displayFieldTeams(teamsToShow) {
     
     teamsToShow.forEach(team => {
         const teamElement = createTeamCard(team);
-        container.appendChild(teamElement);
+        if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
+            container.appendChild(teamElement);
+        } else {
+            console.error('Invalid team element created for team:', team);
+        }
     });
 }
 
 function createTeamCard(team) {
+    // Validate team object
+    if (!team || typeof team !== 'object') {
+        console.error('Invalid team object:', team);
+        return null;
+    }
+    
     const div = document.createElement('div');
     div.className = 'col-md-6 col-lg-4 mb-4';
     
@@ -2792,8 +2802,21 @@ function contactTeamMember() {
 // Zone View functionality
 function showZoneView() {
     console.log('Showing zone view...');
-    document.getElementById('zone-view').style.display = 'block';
-    document.getElementById('list-view').style.display = 'none';
+    const zoneView = document.getElementById('zone-view');
+    const listView = document.getElementById('list-view');
+    
+    if (zoneView) {
+        zoneView.style.display = 'block';
+    } else {
+        console.error('zone-view element not found');
+    }
+    
+    if (listView) {
+        listView.style.display = 'none';
+    } else {
+        console.error('list-view element not found');
+    }
+    
     loadZoneAnalytics();
     // Also load field teams data to populate metrics
     loadFieldTeams();
@@ -2814,7 +2837,8 @@ async function loadZoneAnalytics() {
         
         if (data.zones) {
             console.log('Displaying real zone data');
-            displayZoneBreakdown(data.zones);
+            const normalized = normalizeZones(data.zones);
+            displayZoneBreakdown(normalized);
         } else {
             console.log('No zones data, showing sample data');
             displaySampleZoneData();
@@ -4969,6 +4993,12 @@ function createZonePerformanceChart(tickets) {
         return;
     }
     
+    // Ensure tickets is an array
+    if (!Array.isArray(tickets)) {
+        console.error('tickets is not an array:', tickets);
+        return;
+    }
+    
     const zones = {};
     tickets.forEach(t => {
         const zone = t.location?.zone || 'Unknown';
@@ -5542,5 +5572,34 @@ function updateForecastPeriod(period) {
     console.log('Updating forecast period:', period);
     // Reload forecast with new period
     loadPerformanceAnalysis();
+}
+
+// Normalize zones object shape from backend to what the UI expects
+function normalizeZones(zonesObj) {
+    const out = {};
+    Object.entries(zonesObj).forEach(([key, z]) => {
+        const zoneName = z.zoneName || z.zone || key;
+        const teams = Array.isArray(z.teams) ? z.teams : [];
+        const openTickets = z.openTickets || 0;
+        const closedTickets = z.closedTickets || 0;
+        const totalTickets = z.totalTickets ?? (openTickets + closedTickets);
+        const totalTeams = z.totalTeams ?? teams.length;
+        const activeTeams = z.activeTeams ?? teams.filter(t => (t.status === 'active' || t.status === 'available')).length;
+        const productivityScore = typeof z.productivityScore === 'number'
+            ? z.productivityScore
+            : (totalTickets > 0 ? (((closedTickets - openTickets) / totalTickets) * 100) : 0);
+        out[zoneName] = {
+            zoneName,
+            teams,
+            openTickets,
+            closedTickets,
+            totalTickets,
+            totalTeams,
+            activeTeams,
+            productivityScore,
+            states: Array.isArray(z.states) ? z.states : (z.states ? Object.values(z.states) : [])
+        };
+    });
+    return out;
 }
 

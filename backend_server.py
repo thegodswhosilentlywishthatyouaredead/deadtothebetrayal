@@ -252,6 +252,78 @@ def get_zone_analytics():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/tickets/analytics/overview', methods=['GET'])
+def get_tickets_analytics_overview():
+    """Get tickets analytics overview"""
+    try:
+        # Calculate analytics
+        total_tickets = len(tickets)
+        resolved_tickets = len([t for t in tickets if t.get('status') in ['resolved', 'closed', 'completed']])
+        pending_tickets = len([t for t in tickets if t.get('status') in ['open', 'pending', 'in_progress']])
+        critical_tickets = len([t for t in tickets if t.get('priority') == 'high'])
+        
+        resolution_rate = (resolved_tickets / total_tickets * 100) if total_tickets > 0 else 0
+        
+        # Calculate average resolution time
+        resolved_with_time = [t for t in tickets if t.get('status') in ['resolved', 'closed', 'completed'] and t.get('resolvedAt')]
+        if resolved_with_time:
+            total_time = 0
+            for ticket in resolved_with_time:
+                created = datetime.fromisoformat(ticket['createdAt'].replace('Z', '+00:00'))
+                resolved = datetime.fromisoformat(ticket['resolvedAt'].replace('Z', '+00:00'))
+                total_time += (resolved - created).total_seconds() / 3600  # hours
+            avg_resolution_time = total_time / len(resolved_with_time)
+        else:
+            avg_resolution_time = 0
+        
+        return jsonify({
+            'totalTickets': total_tickets,
+            'resolvedTickets': resolved_tickets,
+            'pendingTickets': pending_tickets,
+            'criticalTickets': critical_tickets,
+            'resolutionRate': round(resolution_rate, 2),
+            'avgResolutionTime': round(avg_resolution_time, 2),
+            'customerSatisfaction': 4.5,  # Mock data
+            'autoAssigned': len([t for t in tickets if t.get('assignedBy') == 'AI'])
+        })
+        
+    except Exception as e:
+        print(f"Error in tickets analytics overview: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/planning/forecast', methods=['GET'])
+def get_planning_forecast():
+    """Get predictive planning forecast"""
+    try:
+        # Mock forecast data
+        forecast_data = {
+            'totalInventory': 127,
+            'aiForecastAccuracy': 89.5,
+            'reorderAlerts': 3,
+            'activeZones': 6,
+            'zoneEfficiency': 87.2,
+            'monthlyCost': 12500.00,
+            'avgLeadTime': 2.5,
+            'stockAvailability': 95.8,
+            'materialUsage': {
+                'fiber': 45,
+                'cpe': 12,
+                'connectors': 23,
+                'cables': 18
+            },
+            'criticalAlerts': [
+                {'type': 'Low Stock', 'item': 'Fiber Cable', 'quantity': 5, 'priority': 'high'},
+                {'type': 'Reorder', 'item': 'CPE Units', 'quantity': 0, 'priority': 'medium'},
+                {'type': 'Maintenance', 'item': 'Test Equipment', 'quantity': 2, 'priority': 'low'}
+            ]
+        }
+        
+        return jsonify(forecast_data)
+        
+    except Exception as e:
+        print(f"Error in planning forecast: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/api/ai/query', methods=['POST'])
 def ai_query():
     """Handle AI assistant queries"""
