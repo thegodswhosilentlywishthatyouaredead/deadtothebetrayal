@@ -10,6 +10,13 @@ let currentProfileTeam = null;
 // API_BASE is now set by config.js
 
 // Initialize the application
+// Ensure chart instance registry exists before any chart code runs
+if (!window.chartInstances) {
+    window.chartInstances = {};
+}
+// Local alias used by chart functions
+const chartRegistry = window.chartInstances;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 FieldAssign Dashboard Initializing...');
     
@@ -1428,8 +1435,8 @@ function createZonePerformanceChart(zones) {
     }
     
     // Destroy existing chart
-    if (chartInstances.zonePerformanceChart) {
-        chartInstances.zonePerformanceChart.destroy();
+    if (chartRegistry.zonePerformanceChart) {
+        chartRegistry.zonePerformanceChart.destroy();
     }
     
     const zoneNames = Object.keys(zones);
@@ -1442,7 +1449,7 @@ function createZonePerformanceChart(zones) {
     const openTickets = zoneNames.map(name => zones[name].openTickets || 0);
     const closedTickets = zoneNames.map(name => zones[name].closedTickets || 0);
     
-    chartInstances.zonePerformanceChart = new Chart(ctx, {
+    chartRegistry.zonePerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: zoneNames,
@@ -1499,8 +1506,8 @@ function createStatePerformanceChart(teams) {
         return;
     }
     
-    if (chartInstances.statePerformanceChart) {
-        chartInstances.statePerformanceChart.destroy();
+    if (chartRegistry.statePerformanceChart) {
+        chartRegistry.statePerformanceChart.destroy();
     }
     
     if (!teams || teams.length === 0) {
@@ -1544,7 +1551,7 @@ function createStatePerformanceChart(teams) {
     const totalTickets = states.map(state => stateStats[state].totalTickets);
     const avgRatings = states.map(state => parseFloat(stateStats[state].avgRating));
     
-    chartInstances.statePerformanceChart = new Chart(ctx, {
+    chartRegistry.statePerformanceChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: states,
@@ -1586,8 +1593,8 @@ function createTeamProductivityChart(teams) {
         return;
     }
     
-    if (chartInstances.teamProductivityChart) {
-        chartInstances.teamProductivityChart.destroy();
+    if (chartRegistry.teamProductivityChart) {
+        chartRegistry.teamProductivityChart.destroy();
     }
     
     if (!teams || teams.length === 0) {
@@ -1609,7 +1616,7 @@ function createTeamProductivityChart(teams) {
     const productivities = sortedTeams.map(t => t.productivity);
     const ratings = sortedTeams.map(t => t.rating);
     
-    chartInstances.teamProductivityChart = new Chart(ctx, {
+    chartRegistry.teamProductivityChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: teamNames,
@@ -1676,8 +1683,8 @@ function createRatingDistributionChart(teams) {
         return;
     }
     
-    if (chartInstances.ratingDistributionChart) {
-        chartInstances.ratingDistributionChart.destroy();
+    if (chartRegistry.ratingDistributionChart) {
+        chartRegistry.ratingDistributionChart.destroy();
     }
     
     if (!teams || teams.length === 0) {
@@ -1703,7 +1710,7 @@ function createRatingDistributionChart(teams) {
         else ratingRanges['Below 3.0']++;
     });
     
-    chartInstances.ratingDistributionChart = new Chart(ctx, {
+    chartRegistry.ratingDistributionChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: Object.keys(ratingRanges),
