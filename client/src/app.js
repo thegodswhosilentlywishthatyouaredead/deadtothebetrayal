@@ -82,6 +82,7 @@ function showSection(sectionName) {
             break;
         case 'teams':
             loadFieldTeams();
+            showZoneView(); // Show zone view by default
             break;
         case 'assignments':
             loadAssignments();
@@ -163,6 +164,7 @@ function showTab(tabName) {
             showTicketsListView(); // Show list view by default
             break;
         case 'teams':
+            // Data loading is handled in the other showTab function
             showZoneView(); // Show zone view by default
             break;
         case 'planning':
@@ -2150,6 +2152,8 @@ function showZoneView() {
     document.getElementById('zone-view').style.display = 'block';
     document.getElementById('list-view').style.display = 'none';
     loadZoneAnalytics();
+    // Also load field teams data to populate metrics
+    loadFieldTeams();
 }
 
 function showListView() {
