@@ -290,6 +290,11 @@ function showTab(tabName) {
     console.log('🔄 Available tab panes:', document.querySelectorAll('.tab-pane').length);
     console.log('🔄 Target tab pane:', document.getElementById(`${tabName}-tab`));
     
+    // Simple test to see if function is being called
+    if (tabName === 'tickets') {
+        console.log('🎫 Tickets tab clicked - function is working!');
+    }
+    
     // Add loading state to current active tab
     const currentActivePane = document.querySelector('.tab-pane.active');
     if (currentActivePane) {
@@ -334,9 +339,11 @@ function showTab(tabName) {
         if (targetPane) {
             targetPane.classList.remove('loading');
             targetPane.classList.add('active');
-            console.log('Tab pane activated:', targetPane.id);
+            console.log('✅ Tab pane activated:', targetPane.id);
+            console.log('✅ Tab pane classes:', targetPane.className);
         } else {
-            console.error('Tab pane not found:', `${tabName}-tab`);
+            console.error('❌ Tab pane not found:', `${tabName}-tab`);
+            console.error('❌ Available tab panes:', Array.from(document.querySelectorAll('.tab-pane')).map(p => p.id));
         }
     }, 150);
     
