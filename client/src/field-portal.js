@@ -7,7 +7,7 @@ let routeMarkers = [];
 let charts = {};
 
 // API Base URL
-const API_BASE = 'http://localhost:5002/api';
+// API_BASE is now set by config.js
 
 // Initialize the field portal
 document.addEventListener('DOMContentLoaded', function() {

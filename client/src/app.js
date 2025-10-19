@@ -7,7 +7,7 @@ let assignments = [];
 let currentProfileTeam = null;
 
 // API Base URL
-const API_BASE = 'http://localhost:5002/api';
+// API_BASE is now set by config.js
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {

@@ -1,0 +1,15 @@
+::1 - - [16/Oct/2025 21:32:45] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [16/Oct/2025 21:32:45] "GET /src/app.js HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:29:09] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:29:09] "GET /src/app.js HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:29:11] "GET /public/field-portal.html HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:29:11] "GET /src/field-portal.js HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:54:42] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [17/Oct/2025 15:54:43] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [17/Oct/2025 15:54:43] "GET /src/app.js HTTP/1.1" 200 -
+::1 - - [17/Oct/2025 15:54:52] code 404, message File not found
+::1 - - [17/Oct/2025 15:54:52] "GET /favicon.ico HTTP/1.1" 404 -
+::1 - - [17/Oct/2025 18:11:40] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [17/Oct/2025 18:11:40] "GET /src/app.js HTTP/1.1" 200 -
+::1 - - [17/Oct/2025 18:11:42] code 404, message File not found
+::1 - - [17/Oct/2025 18:11:42] "GET /favicon.ico HTTP/1.1" 404 -
