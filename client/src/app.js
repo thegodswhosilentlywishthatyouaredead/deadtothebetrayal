@@ -2426,6 +2426,8 @@ function createTeamCard(team) {
                        team.status === 'offline' ? 'danger' : 'secondary';
     
     try {
+        console.log('🔧 Creating team card template for:', team.name || team._id);
+        console.log('🔧 Team data:', team);
         div.innerHTML = `
         <div class="card team-card h-100">
             <div class="card-body">
@@ -2440,7 +2442,7 @@ function createTeamCard(team) {
                 <div class="mb-3">
                     <strong>Skills:</strong>
                     <div class="mt-1">
-                        ${(team.skills || []).map(skill => `<span class="badge bg-light text-dark me-1">${skill}</span>`).join('')}
+                        ${(team.skills || []).map(skill => `<span class="badge bg-light text-dark me-1">${skill || 'Unknown'}</span>`).join('')}
                     </div>
                 </div>
                 <div class="row text-center">
@@ -2454,7 +2456,7 @@ function createTeamCard(team) {
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Rate</div>
-                        <div class="fw-bold">RM${team.cost?.hourlyRate || team.hourlyRate || 0}/hr</div>
+                        <div class="fw-bold">RM${(team.hourlyRate || 0).toFixed(2)}/hr</div>
                     </div>
                 </div>
             </div>
@@ -3118,6 +3120,7 @@ function showZoneView() {
     console.log('Showing zone view...');
     const zoneView = document.getElementById('zone-view');
     const listView = document.getElementById('list-view');
+    const analyticsView = document.getElementById('teams-performance-analytics');
     
     if (zoneView) {
         zoneView.style.display = 'block';
@@ -3129,6 +3132,12 @@ function showZoneView() {
         listView.style.display = 'none';
     } else {
         console.error('list-view element not found');
+    }
+    
+    if (analyticsView) {
+        analyticsView.style.display = 'none';
+    } else {
+        console.error('teams-performance-analytics element not found');
     }
     
     loadZoneAnalytics();
