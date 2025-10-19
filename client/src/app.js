@@ -1435,12 +1435,21 @@ async function loadTeamsPerformanceAnalytics() {
         
         // Check if responses are ok
         if (!zonesResponse.ok || !teamsResponse.ok || !ticketsResponse.ok) {
-            throw new Error(`API Error: ${zonesResponse.status} ${teamsResponse.status} ${ticketsResponse.status}`);
+            console.error('❌ API Response errors:');
+            console.error('Zones:', zonesResponse.status, zonesResponse.statusText);
+            console.error('Teams:', teamsResponse.status, teamsResponse.statusText);
+            console.error('Tickets:', ticketsResponse.status, ticketsResponse.statusText);
+            throw new Error(`API Error: Zones(${zonesResponse.status}) Teams(${teamsResponse.status}) Tickets(${ticketsResponse.status})`);
         }
         
         const zonesData = await zonesResponse.json();
         const teamsData = await teamsResponse.json();
         const ticketsData = await ticketsResponse.json();
+        
+        console.log('📊 Received data:');
+        console.log('Zones:', zonesData);
+        console.log('Teams:', teamsData);
+        console.log('Tickets:', ticketsData);
         
         const zones = zonesData.zones || {};
         const teams = teamsData.teams || [];
@@ -2347,17 +2356,22 @@ function displayFieldTeams(teamsToShow) {
 }
 
 function createTeamCard(team) {
+    console.log('🔍 Creating team card for:', team);
+    
     // Validate team object - be very lenient
     if (!team || typeof team !== 'object') {
-        console.warn('Invalid team object (not an object):', team);
+        console.warn('❌ Invalid team object (not an object):', team);
         return createFallbackTeamCard(team);
     }
     
     // Ensure we have at least a name or _id
     if (!team.name && !team._id) {
-        console.warn('Invalid team object (no name or _id):', team);
+        console.warn('❌ Invalid team object (no name or _id):', team);
+        console.warn('❌ Team keys:', Object.keys(team));
         return createFallbackTeamCard(team);
     }
+    
+    console.log('✅ Team validation passed for:', team.name || team._id);
     
     const div = document.createElement('div');
     div.className = 'col-md-6 col-lg-4 mb-4';
@@ -2414,6 +2428,8 @@ function createTeamCard(team) {
         </div>
     `;
     
+    console.log('✅ Team card created successfully for:', team.name || team._id);
+    console.log('✅ Element type:', div.nodeType, 'Element:', div);
     return div;
 }
 
