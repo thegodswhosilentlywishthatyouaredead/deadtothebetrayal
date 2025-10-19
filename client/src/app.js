@@ -17,14 +17,22 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDashboardData();
     initializeMap();
     
-    // Load initial tab content
+    // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
     loadTeamStatusOverview();
     loadFieldTeams(); // Pre-load Field Teams data
+    loadTickets(); // Pre-load Tickets data
+    loadAssignments(); // Pre-load Assignments data
+    loadAnalytics(); // Pre-load Analytics data
+    loadMaterialForecast(); // Pre-load Predictive Planning data
     
-    // Set up auto-refresh every 30 seconds
+    // Set up auto-refresh every 30 seconds for ALL tabs
     setInterval(loadDashboardData, 30000);
     setInterval(loadFieldTeams, 30000); // Auto-refresh Field Teams data
+    setInterval(loadTickets, 30000); // Auto-refresh Tickets data
+    setInterval(loadAssignments, 30000); // Auto-refresh Assignments data
+    setInterval(loadAnalytics, 30000); // Auto-refresh Analytics data
+    setInterval(loadMaterialForecast, 30000); // Auto-refresh Predictive Planning data
     
     console.log('✅ Dashboard initialization complete!');
 });
@@ -74,23 +82,22 @@ function showSection(sectionName) {
     // Add active class to clicked nav link
     event.target.classList.add('active');
     
-    // Load section-specific data
+    // Load section-specific data (data is already pre-loaded, just ensure views are shown)
     switch(sectionName) {
         case 'dashboard':
-            loadDashboardData();
+            // Data already loaded, just refresh if needed
             break;
         case 'tickets':
-            loadTickets();
+            showTicketsListView(); // Show list view by default
             break;
         case 'teams':
-            loadFieldTeams();
             showZoneView(); // Show zone view by default
             break;
         case 'assignments':
-            loadAssignments();
+            // Data already loaded
             break;
         case 'analytics':
-            loadAnalytics();
+            // Data already loaded
             break;
         case 'map':
             refreshMap();
@@ -166,9 +173,7 @@ function showTab(tabName) {
             showTicketsListView(); // Show list view by default
             break;
         case 'teams':
-            // Load all field teams data immediately
-            loadFieldTeams();
-            showZoneView(); // Show zone view by default
+            showZoneView(); // Show zone view by default (data already loaded)
             break;
         case 'planning':
             showMaterialForecast(); // Show material forecast by default
