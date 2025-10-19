@@ -44,28 +44,29 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ Dashboard initialization complete!');
 });
 
-// Socket.IO initialization
+// Socket.IO initialization - DISABLED (backend doesn't support Socket.IO)
 function initializeSocket() {
-    socket = io('http://localhost:5002');
+    console.log('Socket.IO disabled - backend does not support real-time connections');
+    // socket = io('http://localhost:5002');
     
-    socket.on('connect', () => {
-        console.log('Connected to server');
-        socket.emit('join-admin');
-    });
+    // socket.on('connect', () => {
+    //     console.log('Connected to server');
+    //     socket.emit('join-admin');
+    // });
     
-    socket.on('team-location-update', (data) => {
-        console.log('Team location update:', data);
-        updateTeamLocationOnMap(data);
-    });
+    // socket.on('team-location-update', (data) => {
+    //     console.log('Team location update:', data);
+    //     updateTeamLocationOnMap(data);
+    // });
     
-    socket.on('team-status-update', (data) => {
-        console.log('Team status update:', data);
-        refreshTeamStatus();
-    });
+    // socket.on('team-status-update', (data) => {
+    //     console.log('Team status update:', data);
+    //     refreshTeamStatus();
+    // });
     
-    socket.on('disconnect', () => {
-        console.log('Disconnected from server');
-    });
+    // socket.on('disconnect', () => {
+    //     console.log('Disconnected from server');
+    // });
 }
 
 // Navigation functions
@@ -2129,19 +2130,29 @@ function displayFieldTeams(teamsToShow) {
     }
     
     teamsToShow.forEach(team => {
-        const teamElement = createTeamCard(team);
-        if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
-            container.appendChild(teamElement);
-        } else {
-            console.error('Invalid team element created for team:', team);
+        try {
+            const teamElement = createTeamCard(team);
+            if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
+                container.appendChild(teamElement);
+            } else {
+                console.error('Invalid team element created for team:', team);
+            }
+        } catch (error) {
+            console.error('Error creating team card for team:', team, 'Error:', error);
         }
     });
 }
 
 function createTeamCard(team) {
-    // Validate team object - be more lenient
-    if (!team || typeof team !== 'object' || !team.name) {
-        console.error('Invalid team object:', team);
+    // Validate team object - be very lenient
+    if (!team || typeof team !== 'object') {
+        console.error('Invalid team object (not an object):', team);
+        return null;
+    }
+    
+    // Ensure we have at least a name or _id
+    if (!team.name && !team._id) {
+        console.error('Invalid team object (no name or _id):', team);
         return null;
     }
     
@@ -2156,8 +2167,8 @@ function createTeamCard(team) {
         <div class="card team-card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="card-title mb-0">${team.name}</h5>
-                    <span class="badge bg-${statusClass}">${team.status}</span>
+                    <h5 class="card-title mb-0">${team.name || team._id || 'Unknown'}</h5>
+                    <span class="badge bg-${statusClass}">${team.status || 'unknown'}</span>
                 </div>
                 <p class="text-muted mb-2">
                     <i class="fas fa-envelope me-1"></i>${team.email || 'N/A'}<br>
