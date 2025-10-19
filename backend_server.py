@@ -324,6 +324,45 @@ def get_planning_forecast():
         print(f"Error in planning forecast: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/assignments/analytics/performance', methods=['GET'])
+def get_assignments_analytics_performance():
+    """Get assignments analytics performance"""
+    try:
+        # Calculate assignment performance metrics
+        total_assignments = len(assignments)
+        completed_assignments = len([a for a in assignments if a.get('status') == 'completed'])
+        in_progress_assignments = len([a for a in assignments if a.get('status') == 'in_progress'])
+        pending_assignments = len([a for a in assignments if a.get('status') == 'pending'])
+        
+        completion_rate = (completed_assignments / total_assignments * 100) if total_assignments > 0 else 0
+        
+        # Calculate average completion time
+        completed_with_time = [a for a in assignments if a.get('status') == 'completed' and a.get('completedAt')]
+        if completed_with_time:
+            total_time = 0
+            for assignment in completed_with_time:
+                created = datetime.fromisoformat(assignment['createdAt'].replace('Z', '+00:00'))
+                completed = datetime.fromisoformat(assignment['completedAt'].replace('Z', '+00:00'))
+                total_time += (completed - created).total_seconds() / 3600  # hours
+            avg_completion_time = total_time / len(completed_with_time)
+        else:
+            avg_completion_time = 0
+        
+        return jsonify({
+            'totalAssignments': total_assignments,
+            'completedAssignments': completed_assignments,
+            'inProgressAssignments': in_progress_assignments,
+            'pendingAssignments': pending_assignments,
+            'completionRate': round(completion_rate, 2),
+            'avgCompletionTime': round(avg_completion_time, 2),
+            'efficiencyScore': 85.5,  # Mock data
+            'teamUtilization': 78.3   # Mock data
+        })
+        
+    except Exception as e:
+        print(f"Error in assignments analytics performance: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/api/ai/query', methods=['POST'])
 def ai_query():
     """Handle AI assistant queries"""
