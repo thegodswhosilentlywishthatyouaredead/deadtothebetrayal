@@ -164,6 +164,28 @@ window.testTabs = function() {
 
 // Make showTab function globally available
 window.showTab = showTab;
+
+// Global function to clear all chart instances
+window.clearAllCharts = function() {
+    console.log('🗑️ Clearing all chart instances...');
+    Object.keys(chartInstances).forEach(key => {
+        if (chartInstances[key]) {
+            console.log(`🗑️ Destroying chart: ${key}`);
+            chartInstances[key].destroy();
+            delete chartInstances[key];
+        }
+    });
+    
+    // Clear all canvas elements
+    const canvases = document.querySelectorAll('canvas');
+    canvases.forEach(canvas => {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    });
+    console.log('✅ All charts cleared');
+};
 let currentProfileTeam = null;
 
 // API Base URL
@@ -1460,12 +1482,33 @@ async function loadTeamsPerformanceAnalytics() {
         // Update KPI cards
         updateAnalyticsKPIs(teams, zones, tickets);
         
+        // Destroy all existing chart instances first
+        console.log('🗑️ Destroying existing chart instances...');
+        Object.keys(chartInstances).forEach(key => {
+            if (chartInstances[key]) {
+                console.log(`🗑️ Destroying chart: ${key}`);
+                chartInstances[key].destroy();
+                delete chartInstances[key];
+            }
+        });
+        
+        // Clear chart canvases
+        const chartCanvases = document.querySelectorAll('canvas');
+        chartCanvases.forEach(canvas => {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+        
         // Create charts with error handling
         try {
+            console.log('📊 Creating new charts...');
             createTeamsZonePerformanceChart(tickets); // Pass tickets array, not zones object
             createStatePerformanceChart(teams);
             createTeamProductivityChart(teams);
             createRatingDistributionChart(teams);
+            console.log('✅ All charts created successfully');
         } catch (chartError) {
             console.error('❌ Error creating charts:', chartError);
             showErrorMessage('Error creating charts. Please refresh the page.');
@@ -2368,6 +2411,8 @@ function createTeamCard(team) {
     if (!team.name && !team._id) {
         console.warn('❌ Invalid team object (no name or _id):', team);
         console.warn('❌ Team keys:', Object.keys(team));
+        console.warn('❌ Team name value:', team.name);
+        console.warn('❌ Team _id value:', team._id);
         return createFallbackTeamCard(team);
     }
     
@@ -2380,7 +2425,8 @@ function createTeamCard(team) {
                        team.status === 'busy' ? 'warning' : 
                        team.status === 'offline' ? 'danger' : 'secondary';
     
-    div.innerHTML = `
+    try {
+        div.innerHTML = `
         <div class="card team-card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -2427,6 +2473,11 @@ function createTeamCard(team) {
             </div>
         </div>
     `;
+    } catch (templateError) {
+        console.error('❌ Error creating team card template:', templateError);
+        console.error('❌ Team data:', team);
+        return createFallbackTeamCard(team);
+    }
     
     console.log('✅ Team card created successfully for:', team.name || team._id);
     console.log('✅ Element type:', div.nodeType, 'Element:', div);
