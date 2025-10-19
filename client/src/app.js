@@ -1132,10 +1132,16 @@ function populateTopPerformers(teams) {
     container.innerHTML = '';
     
     if (teams && teams.length > 0) {
-        // Sort teams by tickets completed (descending)
-        const sortedTeams = [...teams].sort((a, b) => 
-            (b.ticketsCompleted || 0) - (a.ticketsCompleted || 0)
-        );
+        // Sort teams by tickets completed (descending) - normalize structures
+        const getCompleted = (t) => {
+            if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
+            if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') {
+                return t.productivity.totalTicketsCompleted;
+            }
+            if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
+            return 0;
+        };
+        const sortedTeams = [...teams].sort((a, b) => getCompleted(b) - getCompleted(a));
         
         // Take top 5 performers
         const topPerformers = sortedTeams.slice(0, 5);
@@ -1147,8 +1153,13 @@ function populateTopPerformers(teams) {
             const teamName = team.name || 'Unknown';
             const teamState = team.state || 'Unknown';
             const teamZone = team.zone || 'Unknown';
-            const ticketsCompleted = team.ticketsCompleted || 0;
-            const rating = parseFloat(team.rating || 4.5).toFixed(2);
+            const ticketsCompleted = getCompleted(team);
+            const ratingValue = (typeof team.rating === 'number')
+                ? team.rating
+                : (team.productivity && typeof team.productivity.customerRating === 'number')
+                    ? team.productivity.customerRating
+                    : 4.5;
+            const rating = parseFloat(ratingValue).toFixed(2);
             const ratingClass = rating >= 4.5 ? 'positive' : rating >= 4.0 ? 'neutral' : 'negative';
             
             performerItem.innerHTML = `
