@@ -5016,7 +5016,12 @@ function createZonePerformanceChart(tickets) {
         zones[zone] = (zones[zone] || 0) + 1;
     });
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.teamsZonePerformanceChart) {
+        chartInstances.teamsZonePerformanceChart.destroy();
+    }
+    
+    chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: Object.keys(zones),
@@ -5052,7 +5057,12 @@ function createPriorityBreakdownChart(tickets) {
         low: tickets.filter(t => t.priority === 'low').length
     };
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.priorityBreakdownChart) {
+        chartInstances.priorityBreakdownChart.destroy();
+    }
+    
+    chartInstances.priorityBreakdownChart = new Chart(ctx, {
         type: 'pie',
         data: {
             labels: ['Emergency', 'High', 'Medium', 'Low'],
@@ -5084,7 +5094,12 @@ function createCategoryDistributionChart(tickets) {
         categories[t.category] = (categories[t.category] || 0) + 1;
     });
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.categoryDistChart) {
+        chartInstances.categoryDistChart.destroy();
+    }
+    
+    chartInstances.categoryDistChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: Object.keys(categories),
@@ -5113,7 +5128,12 @@ function createTeamProductivityChart(teams) {
     
     const topTeams = teams.slice(0, 10);
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.teamProductivityChart) {
+        chartInstances.teamProductivityChart.destroy();
+    }
+    
+    chartInstances.teamProductivityChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: topTeams.map(t => t.name),
@@ -5176,7 +5196,12 @@ function createCostAnalysisChart(tickets, teams) {
     updateElement('cost-month', `RM ${costMonth.toFixed(2)}`);
     updateElement('cost-projected', `RM ${costProjected.toFixed(2)}`);
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.costAnalysisChart) {
+        chartInstances.costAnalysisChart.destroy();
+    }
+    
+    chartInstances.costAnalysisChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
@@ -5216,7 +5241,12 @@ function createPeakHoursChart(tickets) {
         hours[hour]++;
     });
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.peakHoursChart) {
+        chartInstances.peakHoursChart.destroy();
+    }
+    
+    chartInstances.peakHoursChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: hours.map((_, i) => `${i}:00`),
@@ -5255,7 +5285,12 @@ function createDayOfWeekChart(tickets) {
         counts[day]++;
     });
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.dayOfWeekChart) {
+        chartInstances.dayOfWeekChart.destroy();
+    }
+    
+    chartInstances.dayOfWeekChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: days,
@@ -5294,7 +5329,12 @@ function createCustomerRatingsChart(teams) {
         }
     });
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.customerRatingsChart) {
+        chartInstances.customerRatingsChart.destroy();
+    }
+    
+    chartInstances.customerRatingsChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: ['1⭐', '2⭐', '3⭐', '4⭐', '5⭐'],
@@ -5352,7 +5392,12 @@ function createProductivityMetricsChart(tickets, teams) {
         weeklyData.push(count);
     }
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.productivityMetricsChart) {
+        chartInstances.productivityMetricsChart.destroy();
+    }
+    
+    chartInstances.productivityMetricsChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
@@ -5418,7 +5463,12 @@ function createEfficiencyTrendsChart(tickets) {
     updateElement('first-time-fix', `${firstTimeFix}%`);
     updateElement('sla-compliance', `${slaCompliance}%`);
     
-    chartInstances['chart_' + Math.random().toString(36).substr(2, 9)] = new Chart(ctx, {
+    // Destroy existing chart instance if it exists
+    if (chartInstances.efficiencyTrendsChart) {
+        chartInstances.efficiencyTrendsChart.destroy();
+    }
+    
+    chartInstances.efficiencyTrendsChart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: labels,
