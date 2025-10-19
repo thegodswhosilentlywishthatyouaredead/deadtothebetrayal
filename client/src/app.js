@@ -1182,6 +1182,48 @@ function populateTopPerformers(teams) {
     }
 }
 
+// Build missing team performance from tickets
+function enrichTeamsWithTicketStats(teams, tickets) {
+    if (!Array.isArray(teams) || teams.length === 0) return;
+    if (!Array.isArray(tickets) || tickets.length === 0) return;
+    
+    const teamIdToStats = new Map();
+    const completedStatuses = new Set(['resolved', 'closed', 'completed']);
+    
+    tickets.forEach(ticket => {
+        const teamId = ticket.assignedTeam || ticket.assignedTo || ticket.teamId || ticket.team_id;
+        if (!teamId) return;
+        if (!teamIdToStats.has(teamId)) {
+            teamIdToStats.set(teamId, { completed: 0, total: 0, ratingSum: 0, ratingCount: 0 });
+        }
+        const stats = teamIdToStats.get(teamId);
+        stats.total += 1;
+        if (completedStatuses.has(ticket.status)) {
+            stats.completed += 1;
+        }
+        const rating = ticket.customerRating || ticket.rating;
+        if (typeof rating === 'number') {
+            stats.ratingSum += rating;
+            stats.ratingCount += 1;
+        }
+    });
+    
+    teams.forEach(team => {
+        const teamId = team._id || team.id;
+        const stats = teamIdToStats.get(teamId);
+        if (!stats) return;
+        if (!team.productivity) team.productivity = {};
+        if (typeof team.ticketsCompleted !== 'number') {
+            team.productivity.totalTicketsCompleted = stats.completed;
+        }
+        if (typeof team.rating !== 'number' && typeof team.productivity.customerRating !== 'number') {
+            team.productivity.customerRating = stats.ratingCount > 0
+                ? +(stats.ratingSum / stats.ratingCount).toFixed(2)
+                : 4.5;
+        }
+    });
+}
+
 async function loadFieldTeams() {
     try {
         // Fetch teams data
@@ -1198,6 +1240,9 @@ async function loadFieldTeams() {
         const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
         const zonesData = await zonesResponse.json();
         
+        // Derive team stats from tickets when missing
+        enrichTeamsWithTicketStats(fieldTeams, allTickets);
+
         // Update Field Teams tab metrics
         updateFieldTeamsMetrics(fieldTeams, allTickets, zonesData);
         
