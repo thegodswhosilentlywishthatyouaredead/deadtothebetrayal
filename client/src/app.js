@@ -5427,7 +5427,7 @@ function createCategoryDistributionChart(tickets) {
 
 // Create Team Productivity Chart
 function createTeamProductivityChart(teams) {
-    const ctx = document.getElementById('teamProductivityChart');
+    const ctx = document.getElementById('teamsProductivityChart');
     if (!ctx) {
         console.warn(`⚠️ Canvas not found for chart`);
         return;
@@ -5436,11 +5436,11 @@ function createTeamProductivityChart(teams) {
     const topTeams = teams.slice(0, 10);
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.teamProductivityChart) {
-        chartInstances.teamProductivityChart.destroy();
+    if (chartInstances.teamsProductivityChart) {
+        chartInstances.teamsProductivityChart.destroy();
     }
     
-    chartInstances.teamProductivityChart = new Chart(ctx, {
+    chartInstances.teamsProductivityChart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: topTeams.map(t => t.name),
