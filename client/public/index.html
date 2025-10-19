@@ -1178,6 +1178,99 @@
             color: #9ca3af;
         }
 
+        /* Zone Distribution Card */
+        .zone-distribution-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .zone-distribution-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .zone-distribution-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .zone-distribution-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .zone-distribution-content {
+            padding: 1.5rem;
+        }
+
+        /* Performance Analytics */
+        .performance-analytics-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .performance-analytics-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .performance-analytics-subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* Performance Tables */
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .performance-table th,
+        .performance-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .performance-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .performance-table tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .rank-badge.rank-1 { background-color: #fbbf24; }
+        .rank-badge.rank-2 { background-color: #9ca3af; }
+        .rank-badge.rank-3 { background-color: #f59e0b; }
+        .rank-badge.rank-other { background-color: #6b7280; }
+
         /* TM Logo Styles */
         .tm-logo {
             position: relative;
@@ -3568,37 +3661,164 @@
                                         <button type="button" class="btn btn-outline-primary active" onclick="showZoneView()">
                                             <i class="fas fa-map-marked-alt me-2"></i>Zone View
                                         </button>
-                                        <button type="button" class="btn btn-outline-info" onclick="showListView()">
-                                            <i class="fas fa-list me-2"></i>List View
-                                        </button>
-                                        <button type="button" class="btn btn-outline-success" onclick="showTeamsPerformanceView()">
-                                            <i class="fas fa-chart-line me-2"></i>Performance
+                                        <button type="button" class="btn btn-outline-success" onclick="showTeamsPerformanceAnalytics()">
+                                            <i class="fas fa-chart-line me-2"></i>Performance Analytics
                                         </button>
                                     </div>
                                 </div>
 
                                 <!-- Zone View -->
                                 <div id="zone-view">
-                                    <div class="card mb-4">
-                                <div class="card-header">
-                                            <h5 class="card-title mb-0">
+                                    <div class="zone-distribution-card">
+                                        <div class="zone-distribution-header">
+                                            <h5 class="zone-distribution-title">
                                                 <i class="fas fa-map-marked-alt me-2"></i>Team Distribution by Malaysian Zones
                                             </h5>
-                                </div>
-                                <div class="card-body">
+                                        </div>
+                                        <div class="zone-distribution-content">
                                             <div id="zones-container">
                                                 <!-- Zone breakdown will be loaded here -->
-                                        </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- List View -->
-                                <div id="list-view" style="display: none;">
-                                    <div class="row" id="teams-grid">
-                                        <!-- Team members will be loaded here -->
-                            </div>
-                        </div>
+                                <!-- Performance Analytics View -->
+                                <div id="teams-performance-analytics" style="display: none;">
+                                    <div class="performance-analytics-header">
+                                        <h5 class="performance-analytics-title">
+                                            <i class="fas fa-chart-line me-2"></i>Field Team Performance Analytics
+                                        </h5>
+                                        <p class="performance-analytics-subtitle">Comprehensive analysis by states and zones</p>
+                                    </div>
+                                    
+                                    <!-- Performance KPI Cards -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div class="kpi-content">
+                                                    <div class="kpi-value" id="analytics-total-teams">0</div>
+                                                    <div class="kpi-label">Total Teams</div>
+                                                    <div class="kpi-sublabel" id="analytics-active-teams">0 Active</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="kpi-content">
+                                                    <div class="kpi-value" id="analytics-avg-productivity">0%</div>
+                                                    <div class="kpi-label">Avg Productivity</div>
+                                                    <div class="kpi-sublabel" id="analytics-productivity-trend">+0% vs last week</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon">
+                                                    <i class="fas fa-star"></i>
+                                                </div>
+                                                <div class="kpi-content">
+                                                    <div class="kpi-value" id="analytics-avg-rating">0.00</div>
+                                                    <div class="kpi-label">Avg Rating</div>
+                                                    <div class="kpi-sublabel" id="analytics-rating-trend">+0.00 vs last week</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="kpi-card">
+                                                <div class="kpi-icon">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                                <div class="kpi-content">
+                                                    <div class="kpi-value" id="analytics-avg-response">0.00h</div>
+                                                    <div class="kpi-label">Avg Response</div>
+                                                    <div class="kpi-sublabel" id="analytics-response-trend">-0% faster</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Detailed Analysis Charts -->
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance Analysis</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="zonePerformanceChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-flag me-2"></i>State Performance Analysis</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="statePerformanceChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-4">
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-trophy me-2"></i>Team Productivity Trends</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="teamProductivityChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-star me-2"></i>Customer Rating Distribution</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="ratingDistributionChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Performance Tables -->
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-list-ol me-2"></i>Zone Performance Ranking</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <div id="zone-ranking-table">
+                                                        <!-- Zone ranking will be populated here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-medal me-2"></i>Top Performing Teams</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <div id="top-teams-table">
+                                                        <!-- Top teams will be populated here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                     </div>
 
                             <!-- Predictive Planning Tab -->
