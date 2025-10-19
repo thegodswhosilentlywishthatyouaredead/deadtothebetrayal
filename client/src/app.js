@@ -20,9 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial tab content
     loadRecentTickets();
     loadTeamStatusOverview();
+    loadFieldTeams(); // Pre-load Field Teams data
     
     // Set up auto-refresh every 30 seconds
     setInterval(loadDashboardData, 30000);
+    setInterval(loadFieldTeams, 30000); // Auto-refresh Field Teams data
     
     console.log('✅ Dashboard initialization complete!');
 });
@@ -164,7 +166,8 @@ function showTab(tabName) {
             showTicketsListView(); // Show list view by default
             break;
         case 'teams':
-            // Data loading is handled in the other showTab function
+            // Load all field teams data immediately
+            loadFieldTeams();
             showZoneView(); // Show zone view by default
             break;
         case 'planning':
