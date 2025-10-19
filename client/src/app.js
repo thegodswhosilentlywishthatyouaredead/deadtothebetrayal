@@ -1087,8 +1087,8 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     // Populate zone performance list
     populateTeamsZoneList(zonesData);
     
-    // Populate top performers list
-    populateTopPerformers(teams);
+    // Populate top performers list using zones data (same as main dashboard)
+    populateTopPerformersFromZones(zonesData);
 }
 
 function populateTeamsZoneList(zonesData) {
@@ -1123,6 +1123,88 @@ function populateTeamsZoneList(zonesData) {
             container.appendChild(zoneItem);
         });
     }
+}
+
+function populateTopPerformersFromZones(zonesData) {
+    const container = document.getElementById('teams-top-performers');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!zonesData.zones || Object.keys(zonesData.zones).length === 0) {
+        container.innerHTML = '<p class="text-muted">No team data available</p>';
+        return;
+    }
+    
+    // Extract all teams from zones data (same as main dashboard)
+    const allTeams = [];
+    Object.entries(zonesData.zones).forEach(([zoneName, zoneData]) => {
+        if (zoneData.teams && Array.isArray(zoneData.teams)) {
+            zoneData.teams.forEach(team => {
+                allTeams.push({
+                    ...team,
+                    zone: zoneName,
+                    // Add zone-level data to team
+                    zoneProductivity: zoneData.productivityScore || 0,
+                    zoneOpenTickets: zoneData.openTickets || 0,
+                    zoneClosedTickets: zoneData.closedTickets || 0
+                });
+            });
+        }
+    });
+    
+    if (allTeams.length === 0) {
+        container.innerHTML = '<p class="text-muted">No teams found in zones</p>';
+        return;
+    }
+    
+    // Sort teams by productivity score (from zone data) or tickets completed
+    const sortedTeams = allTeams.sort((a, b) => {
+        // First try zone productivity score
+        const aScore = a.zoneProductivity || 0;
+        const bScore = b.zoneProductivity || 0;
+        if (aScore !== bScore) return bScore - aScore;
+        
+        // Then by tickets completed if available
+        const aCompleted = a.productivity?.totalTicketsCompleted || a.ticketsCompleted || 0;
+        const bCompleted = b.productivity?.totalTicketsCompleted || b.ticketsCompleted || 0;
+        return bCompleted - aCompleted;
+    });
+    
+    // Take top 5 performers
+    const topPerformers = sortedTeams.slice(0, 5);
+    
+    topPerformers.forEach((team, index) => {
+        const performerItem = document.createElement('div');
+        performerItem.className = 'top-performer-item';
+        
+        const teamName = team.name || 'Unknown';
+        const teamState = team.state || 'Unknown';
+        const teamZone = team.zone || 'Unknown';
+        const ticketsCompleted = team.productivity?.totalTicketsCompleted || team.ticketsCompleted || 0;
+        const ratingValue = team.productivity?.customerRating || team.rating || 4.5;
+        const rating = parseFloat(ratingValue).toFixed(2);
+        const ratingClass = rating >= 4.5 ? 'positive' : rating >= 4.0 ? 'neutral' : 'negative';
+        
+        performerItem.innerHTML = `
+            <div class="performer-info">
+                <div class="performer-name">${teamName}</div>
+                <div class="performer-details">
+                    <span>${teamState}</span>
+                    <span>${teamZone} Zone</span>
+                    <span>${ticketsCompleted} tickets</span>
+                </div>
+            </div>
+            <div class="performer-metrics">
+                <div class="performer-rating ${ratingClass}">${rating}</div>
+                <div class="performer-stats">Rank #${index + 1}</div>
+            </div>
+        `;
+        
+        container.appendChild(performerItem);
+    });
+    
+    console.log('🏆 Top performers populated:', topPerformers.length, 'teams from zones data');
 }
 
 function populateTopPerformers(teams) {
