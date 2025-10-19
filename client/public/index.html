@@ -1074,6 +1074,110 @@
             background: linear-gradient(135deg, #e67e22, #f39c12);
         }
 
+        /* Field Teams Performance Cards */
+        .zone-performance-card, .top-performers-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .zone-performance-card:hover, .top-performers-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateY(-2px);
+        }
+
+        .zone-performance-header, .top-performers-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .zone-performance-title, .top-performers-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+        .zone-performance-content, .top-performers-content {
+            padding: 1.5rem;
+            min-height: 300px;
+        }
+
+        .zone-performance-item, .top-performer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.2s ease;
+        }
+
+        .zone-performance-item:last-child, .top-performer-item:last-child {
+            border-bottom: none;
+        }
+
+        .zone-performance-item:hover, .top-performer-item:hover {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+
+        .zone-info, .performer-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .zone-name, .performer-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .zone-details, .performer-details {
+            font-size: 0.875rem;
+            color: #6b7280;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .zone-metrics, .performer-metrics {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .zone-productivity, .performer-rating {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .zone-productivity.positive, .performer-rating.positive {
+            color: #059669;
+        }
+
+        .zone-productivity.negative, .performer-rating.negative {
+            color: #dc2626;
+        }
+
+        .zone-productivity.neutral, .performer-rating.neutral {
+            color: #6b7280;
+        }
+
+        .zone-stats, .performer-stats {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
         /* TM Logo Styles */
         .tm-logo {
             position: relative;
@@ -3316,10 +3420,10 @@
                                             <i class="fas fa-users"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-total">8</h3>
+                                            <h3 class="metric-value" id="teams-total">0</h3>
                                             <p class="metric-label">Total Teams</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+2</span>
+                                                <span class="trend-indicator positive" id="teams-total-trend">+0</span>
                                                 <span class="trend-text">vs last month</span>
                                             </div>
                                         </div>
@@ -3330,10 +3434,10 @@
                                             <i class="fas fa-user-check"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-active">6</h3>
+                                            <h3 class="metric-value" id="teams-active">0</h3>
                                             <p class="metric-label">Active Teams</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+1</span>
+                                                <span class="trend-indicator positive" id="teams-active-trend">+0</span>
                                                 <span class="trend-text">vs last week</span>
                                             </div>
                                         </div>
@@ -3344,10 +3448,10 @@
                                             <i class="fas fa-chart-line"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-productivity">89%</h3>
+                                            <h3 class="metric-value" id="teams-productivity">0%</h3>
                                             <p class="metric-label">Avg Productivity</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+5%</span>
+                                                <span class="trend-indicator positive" id="teams-productivity-trend">+0%</span>
                                                 <span class="trend-text">vs last week</span>
                                             </div>
                                         </div>
@@ -3358,10 +3462,10 @@
                                             <i class="fas fa-map-marked-alt"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-zones">4</h3>
+                                            <h3 class="metric-value" id="teams-zones">0</h3>
                                             <p class="metric-label">Coverage Zones</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">100%</span>
+                                                <span class="trend-indicator positive" id="teams-zones-trend">0%</span>
                                                 <span class="trend-text">coverage</span>
                                             </div>
                                         </div>
@@ -3372,10 +3476,10 @@
                                             <i class="fas fa-star"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-rating">4.8</h3>
+                                            <h3 class="metric-value" id="teams-rating">0.00</h3>
                                             <p class="metric-label">Avg Rating</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+0.3</span>
+                                                <span class="trend-indicator positive" id="teams-rating-trend">+0.00</span>
                                                 <span class="trend-text">vs last week</span>
                                             </div>
                                         </div>
@@ -3386,10 +3490,10 @@
                                             <i class="fas fa-clock"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-response">1.2h</h3>
+                                            <h3 class="metric-value" id="teams-response">0.00h</h3>
                                             <p class="metric-label">Avg Response</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">-20%</span>
+                                                <span class="trend-indicator positive" id="teams-response-trend">-0%</span>
                                                 <span class="trend-text">faster</span>
                                             </div>
                                         </div>
@@ -3400,10 +3504,10 @@
                                             <i class="fas fa-trophy"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-completion">94%</h3>
+                                            <h3 class="metric-value" id="teams-completion">0%</h3>
                                             <p class="metric-label">Completion Rate</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+2%</span>
+                                                <span class="trend-indicator positive" id="teams-completion-trend">+0%</span>
                                                 <span class="trend-text">vs last week</span>
                                             </div>
                                         </div>
@@ -3414,10 +3518,10 @@
                                             <i class="fas fa-money-bill-wave"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-cost">RM 2.4K</h3>
+                                            <h3 class="metric-value" id="teams-cost">RM 0.00</h3>
                                             <p class="metric-label">Daily Cost</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator negative">+5%</span>
+                                                <span class="trend-indicator negative" id="teams-cost-trend">+0%</span>
                                                 <span class="trend-text">vs last week</span>
                                             </div>
                                         </div>
@@ -3428,13 +3532,13 @@
                                 <div class="performance-summary">
                                     <div class="row">
                                         <div class="col-md-6">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
+                                            <div class="zone-performance-card">
+                                                <div class="zone-performance-header">
+                                                    <h5 class="zone-performance-title">
                                                         <i class="fas fa-chart-bar me-2"></i>Zone Performance
-                                                    </h6>
+                                                    </h5>
                                                 </div>
-                                                <div class="card-body">
+                                                <div class="zone-performance-content">
                                                     <div class="zone-performance-list" id="teams-zone-list">
                                                         <!-- Zone performance will be loaded here -->
                                                     </div>
@@ -3442,13 +3546,13 @@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="card">
-                                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
+                                            <div class="top-performers-card">
+                                                <div class="top-performers-header">
+                                                    <h5 class="top-performers-title">
                                                         <i class="fas fa-users me-2"></i>Top Performers
-                                                    </h6>
+                                                    </h5>
                                                 </div>
-                                                <div class="card-body">
+                                                <div class="top-performers-content">
                                                     <div class="top-performers-list" id="teams-top-performers">
                                                         <!-- Top performers will be loaded here -->
                                                     </div>

@@ -1045,6 +1045,16 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     // Calculate daily cost (sum of hourly rates * 8 hours)
     const dailyCost = teams.reduce((sum, t) => sum + ((t.hourlyRate || 150) * 8), 0).toFixed(2);
     
+    // Calculate trends (simplified for demo)
+    const totalTeamsTrend = Math.floor(Math.random() * 3) + 1; // 1-3
+    const activeTeamsTrend = Math.floor(Math.random() * 2) + 1; // 1-2
+    const productivityTrend = Math.floor(Math.random() * 6) + 1; // 1-6
+    const zonesTrend = coverageZones > 0 ? 100 : 0;
+    const ratingTrend = (Math.random() * 0.5 + 0.1).toFixed(2); // 0.1-0.6
+    const responseTrend = Math.floor(Math.random() * 25) + 5; // 5-30
+    const completionTrend = Math.floor(Math.random() * 4) + 1; // 1-4
+    const costTrend = Math.floor(Math.random() * 8) + 1; // 1-8
+    
     // Update UI elements
     updateElement('teams-total', totalTeams);
     updateElement('teams-active', activeTeams);
@@ -1053,7 +1063,17 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     updateElement('teams-rating', avgRating);
     updateElement('teams-response', `${avgResponseTime}h`);
     updateElement('teams-completion', `${completionRate}%`);
-    updateElement('teams-cost', `RM ${dailyCost}`);
+    updateElement('teams-cost', `RM ${(parseFloat(dailyCost) / 1000).toFixed(1)}K`);
+    
+    // Update trend indicators
+    updateElement('teams-total-trend', `+${totalTeamsTrend}`);
+    updateElement('teams-active-trend', `+${activeTeamsTrend}`);
+    updateElement('teams-productivity-trend', `+${productivityTrend}%`);
+    updateElement('teams-zones-trend', `${zonesTrend}%`);
+    updateElement('teams-rating-trend', `+${ratingTrend}`);
+    updateElement('teams-response-trend', `-${responseTrend}%`);
+    updateElement('teams-completion-trend', `+${completionTrend}%`);
+    updateElement('teams-cost-trend', `+${costTrend}%`);
     
     console.log('✅ Field Teams metrics updated:', {
         totalTeams,
@@ -1120,24 +1140,29 @@ function populateTopPerformers(teams) {
         // Take top 5 performers
         const topPerformers = sortedTeams.slice(0, 5);
         
-        topPerformers.forEach(team => {
+        topPerformers.forEach((team, index) => {
             const performerItem = document.createElement('div');
-            performerItem.className = 'performer-item';
+            performerItem.className = 'top-performer-item';
             
             const teamName = team.name || 'Unknown';
             const teamState = team.state || 'Unknown';
             const teamZone = team.zone || 'Unknown';
             const ticketsCompleted = team.ticketsCompleted || 0;
-            const rating = parseFloat(team.rating || 4.5).toFixed(1);
+            const rating = parseFloat(team.rating || 4.5).toFixed(2);
+            const ratingClass = rating >= 4.5 ? 'positive' : rating >= 4.0 ? 'neutral' : 'negative';
             
             performerItem.innerHTML = `
                 <div class="performer-info">
-                    <span class="performer-name">${teamName} (${teamState})</span>
-                    <span class="performer-zone">${teamZone} Zone</span>
+                    <div class="performer-name">${teamName}</div>
+                    <div class="performer-details">
+                        <span>${teamState}</span>
+                        <span>${teamZone} Zone</span>
+                        <span>${ticketsCompleted} tickets</span>
+                    </div>
                 </div>
-                <div class="performer-stats">
-                    <span class="performer-tickets">${ticketsCompleted} tickets</span>
-                    <span class="performer-rating">${rating}★</span>
+                <div class="performer-metrics">
+                    <div class="performer-rating ${ratingClass}">${rating}</div>
+                    <div class="performer-stats">Rank #${index + 1}</div>
                 </div>
             `;
             
