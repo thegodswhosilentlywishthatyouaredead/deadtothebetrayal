@@ -6,6 +6,10 @@ let fieldTeams = [];
 let assignments = [];
 let chartInstances = {};
 
+// Test global variable to verify JavaScript is loading
+window.JS_LOADED = true;
+console.log('✅ JavaScript file loaded successfully');
+
 // Standardized view control functions
 function setActiveViewButton(containerClass, activeButton) {
     const container = document.querySelector(`.${containerClass}`);
@@ -157,6 +161,9 @@ window.testTabs = function() {
         }, index * 1000);
     });
 };
+
+// Make showTab function globally available
+window.showTab = showTab;
 let currentProfileTeam = null;
 
 // API Base URL
