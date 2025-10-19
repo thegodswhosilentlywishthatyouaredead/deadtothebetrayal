@@ -145,6 +145,18 @@ function adjustColorBrightness(color, amount) {
         (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
         (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
 }
+
+// Global test function for debugging tabs
+window.testTabs = function() {
+    console.log('🧪 Testing all tabs...');
+    const tabs = ['overview', 'tickets', 'teams', 'planning', 'map'];
+    tabs.forEach((tab, index) => {
+        setTimeout(() => {
+            console.log(`🧪 Testing ${tab} tab...`);
+            showTab(tab);
+        }, index * 1000);
+    });
+};
 let currentProfileTeam = null;
 
 // API Base URL
@@ -175,6 +187,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('🧪 Testing showTab function...');
         if (typeof showTab === 'function') {
             console.log('✅ showTab function is available');
+            // Test switching to tickets tab
+            console.log('🧪 Testing tab switch to tickets...');
+            showTab('tickets');
         } else {
             console.error('❌ showTab function is not available');
         }
@@ -303,8 +318,14 @@ function showTab(tabName) {
     }
     
     // Add active class to clicked tab button (if from tab buttons)
-    if (event && event.target && event.target.classList.contains('tab-button')) {
-        event.target.classList.add('active');
+    // Note: event parameter might not be available in all contexts
+    try {
+        if (typeof event !== 'undefined' && event && event.target && event.target.classList.contains('tab-button')) {
+            event.target.classList.add('active');
+        }
+    } catch (e) {
+        // Event not available, continue without it
+        console.log('Event not available in showTab context');
     }
     
     // Show corresponding tab pane with smooth transition
