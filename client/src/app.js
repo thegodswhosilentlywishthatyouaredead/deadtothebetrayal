@@ -160,11 +160,25 @@ const chartRegistry = window.chartInstances;
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 FieldAssign Dashboard Initializing...');
+    console.log('🚀 DOM loaded, checking tab elements...');
+    console.log('🚀 Tab panes found:', document.querySelectorAll('.tab-pane').length);
+    console.log('🚀 Nav links found:', document.querySelectorAll('.nav-link').length);
     
     initializeSocket();
     loadDashboardData();
     initializeMap();
     initializeViewControls(); // Initialize standardized view controls
+    
+    // Test tab functionality
+    console.log('🧪 Testing tab functionality...');
+    setTimeout(() => {
+        console.log('🧪 Testing showTab function...');
+        if (typeof showTab === 'function') {
+            console.log('✅ showTab function is available');
+        } else {
+            console.error('❌ showTab function is not available');
+        }
+    }, 1000);
     
     // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
@@ -257,7 +271,9 @@ function showSection(sectionName) {
 
 // Tab navigation function with smooth transitions
 function showTab(tabName) {
-    console.log('Switching to tab:', tabName);
+    console.log('🔄 Switching to tab:', tabName);
+    console.log('🔄 Available tab panes:', document.querySelectorAll('.tab-pane').length);
+    console.log('🔄 Target tab pane:', document.getElementById(`${tabName}-tab`));
     
     // Add loading state to current active tab
     const currentActivePane = document.querySelector('.tab-pane.active');
