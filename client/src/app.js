@@ -1462,7 +1462,7 @@ async function loadTeamsPerformanceAnalytics() {
         
         // Create charts with error handling
         try {
-            createZonePerformanceChart(tickets); // Pass tickets array, not zones object
+            createTeamsZonePerformanceChart(tickets); // Pass tickets array, not zones object
             createStatePerformanceChart(teams);
             createTeamProductivityChart(teams);
             createRatingDistributionChart(teams);
@@ -5244,7 +5244,7 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
 }
 
 // Create Zone Performance Chart
-function createZonePerformanceChart(tickets) {
+function createTeamsZonePerformanceChart(tickets) {
     const ctx = document.getElementById('teamsZonePerformanceChart');
     if (!ctx) {
         console.warn(`⚠️ Canvas not found for chart`);
