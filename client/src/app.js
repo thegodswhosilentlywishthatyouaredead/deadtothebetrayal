@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Socket.IO initialization
 function initializeSocket() {
-    socket = io('http://localhost:5001');
+    socket = io('http://localhost:5002');
     
     socket.on('connect', () => {
         console.log('Connected to server');
