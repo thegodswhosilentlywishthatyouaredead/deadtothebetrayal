@@ -1975,6 +1975,7 @@ async function loadFieldTeams() {
         updateFieldTeamsMetrics(fieldTeams, allTickets, zonesData);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
+        console.log('👥 First team sample:', fieldTeams[0]);
         
         if (fieldTeams.length === 0) {
             // Show sample data if no real data available
@@ -2124,21 +2125,30 @@ function displayFieldTeams(teamsToShow) {
     const container = document.getElementById('teams-grid');
     container.innerHTML = '';
     
+    console.log('🎯 Displaying teams:', teamsToShow.length, 'teams');
+    console.log('🎯 First team to display:', teamsToShow[0]);
+    
     if (teamsToShow.length === 0) {
         container.innerHTML = '<p class="text-muted">No team members found</p>';
         return;
     }
     
-    teamsToShow.forEach(team => {
+    teamsToShow.forEach((team, index) => {
         try {
             const teamElement = createTeamCard(team);
             if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
                 container.appendChild(teamElement);
             } else {
-                console.error('Invalid team element created for team:', team);
+                console.warn(`Failed to create team card for team at index ${index}:`, team);
+                // Create a fallback card
+                const fallbackElement = createFallbackTeamCard(team);
+                container.appendChild(fallbackElement);
             }
         } catch (error) {
-            console.error('Error creating team card for team:', team, 'Error:', error);
+            console.warn(`Error creating team card for team at index ${index}:`, team, 'Error:', error);
+            // Create a fallback card
+            const fallbackElement = createFallbackTeamCard(team);
+            container.appendChild(fallbackElement);
         }
     });
 }
@@ -2146,14 +2156,14 @@ function displayFieldTeams(teamsToShow) {
 function createTeamCard(team) {
     // Validate team object - be very lenient
     if (!team || typeof team !== 'object') {
-        console.error('Invalid team object (not an object):', team);
-        return null;
+        console.warn('Invalid team object (not an object):', team);
+        return createFallbackTeamCard(team);
     }
     
     // Ensure we have at least a name or _id
     if (!team.name && !team._id) {
-        console.error('Invalid team object (no name or _id):', team);
-        return null;
+        console.warn('Invalid team object (no name or _id):', team);
+        return createFallbackTeamCard(team);
     }
     
     const div = document.createElement('div');
@@ -2206,6 +2216,39 @@ function createTeamCard(team) {
                     <button class="btn btn-sm btn-outline-info" onclick="viewTeamPerformance('${team._id}')">
                         <i class="fas fa-chart-line"></i>
                     </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    return div;
+}
+
+function createFallbackTeamCard(team) {
+    // Create a fallback team card for invalid data
+    const div = document.createElement('div');
+    div.className = 'col-md-6 col-lg-4 mb-4';
+    
+    div.innerHTML = `
+        <div class="card team-card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="card-title mb-0">Invalid Team Data</h5>
+                    <span class="badge bg-secondary">unknown</span>
+                </div>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Data Error<br>
+                    <i class="fas fa-info-circle me-1"></i>Please refresh
+                </p>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted">Tickets</small>
+                        <div class="fw-bold">0</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Rating</small>
+                        <div class="fw-bold">N/A</div>
+                    </div>
                 </div>
             </div>
         </div>
