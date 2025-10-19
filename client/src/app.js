@@ -4752,8 +4752,7 @@ async function getSystemDataForAI() {
 }
 // ==================== PERFORMANCE ANALYSIS FUNCTIONS ====================
 
-// Store chart instances globally to destroy them before recreating
-const chartInstances = {};
+// Chart instances are already declared globally at the top of the file
 
 // Show Performance Analysis view
 function showTicketsPerformanceAnalysis() {
