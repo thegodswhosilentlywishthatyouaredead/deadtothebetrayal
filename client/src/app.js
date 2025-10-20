@@ -1146,7 +1146,7 @@ function createTicketElement(ticket, isCompact = false) {
             <div class="ticket-header">
                 <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
                 <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
-            </div>
+                </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
@@ -1165,7 +1165,7 @@ function createTicketElement(ticket, isCompact = false) {
             <div class="ticket-header">
                 <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
                 <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
-            </div>
+                    </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
@@ -1183,19 +1183,19 @@ function createTicketElement(ticket, isCompact = false) {
             </div>
             <div class="mt-3">
                 <div class="btn-group" role="group">
-                    ${ticket.status === 'open' ? `
-                        <button class="btn btn-sm btn-primary" onclick="autoAssignTicket('${ticket._id}')">
-                            <i class="fas fa-magic me-1"></i>Auto Assign
+                        ${ticket.status === 'open' ? `
+                            <button class="btn btn-sm btn-primary" onclick="autoAssignTicket('${ticket._id}')">
+                                <i class="fas fa-magic me-1"></i>Auto Assign
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket._id}')">
+                            <i class="fas fa-eye me-1"></i>View Details
                         </button>
-                    ` : ''}
-                    <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket._id}')">
-                        <i class="fas fa-eye me-1"></i>View Details
-                    </button>
-                    ${ticket.status === 'open' ? `
-                        <button class="btn btn-sm btn-outline-warning" onclick="showAssignModal('${ticket._id}')">
-                            <i class="fas fa-user-plus me-1"></i>Manual Assign
-                        </button>
-                    ` : ''}
+                        ${ticket.status === 'open' ? `
+                            <button class="btn btn-sm btn-outline-warning" onclick="showAssignModal('${ticket._id}')">
+                                <i class="fas fa-user-plus me-1"></i>Manual Assign
+                            </button>
+                        ` : ''}
                 </div>
             </div>
         `;
@@ -2311,11 +2311,11 @@ function displayFieldTeams(teamsToShow) {
     teamsToShow.forEach((team, index) => {
         try {
             console.log(`🔧 Creating team card for index ${index}:`, team.name || team._id || team.id);
-            const teamElement = createTeamCard(team);
+        const teamElement = createTeamCard(team);
             console.log(`🔧 Team element created:`, teamElement ? 'SUCCESS' : 'FAILED', teamElement);
             
             if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
-                container.appendChild(teamElement);
+        container.appendChild(teamElement);
                 console.log(`✅ Team card appended successfully for:`, team.name || team._id || team.id);
             } else {
                 console.warn(`❌ Failed to create team card for team at index ${index}:`, team);
@@ -2364,7 +2364,7 @@ function createTeamCard(team) {
     try {
         console.log('🔧 Creating team card template for:', team.name || team._id || team.id);
         console.log('🔧 Team data:', team);
-        div.innerHTML = `
+    div.innerHTML = `
         <div class="card team-card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -2396,7 +2396,7 @@ function createTeamCard(team) {
                     </div>
                 </div>
             </div>
-                <div class="card-footer">
+            <div class="card-footer">
                 <div class="btn-group w-100" role="group">
                     <button class="btn btn-sm btn-outline-primary" onclick="viewTeamDetails('${teamId}')">
                         <i class="fas fa-eye"></i>
@@ -2507,23 +2507,33 @@ function createAssignmentElement(assignment) {
     const div = document.createElement('div');
     div.className = 'assignment-item p-3 mb-3 border rounded';
     
-    const statusClass = assignment.status === 'completed' ? 'success' : 
-                       assignment.status === 'in-progress' ? 'warning' : 
-                       assignment.status === 'assigned' ? 'primary' : 'secondary';
+    // Safely extract values with fallbacks
+    const ticketNumber = assignment?.ticket?.ticketNumber || assignment?.ticketNumber || assignment?.ticket?._id || 'N/A';
+    const ticketTitle = assignment?.ticket?.title || assignment?.title || 'Unknown Ticket';
+    const teamName = assignment?.fieldTeam?.name || assignment?.teamName || assignment?.assignedTo || 'Unknown Team';
+    const status = assignment?.status || 'unknown';
+    const assignmentType = assignment?.assignmentType || 'manual';
+    const assignmentScore = assignment?.assignmentScore || 0;
+    const assignedAt = assignment?.assignedAt || assignment?.createdAt || new Date().toISOString();
+    const estimatedArrivalTime = assignment?.estimatedArrivalTime;
+    
+    const statusClass = status === 'completed' ? 'success' : 
+                       status === 'in-progress' ? 'warning' : 
+                       status === 'assigned' ? 'primary' : 'secondary';
     
     div.innerHTML = `
         <div class="row">
             <div class="col-md-8">
-                <h6 class="mb-1">${assignment.ticket.ticketNumber} - ${assignment.ticket.title}</h6>
-                <p class="text-muted mb-2">Assigned to: ${assignment.fieldTeam.name}</p>
+                <h6 class="mb-1">${ticketNumber} - ${ticketTitle}</h6>
+                <p class="text-muted mb-2">Assigned to: ${teamName}</p>
                 <div class="d-flex gap-2 mb-2">
-                    <span class="badge bg-${statusClass}">${assignment.status}</span>
-                    <span class="badge bg-info">${assignment.assignmentType}</span>
-                    <span class="badge bg-secondary">Score: ${assignment.assignmentScore.toFixed(1)}</span>
+                    <span class="badge bg-${statusClass}">${status}</span>
+                    <span class="badge bg-info">${assignmentType}</span>
+                    <span class="badge bg-secondary">Score: ${assignmentScore.toFixed(1)}</span>
                 </div>
                 <small class="text-muted">
-                    Assigned: ${new Date(assignment.assignedAt).toLocaleString()}
-                    ${assignment.estimatedArrivalTime ? ` | ETA: ${new Date(assignment.estimatedArrivalTime).toLocaleString()}` : ''}
+                    Assigned: ${new Date(assignedAt).toLocaleString()}
+                    ${estimatedArrivalTime ? ` | ETA: ${new Date(estimatedArrivalTime).toLocaleString()}` : ''}
                 </small>
             </div>
             <div class="col-md-4 text-end">
@@ -2576,17 +2586,23 @@ async function loadAnalytics() {
 function displayPerformanceMetrics(data) {
     const container = document.getElementById('performance-metrics');
     
+    // Safely extract values with fallbacks
+    const totalAssignments = data?.totalAssignments || 0;
+    const completedAssignments = data?.completedAssignments || 0;
+    const completionRate = data?.completionRate || 0;
+    const avgCompletionTime = data?.avgCompletionTime || 0;
+    
     container.innerHTML = `
         <div class="row">
             <div class="col-6">
                 <div class="text-center">
-                    <h3 class="text-primary">${data.totalAssignments}</h3>
+                    <h3 class="text-primary">${totalAssignments}</h3>
                     <p class="text-muted">Total Assignments</p>
                 </div>
             </div>
             <div class="col-6">
                 <div class="text-center">
-                    <h3 class="text-success">${data.completedAssignments}</h3>
+                    <h3 class="text-success">${completedAssignments}</h3>
                     <p class="text-muted">Completed</p>
                 </div>
             </div>
@@ -2594,13 +2610,13 @@ function displayPerformanceMetrics(data) {
         <div class="row mt-3">
             <div class="col-6">
                 <div class="text-center">
-                    <h3 class="text-warning">${data.averageRating.toFixed(1)}</h3>
-                    <p class="text-muted">Avg Rating</p>
+                    <h3 class="text-warning">${completionRate.toFixed(1)}%</h3>
+                    <p class="text-muted">Completion Rate</p>
                 </div>
             </div>
             <div class="col-6">
                 <div class="text-center">
-                    <h3 class="text-info">${Math.round(data.averageCompletionTime)}m</h3>
+                    <h3 class="text-info">${Math.round(avgCompletionTime)}h</h3>
                     <p class="text-muted">Avg Time</p>
                 </div>
             </div>
@@ -4166,11 +4182,18 @@ async function loadMaterialForecast() {
         const forecastResponse = await fetch(`${API_BASE}/planning/forecast`);
         const forecastData = await forecastResponse.json();
         
-        // Update forecast summary
-        document.getElementById('forecast-7days').textContent = `${forecastData.next7Days} tickets`;
-        document.getElementById('forecast-workforce').textContent = `${forecastData.workforceNeeded} technicians`;
-        document.getElementById('forecast-materials').textContent = `${forecastData.materialDemand.fiber}m fiber, ${forecastData.materialDemand.cpe} CPE`;
-        document.getElementById('forecast-peak').textContent = forecastData.peakHours;
+        // Update forecast summary with safe access
+        const next7Days = forecastData?.next7Days || forecastData?.totalInventory || 0;
+        const workforceNeeded = forecastData?.workforceNeeded || forecastData?.activeZones || 0;
+        const materialUsage = forecastData?.materialUsage || forecastData?.materialDemand || {};
+        const fiber = materialUsage?.fiber || 0;
+        const cpe = materialUsage?.cpe || 0;
+        const peakHours = forecastData?.peakHours || '9:00-17:00';
+        
+        document.getElementById('forecast-7days').textContent = `${next7Days} tickets`;
+        document.getElementById('forecast-workforce').textContent = `${workforceNeeded} technicians`;
+        document.getElementById('forecast-materials').textContent = `${fiber}m fiber, ${cpe} CPE`;
+        document.getElementById('forecast-peak').textContent = peakHours;
         
         // Load zone material usage
         loadZoneMaterialUsage();
