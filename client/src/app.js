@@ -6150,3 +6150,426 @@ function normalizeZones(zonesObj) {
     return out;
 }
 
+// ==================== FLOATING AI CHATBOT FUNCTIONALITY ====================
+
+// AI Chatbot State
+let aiChatbotOpen = false;
+let aiChatHistory = [];
+
+// Initialize AI Chatbot
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAIChatbot();
+});
+
+function initializeAIChatbot() {
+    const toggle = document.getElementById('ai-chatbot-toggle');
+    const window = document.getElementById('ai-chatbot-window');
+    
+    if (toggle) {
+        toggle.addEventListener('click', toggleAIChatbot);
+    }
+    
+    // Auto-show chatbot after 3 seconds
+    setTimeout(() => {
+        if (!aiChatbotOpen) {
+            showAINotification();
+        }
+    }, 3000);
+}
+
+function toggleAIChatbot() {
+    const window = document.getElementById('ai-chatbot-window');
+    const badge = document.getElementById('ai-notification-badge');
+    
+    aiChatbotOpen = !aiChatbotOpen;
+    
+    if (aiChatbotOpen) {
+        window.classList.add('active');
+        if (badge) badge.style.display = 'none';
+    } else {
+        window.classList.remove('active');
+    }
+}
+
+function showAINotification() {
+    const badge = document.getElementById('ai-notification-badge');
+    if (badge && !aiChatbotOpen) {
+        badge.style.display = 'flex';
+    }
+}
+
+function clearAIChat() {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = `
+            <div class="ai-message ai-assistant">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-content">
+                    <p>Chat cleared! How can I help you today?</p>
+                </div>
+            </div>
+        `;
+    }
+    aiChatHistory = [];
+}
+
+function handleAIChatbotKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendAIChatbotMessage();
+    }
+}
+
+function sendAIChatbotMessage() {
+    const input = document.getElementById('ai-chatbot-input');
+    const message = input.value.trim();
+    
+    if (message) {
+        addUserMessage(message);
+        input.value = '';
+        
+        // Show typing indicator
+        showAITyping();
+        
+        // Process AI response
+        setTimeout(() => {
+            processAIQuery(message);
+        }, 1000);
+    }
+}
+
+function askAI(question) {
+    const input = document.getElementById('ai-chatbot-input');
+    input.value = question;
+    sendAIChatbotMessage();
+}
+
+function addUserMessage(message) {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'ai-message ai-user';
+        messageDiv.innerHTML = `
+            <div class="ai-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="ai-content">
+                <p>${message}</p>
+            </div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    aiChatHistory.push({ role: 'user', content: message });
+}
+
+function addAIMessage(message) {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'ai-message ai-assistant';
+        messageDiv.innerHTML = `
+            <div class="ai-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ai-content">
+                ${message}
+            </div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    aiChatHistory.push({ role: 'assistant', content: message });
+}
+
+function showAITyping() {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'ai-message ai-assistant';
+        typingDiv.id = 'ai-typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="ai-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ai-content">
+                <div class="ai-typing">
+                    <span>AI is thinking</span>
+                    <div class="ai-typing-dots">
+                        <div class="ai-typing-dot"></div>
+                        <div class="ai-typing-dot"></div>
+                        <div class="ai-typing-dot"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
+function hideAITyping() {
+    const typingIndicator = document.getElementById('ai-typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.remove();
+    }
+}
+
+async function processAIQuery(query) {
+    hideAITyping();
+    
+    try {
+        // Get current system data
+        const systemData = await getCurrentSystemData();
+        
+        // Process the query and generate response
+        const response = await generateAIResponse(query, systemData);
+        
+        addAIMessage(response);
+        
+    } catch (error) {
+        console.error('Error processing AI query:', error);
+        addAIMessage(`
+            <p>I apologize, but I'm having trouble processing your request right now. Please try again in a moment.</p>
+            <p>You can ask me about:</p>
+            <ul>
+                <li>📊 Current system performance</li>
+                <li>👥 Team productivity metrics</li>
+                <li>🎫 Ticket trends and analysis</li>
+                <li>📦 Material usage forecasts</li>
+                <li>💡 Optimization recommendations</li>
+            </ul>
+        `);
+    }
+}
+
+async function getCurrentSystemData() {
+    try {
+        const [ticketsResponse, teamsResponse, zonesResponse, forecastResponse] = await Promise.all([
+            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/teams`),
+            fetch(`${API_BASE}/teams/analytics/zones`),
+            fetch(`${API_BASE}/planning/forecast`)
+        ]);
+        
+        const tickets = await ticketsResponse.json();
+        const teams = await teamsResponse.json();
+        const zones = await zonesResponse.json();
+        const forecast = await forecastResponse.json();
+        
+        return {
+            tickets: tickets.tickets || [],
+            teams: teams.teams || [],
+            zones: zones.zones || {},
+            forecast: forecast || {}
+        };
+    } catch (error) {
+        console.error('Error fetching system data:', error);
+        return { tickets: [], teams: [], zones: {}, forecast: {} };
+    }
+}
+
+async function generateAIResponse(query, systemData) {
+    const lowerQuery = query.toLowerCase();
+    
+    // Ticket Analysis
+    if (lowerQuery.includes('ticket') && (lowerQuery.includes('trend') || lowerQuery.includes('analysis'))) {
+        return generateTicketAnalysis(systemData);
+    }
+    
+    // Team Performance
+    if (lowerQuery.includes('team') && (lowerQuery.includes('performance') || lowerQuery.includes('analysis'))) {
+        return generateTeamAnalysis(systemData);
+    }
+    
+    // Material Forecast
+    if (lowerQuery.includes('material') && (lowerQuery.includes('forecast') || lowerQuery.includes('usage'))) {
+        return generateMaterialAnalysis(systemData);
+    }
+    
+    // Optimization Suggestions
+    if (lowerQuery.includes('optimization') || lowerQuery.includes('suggest') || lowerQuery.includes('tip')) {
+        return generateOptimizationTips(systemData);
+    }
+    
+    // General System Overview
+    if (lowerQuery.includes('overview') || lowerQuery.includes('summary') || lowerQuery.includes('status')) {
+        return generateSystemOverview(systemData);
+    }
+    
+    // Default response
+    return generateDefaultResponse(systemData);
+}
+
+function generateTicketAnalysis(data) {
+    const tickets = data.tickets;
+    const totalTickets = tickets.length;
+    const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'pending').length;
+    const closedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+    const resolutionRate = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 0;
+    
+    // Priority analysis
+    const priorityCounts = tickets.reduce((acc, ticket) => {
+        acc[ticket.priority] = (acc[ticket.priority] || 0) + 1;
+        return acc;
+    }, {});
+    
+    const highPriority = priorityCounts.high || 0;
+    const mediumPriority = priorityCounts.medium || 0;
+    const lowPriority = priorityCounts.low || 0;
+    
+    return `
+        <p><strong>📊 Current Ticket Analysis:</strong></p>
+        <ul>
+            <li><strong>Total Tickets:</strong> ${totalTickets}</li>
+            <li><strong>Open Tickets:</strong> ${openTickets}</li>
+            <li><strong>Closed Tickets:</strong> ${closedTickets}</li>
+            <li><strong>Resolution Rate:</strong> ${resolutionRate}%</li>
+        </ul>
+        <p><strong>🎯 Priority Breakdown:</strong></p>
+        <ul>
+            <li><strong>High Priority:</strong> ${highPriority} tickets</li>
+            <li><strong>Medium Priority:</strong> ${mediumPriority} tickets</li>
+            <li><strong>Low Priority:</strong> ${lowPriority} tickets</li>
+        </ul>
+        <p><strong>💡 Recommendation:</strong> ${resolutionRate < 70 ? 'Focus on improving resolution rates by optimizing team assignments and reducing ticket backlog.' : 'Great job! Your resolution rate is above 70%. Consider implementing preventive measures to maintain this performance.'}</p>
+    `;
+}
+
+function generateTeamAnalysis(data) {
+    const teams = data.teams;
+    const totalTeams = teams.length;
+    const activeTeams = teams.filter(t => t.status === 'available' || t.status === 'busy').length;
+    const avgRating = teams.length > 0 ? (teams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / teams.length).toFixed(1) : 0;
+    
+    // Top performers
+    const topPerformers = teams
+        .sort((a, b) => (b.productivity?.totalTicketsCompleted || 0) - (a.productivity?.totalTicketsCompleted || 0))
+        .slice(0, 3);
+    
+    return `
+        <p><strong>👥 Team Performance Analysis:</strong></p>
+        <ul>
+            <li><strong>Total Teams:</strong> ${totalTeams}</li>
+            <li><strong>Active Teams:</strong> ${activeTeams}</li>
+            <li><strong>Average Rating:</strong> ${avgRating}/5.0</li>
+            <li><strong>Utilization Rate:</strong> ${((activeTeams / totalTeams) * 100).toFixed(1)}%</li>
+        </ul>
+        <p><strong>🏆 Top Performers:</strong></p>
+        <ul>
+            ${topPerformers.map(team => `<li><strong>${team.name}:</strong> ${team.productivity?.totalTicketsCompleted || 0} tickets completed</li>`).join('')}
+        </ul>
+        <p><strong>💡 Recommendation:</strong> ${activeTeams < totalTeams * 0.8 ? 'Consider reassigning inactive teams to high-priority zones to improve overall utilization.' : 'Excellent team utilization! Consider cross-training to enhance flexibility.'}</p>
+    `;
+}
+
+function generateMaterialAnalysis(data) {
+    const forecast = data.forecast;
+    const materialUsage = forecast.materialUsage || {};
+    
+    return `
+        <p><strong>📦 Material Usage Forecast:</strong></p>
+        <ul>
+            <li><strong>Fiber:</strong> ${materialUsage.fiber || 0} units</li>
+            <li><strong>CPE:</strong> ${materialUsage.cpe || 0} units</li>
+            <li><strong>Connectors:</strong> ${materialUsage.connectors || 0} units</li>
+            <li><strong>Cables:</strong> ${materialUsage.cables || 0} units</li>
+        </ul>
+        <p><strong>📈 Next 7 Days Projection:</strong></p>
+        <ul>
+            <li><strong>Workforce Needed:</strong> ${forecast.workforceNeeded || 0} teams</li>
+            <li><strong>Peak Hours:</strong> ${forecast.peakHours || '2:00 PM'}</li>
+        </ul>
+        <p><strong>💡 Recommendation:</strong> Plan material procurement based on forecasted usage to avoid shortages during peak periods.</p>
+    `;
+}
+
+function generateOptimizationTips(data) {
+    const tickets = data.tickets;
+    const teams = data.teams;
+    const zones = data.zones;
+    
+    const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'pending').length;
+    const activeTeams = teams.filter(t => t.status === 'available' || t.status === 'busy').length;
+    
+    let tips = '<p><strong>💡 Optimization Recommendations:</strong></p><ul>';
+    
+    // Ticket optimization
+    if (openTickets > activeTeams * 2) {
+        tips += '<li><strong>Ticket Load:</strong> Consider requesting additional teams or prioritizing high-impact tickets</li>';
+    }
+    
+    // Team optimization
+    const inactiveTeams = teams.length - activeTeams;
+    if (inactiveTeams > 0) {
+        tips += `<li><strong>Team Utilization:</strong> ${inactiveTeams} teams are inactive - consider reassignment</li>`;
+    }
+    
+    // Zone optimization
+    const zoneEntries = Object.entries(zones);
+    if (zoneEntries.length > 0) {
+        const lowPerformingZones = zoneEntries.filter(([name, data]) => (data.productivityScore || 0) < 50);
+        if (lowPerformingZones.length > 0) {
+            tips += `<li><strong>Zone Performance:</strong> Focus on improving ${lowPerformingZones.map(([name]) => name).join(', ')} zones</li>`;
+        }
+    }
+    
+    // General tips
+    tips += '<li><strong>Process:</strong> Implement automated ticket routing to reduce assignment time</li>';
+    tips += '<li><strong>Training:</strong> Cross-train teams to handle multiple ticket types</li>';
+    tips += '<li><strong>Monitoring:</strong> Set up real-time alerts for critical ticket escalations</li>';
+    
+    tips += '</ul>';
+    return tips;
+}
+
+function generateSystemOverview(data) {
+    const tickets = data.tickets;
+    const teams = data.teams;
+    const zones = data.zones;
+    
+    const totalTickets = tickets.length;
+    const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'pending').length;
+    const totalTeams = teams.length;
+    const activeTeams = teams.filter(t => t.status === 'available' || t.status === 'busy').length;
+    const totalZones = Object.keys(zones).length;
+    
+    return `
+        <p><strong>🏢 System Overview:</strong></p>
+        <ul>
+            <li><strong>Total Tickets:</strong> ${totalTickets} (${openTickets} open)</li>
+            <li><strong>Total Teams:</strong> ${totalTeams} (${activeTeams} active)</li>
+            <li><strong>Coverage Zones:</strong> ${totalZones}</li>
+            <li><strong>System Status:</strong> ${openTickets < totalTeams * 2 ? '🟢 Optimal' : '🟡 Needs Attention'}</li>
+        </ul>
+        <p><strong>📊 Key Metrics:</strong></p>
+        <ul>
+            <li><strong>Ticket Resolution Rate:</strong> ${totalTickets > 0 ? (((totalTickets - openTickets) / totalTickets) * 100).toFixed(1) : 0}%</li>
+            <li><strong>Team Utilization:</strong> ${((activeTeams / totalTeams) * 100).toFixed(1)}%</li>
+        </ul>
+        <p>Ask me about specific areas for detailed analysis!</p>
+    `;
+}
+
+function generateDefaultResponse(data) {
+    return `
+        <p>I'm your AI assistant for the AIFF system! I can help you with:</p>
+        <ul>
+            <li>📊 <strong>System Analytics:</strong> Current performance metrics and trends</li>
+            <li>👥 <strong>Team Analysis:</strong> Performance insights and recommendations</li>
+            <li>🎫 <strong>Ticket Trends:</strong> Analysis of ticket patterns and resolution rates</li>
+            <li>📦 <strong>Material Forecast:</strong> Usage predictions and procurement planning</li>
+            <li>💡 <strong>Optimization Tips:</strong> Actionable recommendations for improvement</li>
+        </ul>
+        <p>Try asking me something like:</p>
+        <ul>
+            <li>"Show me current ticket trends"</li>
+            <li>"Analyze team performance"</li>
+            <li>"What are the optimization opportunities?"</li>
+        </ul>
+    `;
+}
+
