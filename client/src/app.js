@@ -2399,13 +2399,13 @@ function displayFieldTeams(teamsToShow) {
     
     teamsToShow.forEach((team, index) => {
         try {
-            console.log(`🔧 Creating team card for index ${index}:`, team.name || team._id);
+            console.log(`🔧 Creating team card for index ${index}:`, team.name || team._id || team.id);
             const teamElement = createTeamCard(team);
             console.log(`🔧 Team element created:`, teamElement ? 'SUCCESS' : 'FAILED', teamElement);
             
             if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
                 container.appendChild(teamElement);
-                console.log(`✅ Team card appended successfully for:`, team.name || team._id);
+                console.log(`✅ Team card appended successfully for:`, team.name || team._id || team.id);
             } else {
                 console.warn(`❌ Failed to create team card for team at index ${index}:`, team);
                 console.warn(`❌ Element type:`, typeof teamElement, 'Node type:', teamElement?.nodeType);
@@ -2431,16 +2431,17 @@ function createTeamCard(team) {
         return createFallbackTeamCard(team);
     }
     
-    // Ensure we have at least a name or _id
-    if (!team.name && !team._id) {
-        console.warn('❌ Invalid team object (no name or _id):', team);
+    // Ensure we have at least a name or id/_id
+    const teamId = team._id || team.id;
+    if (!team.name && !teamId) {
+        console.warn('❌ Invalid team object (no name or id):', team);
         console.warn('❌ Team keys:', Object.keys(team));
         console.warn('❌ Team name value:', team.name);
-        console.warn('❌ Team _id value:', team._id);
+        console.warn('❌ Team id value:', teamId);
         return createFallbackTeamCard(team);
     }
     
-    console.log('✅ Team validation passed for:', team.name || team._id);
+    console.log('✅ Team validation passed for:', team.name || team._id || team.id);
     
     const div = document.createElement('div');
     div.className = 'col-md-6 col-lg-4 mb-4';
@@ -2450,13 +2451,13 @@ function createTeamCard(team) {
                        team.status === 'offline' ? 'danger' : 'secondary';
     
     try {
-        console.log('🔧 Creating team card template for:', team.name || team._id);
+        console.log('🔧 Creating team card template for:', team.name || team._id || team.id);
         console.log('🔧 Team data:', team);
         div.innerHTML = `
         <div class="card team-card h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
-                    <h5 class="card-title mb-0">${team.name || team._id || 'Unknown'}</h5>
+                    <h5 class="card-title mb-0">${team.name || team._id || team.id || 'Unknown'}</h5>
                     <span class="badge bg-${statusClass}">${team.status || 'unknown'}</span>
                 </div>
                 <p class="text-muted mb-2">
@@ -2484,15 +2485,15 @@ function createTeamCard(team) {
                     </div>
                 </div>
             </div>
-            <div class="card-footer">
+                <div class="card-footer">
                 <div class="btn-group w-100" role="group">
-                    <button class="btn btn-sm btn-outline-primary" onclick="viewTeamDetails('${team._id}')">
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewTeamDetails('${teamId}')">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-secondary" onclick="updateTeamLocation('${team._id}')">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="updateTeamLocation('${teamId}')">
                         <i class="fas fa-map-marker-alt"></i>
                     </button>
-                    <button class="btn btn-sm btn-outline-info" onclick="viewTeamPerformance('${team._id}')">
+                    <button class="btn btn-sm btn-outline-info" onclick="viewTeamPerformance('${teamId}')">
                         <i class="fas fa-chart-line"></i>
                     </button>
                 </div>
@@ -2505,7 +2506,7 @@ function createTeamCard(team) {
         return createFallbackTeamCard(team);
     }
     
-    console.log('✅ Team card created successfully for:', team.name || team._id);
+    console.log('✅ Team card created successfully for:', team.name || team._id || team.id);
     console.log('✅ Element type:', div.nodeType, 'Element:', div);
     return div;
 }
@@ -2553,7 +2554,7 @@ function createTeamStatusElement(team) {
     
     div.innerHTML = `
         <div>
-            <strong><a href="#" class="team-member-name" onclick="showTeamProfile('${team._id}'); return false;">${team.name}</a></strong>
+            <strong><a href="#" class="team-member-name" onclick="showTeamProfile('${team._id || team.id}'); return false;">${team.name}</a></strong>
             <br>
             <small class="text-muted">${team.skills.join(', ')}</small>
         </div>
@@ -2761,7 +2762,7 @@ function refreshMap() {
                             <p><strong>Last Update:</strong> ${new Date().toLocaleTimeString('en-MY')}</p>
                         </div>
                         <div class="popup-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showTeamProfile('${team.id}')">
+                            <button class="btn btn-sm btn-primary" onclick="showTeamProfile('${team._id || team.id}')">
                                 <i class="fas fa-user"></i> View Profile
                             </button>
                         </div>
@@ -3225,7 +3226,7 @@ function createZoneDetailsList(zones, teams, tickets) {
         
         // Get tickets for this zone
         const zoneTickets = tickets.filter(ticket => 
-            zoneTeams.some(team => team._id === ticket.assignedTeamId)
+            zoneTeams.some(team => (team._id || team.id) === ticket.assignedTeamId)
         );
         
         // Calculate zone metrics
@@ -3463,55 +3464,6 @@ function createStateElement(state) {
     `;
 }
 
-function createTeamCard(team) {
-    const normalizedStatus = (team.status || '').toLowerCase();
-    const statusClass = normalizedStatus === 'active' || normalizedStatus === 'available' ? 'active'
-        : normalizedStatus === 'busy' || normalizedStatus === 'in_progress' ? 'busy'
-        : 'offline';
-
-    const teamId = team._id || team.id || '';
-    const hourlyRate = typeof team.hourlyRate === 'number' ? team.hourlyRate.toFixed(2) : (parseFloat(team.hourlyRate || 0).toFixed(2));
-    const skills = Array.isArray(team.skills) ? team.skills : [];
-
-    const totalTicketsCompleted = team.productivity?.totalTicketsCompleted ?? team.ticketsCompleted ?? 0;
-    const customerRating = team.productivity?.customerRating ?? team.rating ?? 0;
-    const ticketsThisMonth = team.productivity?.ticketsThisMonth ?? team.ticketsThisMonth ?? 0;
-    const efficiencyScore = team.productivity?.efficiencyScore ?? team.efficiency ?? 0;
-
-    return `
-        <div class="team-card" onclick="showTeamProfile('${teamId}')">
-            <div class="team-card-header">
-                <h5 class="team-name">${team.name || 'Unknown'}</h5>
-                <span class="team-status ${statusClass}">${team.status || 'offline'}</span>
-            </div>
-            
-            <div class="team-details">
-                <p class="mb-1"><i class="fas fa-map-marker-alt me-2"></i>${team.state || team.zone || '-'}</p>
-                <p class="mb-1"><i class="fas fa-dollar-sign me-2"></i>RM${hourlyRate}/hour</p>
-                <p class="mb-2"><i class="fas fa-tools me-2"></i>${skills.join(', ')}</p>
-            </div>
-            
-            <div class="team-performance">
-                <div class="performance-item">
-                    <span class="performance-value">${totalTicketsCompleted}</span>
-                    <div class="performance-label">Tickets</div>
-                </div>
-                <div class="performance-item">
-                    <span class="performance-value">${Number(customerRating).toFixed(1)}</span>
-                    <div class="performance-label">Rating</div>
-                </div>
-                <div class="performance-item">
-                    <span class="performance-value">${ticketsThisMonth}</span>
-                    <div class="performance-label">This Month</div>
-                </div>
-                <div class="performance-item">
-                    <span class="performance-value">${Number(efficiencyScore).toFixed(2)}%</span>
-                    <div class="performance-label">Efficiency</div>
-                </div>
-            </div>
-        </div>
-    `;
-}
 
 function displaySampleZoneData() {
     const sampleZones = {
