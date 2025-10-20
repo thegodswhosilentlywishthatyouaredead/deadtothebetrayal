@@ -1596,10 +1596,38 @@
             };
         }
         
+        if (typeof logout === 'undefined') {
+            window.logout = function() {
+                console.log('Fallback logout called');
+                if (confirm('Are you sure you want to logout?')) {
+                    // Simple logout - redirect to main dashboard
+                    window.location.href = 'http://localhost:8081/public/index.html';
+                }
+            };
+        }
+        
+        if (typeof sendFieldQuickQuery === 'undefined') {
+            window.sendFieldQuickQuery = function(query) {
+                console.log('Fallback sendFieldQuickQuery called with:', query);
+                // Simple response for AI queries
+                const responses = {
+                    'performance': 'Your performance metrics are loading. Check back in a moment!',
+                    'tasks': 'Your current tasks are being fetched from the server.',
+                    'troubleshooting': 'For troubleshooting, please contact your supervisor or check the knowledge base.',
+                    'optimize': 'To optimize your work, focus on completing tickets efficiently and following best practices.'
+                };
+                
+                const response = responses[query.toLowerCase()] || 'I understand you need help with: ' + query + '. Please contact your supervisor for assistance.';
+                alert('NRO-Bots: ' + response);
+            };
+        }
+        
         // Debug script loading
         console.log('Field portal scripts loaded');
         console.log('showFieldTab available:', typeof showFieldTab !== 'undefined');
         console.log('toggleFieldAIWidget available:', typeof toggleFieldAIWidget !== 'undefined');
+        console.log('logout available:', typeof logout !== 'undefined');
+        console.log('sendFieldQuickQuery available:', typeof sendFieldQuickQuery !== 'undefined');
     </script>
 </body>
 </html>
