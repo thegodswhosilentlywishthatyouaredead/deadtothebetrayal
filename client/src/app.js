@@ -165,6 +165,30 @@ window.testTabs = function() {
 // Make showTab function globally available
 window.showTab = showTab;
 
+// Fallback function in case showTab is not yet defined
+window.showTabFallback = function(tabName) {
+    console.log('🔄 Fallback showTab called for:', tabName);
+    // Simple fallback implementation
+    const targetPane = document.getElementById(`${tabName}-tab`);
+    if (targetPane) {
+        // Hide all panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        // Show target pane
+        targetPane.classList.add('active');
+        
+        // Update button states
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        const targetButton = document.querySelector(`[onclick*="${tabName}"]`);
+        if (targetButton) {
+            targetButton.classList.add('active');
+        }
+    }
+};
+
 // Global function to clear all chart instances
 window.clearAllCharts = function() {
     console.log('🗑️ Clearing all chart instances...');
@@ -4845,8 +4869,7 @@ function viewAssignmentDetails(assignmentId) {
     showNotification('Assignment details view - Coming soon!', 'info');
 }
 
-// AI Assist Functions
-let aiChatHistory = [];
+// AI Assist Functions (Legacy - removed duplicate declaration)
 
 function handleAIChatKeyPress(event) {
     if (event.key === 'Enter') {
