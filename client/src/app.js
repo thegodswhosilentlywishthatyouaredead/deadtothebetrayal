@@ -3127,6 +3127,14 @@ async function loadZoneDetails() {
         const teams = teamsData.teams || [];
         const tickets = ticketsData.tickets || [];
         
+        console.log('📊 Loaded data:', { 
+            zones: Object.keys(zones), 
+            teamsCount: teams.length, 
+            ticketsCount: tickets.length 
+        });
+        console.log('📊 Sample ticket:', tickets[0]);
+        console.log('📊 Sample zone:', Object.entries(zones)[0]);
+        
         // Create zone details list
         createZoneDetailsList(zones, teams, tickets);
         
@@ -3148,20 +3156,27 @@ function createZoneDetailsList(zones, teams, tickets) {
     container.innerHTML = '';
     
     Object.entries(zones).forEach(([zoneName, zoneData]) => {
+        console.log(`🔍 Processing zone: ${zoneName}`, zoneData);
+        
         // Get teams in this zone
         const zoneTeams = zoneData.teams || [];
         
-        // Get tickets for this zone
+        // Get tickets for this zone using location.zone
         const zoneTickets = tickets.filter(ticket => 
-            zoneTeams.some(team => (team._id || team.id) === ticket.assignedTeamId)
+            ticket.location?.zone === zoneName
         );
         
-        // Calculate zone metrics
-        const openTickets = zoneTickets.filter(t => t.status === 'open' || t.status === 'pending').length;
-        const closedTickets = zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+        console.log(`📊 Zone ${zoneName}: Found ${zoneTickets.length} tickets`);
+        console.log(`📊 Zone ${zoneName}: Sample tickets:`, zoneTickets.slice(0, 2));
+        
+        // Use zone data metrics or calculate from tickets
+        const openTickets = zoneData.openTickets || zoneTickets.filter(t => t.status === 'open' || t.status === 'pending' || t.status === 'in_progress').length;
+        const closedTickets = zoneData.closedTickets || zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length;
         const totalTickets = zoneTickets.length;
         const productivity = zoneData.productivityScore || 0;
         const efficiency = totalTickets > 0 ? ((closedTickets - openTickets) / totalTickets * 100).toFixed(2) : 0;
+        
+        console.log(`📊 Zone ${zoneName} metrics:`, { openTickets, closedTickets, totalTickets, productivity, efficiency });
         
         // Create zone detail item
         const zoneItem = document.createElement('div');
