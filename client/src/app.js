@@ -253,6 +253,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ Main dashboard cards set to visible');
     }
     
+    // Hide NRO-Bots tab by default (overview is active)
+    const nroBotsTab = document.querySelector('.nro-bots-tab');
+    if (nroBotsTab) {
+        nroBotsTab.style.display = 'none';
+        console.log('✅ NRO-Bots tab hidden by default');
+    }
+    
     // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
     loadTeamStatusOverview();
@@ -414,6 +421,16 @@ function showTab(tabName) {
             mainDashboardCards.style.display = 'grid';
         } else {
             mainDashboardCards.style.display = 'none';
+        }
+    }
+    
+    // Show/hide NRO-Bots tab based on current page
+    const nroBotsTab = document.querySelector('.nro-bots-tab');
+    if (nroBotsTab) {
+        if (tabName === 'overview') {
+            nroBotsTab.style.display = 'none';
+        } else {
+            nroBotsTab.style.display = 'inline-flex';
         }
     }
 
@@ -6579,7 +6596,7 @@ function generateSystemOverview(data) {
 
 function generateDefaultResponse(data) {
     return `
-        <p>I'm your AI assistant for the AIFF system! I can help you with:</p>
+        <p>I'm NRO-Bots, your AI assistant for the AIFF system! I can help you with:</p>
         <ul>
             <li>📊 <strong>System Analytics:</strong> Current performance metrics and trends</li>
             <li>👥 <strong>Team Analysis:</strong> Performance insights and recommendations</li>
