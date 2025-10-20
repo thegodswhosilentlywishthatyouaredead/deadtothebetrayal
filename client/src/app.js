@@ -1411,7 +1411,7 @@ function populateTopPerformersFromZones(zonesData) {
     
     topPerformers.forEach((team, index) => {
         const performerItem = document.createElement('div');
-        performerItem.className = 'top-performer-item';
+        performerItem.className = 'performer-item';
         
         const teamName = team.name || 'Unknown';
         const teamState = team.state || 'Unknown';
@@ -1419,20 +1419,19 @@ function populateTopPerformersFromZones(zonesData) {
         const ticketsCompleted = team.productivity?.totalTicketsCompleted || team.ticketsCompleted || 0;
         const ratingValue = team.productivity?.customerRating || team.rating || 4.5;
         const rating = parseFloat(ratingValue).toFixed(2);
-        const ratingClass = rating >= 4.5 ? 'positive' : rating >= 4.0 ? 'neutral' : 'negative';
+        const status = team.status || 'available';
+        const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
         
         performerItem.innerHTML = `
+            <div class="performer-rank">${index + 1}</div>
             <div class="performer-info">
                 <div class="performer-name">${teamName}</div>
-                <div class="performer-details">
-                    <span>${teamState}</span>
-                    <span>${teamZone} Zone</span>
-                    <span>${ticketsCompleted} tickets</span>
-                </div>
+                <div class="performer-zone">${teamState}</div>
             </div>
             <div class="performer-metrics">
-                <div class="performer-rating ${ratingClass}">${rating}</div>
-                <div class="performer-stats">Rank #${index + 1}</div>
+                <div class="performer-tickets">${ticketsCompleted}</div>
+                <div class="performer-rating">${rating}</div>
+                <div class="performer-status ${statusClass}">${status}</div>
             </div>
         `;
         
