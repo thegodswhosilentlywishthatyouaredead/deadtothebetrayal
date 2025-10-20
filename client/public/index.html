@@ -1150,6 +1150,178 @@
             max-height: 250px;
         }
 
+        /* Zone Details Styles */
+        .zone-details-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--sidebar-border);
+            overflow: hidden;
+        }
+
+        .zone-detail-item {
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .zone-detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .zone-detail-item:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .zone-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .zone-detail-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .zone-detail-badge {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .zone-detail-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .zone-metric {
+            text-align: center;
+            padding: 0.75rem;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .zone-metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .zone-metric-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .zone-detail-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .zone-tickets-section, .zone-teams-section {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid var(--sidebar-border);
+        }
+
+        .zone-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0 0 0.75rem 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .zone-section-title i {
+            margin-right: 0.5rem;
+            color: var(--primary-color);
+        }
+
+        .zone-ticket-item, .zone-team-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .zone-ticket-item:last-child, .zone-team-item:last-child {
+            border-bottom: none;
+        }
+
+        .zone-item-info {
+            flex: 1;
+        }
+
+        .zone-item-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .zone-item-details {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .zone-item-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .status-open {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .status-closed {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .status-in-progress {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .status-available {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+
+        @media (max-width: 768px) {
+            .zone-detail-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .zone-detail-metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
         .zone-header {
             display: flex;
             justify-content: between;
@@ -4397,129 +4569,19 @@
                                     </button>
                                 </div>
 
-                                <!-- Zone View - Enhanced Layout -->
+                                <!-- Zone Details - Simple List Format -->
                                 <div id="zone-view">
-                                    <div class="performance-analytics-header">
-                                        <h5 class="performance-analytics-title">
-                                            <i class="fas fa-map-marked-alt me-2"></i>Zone Performance Analysis
-                                        </h5>
-                                        <p class="performance-analytics-subtitle">Comprehensive zone-based team performance and analytics</p>
+                                    <div class="domain-header">
+                                        <h4 class="domain-title">
+                                            <i class="fas fa-map-marked-alt me-2"></i>Zone Details
+                                        </h4>
+                                        <p class="domain-subtitle">Zone performance overview with ticket and team details</p>
                                     </div>
                                     
-                                    <!-- Zone KPI Cards - Field Teams Style Layout -->
-                                    <div class="domain-metrics">
-                                        <div class="metric-card">
-                                            <div class="metric-icon blue">
-                                                <i class="fas fa-map-marked-alt"></i>
-                                            </div>
-                                            <div class="metric-content">
-                                                <h3 class="metric-value" id="zone-total-zones">0</h3>
-                                                <p class="metric-label">Total Zones</p>
-                                                <div class="metric-trend">
-                                                    <span class="trend-indicator positive" id="zone-active-zones">0 Active</span>
-                                                    <span class="trend-text">currently operational</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="metric-card">
-                                            <div class="metric-icon green">
-                                                <i class="fas fa-users"></i>
-                                            </div>
-                                            <div class="metric-content">
-                                                <h3 class="metric-value" id="zone-total-teams">0</h3>
-                                                <p class="metric-label">Total Teams</p>
-                                                <div class="metric-trend">
-                                                    <span class="trend-indicator positive" id="zone-active-teams">0 Active</span>
-                                                    <span class="trend-text">field teams</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="metric-card">
-                                            <div class="metric-icon orange">
-                                                <i class="fas fa-chart-line"></i>
-                                            </div>
-                                            <div class="metric-content">
-                                                <h3 class="metric-value" id="zone-avg-productivity">0%</h3>
-                                                <p class="metric-label">Avg Productivity</p>
-                                                <div class="metric-trend">
-                                                    <span class="trend-indicator positive" id="zone-productivity-trend">+0%</span>
-                                                    <span class="trend-text">vs last week</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="metric-card">
-                                            <div class="metric-icon red">
-                                                <i class="fas fa-ticket-alt"></i>
-                                            </div>
-                                            <div class="metric-content">
-                                                <h3 class="metric-value" id="zone-total-tickets">0</h3>
-                                                <p class="metric-label">Total Tickets</p>
-                                                <div class="metric-trend">
-                                                    <span class="trend-indicator positive" id="zone-resolved-tickets">0 Resolved</span>
-                                                    <span class="trend-text">this month</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Zone Analysis Cards -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-lg-6">
-                                            <div class="zone-performance-card">
-                                                <div class="zone-performance-header">
-                                                    <h5 class="zone-performance-title">
-                                                        <i class="fas fa-chart-bar me-2"></i>Zone Performance Ranking
-                                                        <span class="ms-auto badge bg-white text-primary">Live</span>
-                                                    </h5>
-                                                </div>
-                                                <div class="zone-performance-content">
-                                                    <div class="zone-performance-list" id="teams-zone-list">
-                                                        <!-- Zone performance will be loaded here -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="top-performers-card">
-                                                <div class="top-performers-header">
-                                                    <h5 class="top-performers-title">
-                                                        <i class="fas fa-trophy me-2"></i>Top Performing Teams
-                                                        <span class="ms-auto badge bg-white text-primary">Ranked</span>
-                                                    </h5>
-                                                </div>
-                                                <div class="top-performers-content">
-                                                    <div class="top-performers-list" id="teams-top-performers">
-                                                        <!-- Top performers will be loaded here -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Zone Analysis Charts -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-lg-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Coverage Analysis</h5>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="zoneCoverageChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-pie me-2"></i>Team Distribution by Zone</h5>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="teamDistributionChart"></canvas>
-                                                </div>
-                                            </div>
+                                    <!-- Zone Details List -->
+                                    <div class="zone-details-container">
+                                        <div id="zone-details-list">
+                                            <!-- Zone details will be loaded here -->
                                         </div>
                                     </div>
                                 </div>

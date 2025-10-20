@@ -3149,8 +3149,7 @@ function showZoneView() {
         console.error('teams-performance-analytics element not found');
     }
     
-    loadZoneAnalytics();
-    loadZoneKPIs();
+    loadZoneDetails();
     // Also load field teams data to populate metrics
     loadFieldTeams();
 }
@@ -3161,12 +3160,12 @@ function showTeamsPerformanceAnalytics() {
     loadTeamsPerformanceAnalytics();
 }
 
-// Load Zone KPI Cards
-async function loadZoneKPIs() {
+// Load Zone Details
+async function loadZoneDetails() {
     try {
-        console.log('📊 Loading zone KPIs...');
+        console.log('📊 Loading zone details...');
         
-        // Fetch zones and teams data
+        // Fetch zones, teams, and tickets data
         const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
             fetch(`${API_BASE}/teams/analytics/zones`),
             fetch(`${API_BASE}/teams`),
@@ -3185,186 +3184,110 @@ async function loadZoneKPIs() {
         const teams = teamsData.teams || [];
         const tickets = ticketsData.tickets || [];
         
-        // Calculate zone KPIs
-        const totalZones = Object.keys(zones).length;
-        const activeZones = Object.values(zones).filter(zone => zone.teams && zone.teams.length > 0).length;
-        const totalTeams = teams.length;
-        const activeTeams = teams.filter(t => t.status === 'active' || t.status === 'available').length;
+        // Create zone details list
+        createZoneDetailsList(zones, teams, tickets);
         
-        // Calculate average productivity
-        let totalProductivity = 0;
-        let zoneCount = 0;
-        Object.values(zones).forEach(zone => {
-            if (zone.productivityScore) {
-                totalProductivity += zone.productivityScore;
-                zoneCount++;
-            }
-        });
-        const avgProductivity = zoneCount > 0 ? (totalProductivity / zoneCount).toFixed(2) : 0;
-        
-        // Calculate ticket statistics
-        const totalTickets = tickets.length;
-        const resolvedTickets = tickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
-        
-        // Update UI
-        updateElement('zone-total-zones', totalZones);
-        updateElement('zone-active-zones', `${activeZones} Active`);
-        updateElement('zone-total-teams', totalTeams);
-        updateElement('zone-active-teams', `${activeTeams} Active`);
-        updateElement('zone-avg-productivity', `${avgProductivity}%`);
-        updateElement('zone-productivity-trend', `+${Math.floor(Math.random() * 6) + 1}%`);
-        updateElement('zone-total-tickets', totalTickets);
-        updateElement('zone-resolved-tickets', `${resolvedTickets} Resolved`);
-        
-        // Create zone analysis charts
-        createZoneCoverageChart(zones);
-        createTeamDistributionChart(zones);
-        
-        console.log('✅ Zone KPIs loaded successfully');
+        console.log('✅ Zone details loaded successfully');
         
     } catch (error) {
-        console.error('❌ Error loading zone KPIs:', error);
+        console.error('❌ Error loading zone details:', error);
     }
 }
 
-// Create Zone Coverage Chart
-function createZoneCoverageChart(zones) {
-    const ctx = document.getElementById('zoneCoverageChart');
-    if (!ctx) {
-        console.warn('⚠️ Zone coverage chart canvas not found');
+// Create Zone Details List
+function createZoneDetailsList(zones, teams, tickets) {
+    const container = document.getElementById('zone-details-list');
+    if (!container) {
+        console.error('Zone details list container not found');
         return;
     }
     
-    // Destroy existing chart instance if it exists
-    if (chartInstances.zoneCoverageChart) {
-        chartInstances.zoneCoverageChart.destroy();
-    }
+    container.innerHTML = '';
     
-    const zoneNames = Object.keys(zones);
-    const zoneData = zoneNames.map(zoneName => {
-        const zone = zones[zoneName];
-        return {
-            name: zoneName,
-            teams: zone.teams ? zone.teams.length : 0,
-            productivity: zone.productivityScore || 0,
-            tickets: zone.totalTickets || 0
-        };
-    });
-    
-    chartInstances.zoneCoverageChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: zoneNames,
-            datasets: [{
-                label: 'Teams',
-                data: zoneData.map(d => d.teams),
-                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                borderColor: 'rgba(59, 130, 246, 1)',
-                borderWidth: 1
-            }, {
-                label: 'Productivity %',
-                data: zoneData.map(d => d.productivity),
-                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                borderColor: 'rgba(16, 185, 129, 1)',
-                borderWidth: 1,
-                yAxisID: 'y1'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Zone Coverage Analysis'
-                },
-                legend: {
-                    display: true,
-                    position: 'top'
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Number of Teams'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'Productivity %'
-                    },
-                    grid: {
-                        drawOnChartArea: false,
-                    },
-                }
-            }
-        }
+    Object.entries(zones).forEach(([zoneName, zoneData]) => {
+        // Get teams in this zone
+        const zoneTeams = zoneData.teams || [];
+        
+        // Get tickets for this zone
+        const zoneTickets = tickets.filter(ticket => 
+            zoneTeams.some(team => team._id === ticket.assignedTeamId)
+        );
+        
+        // Calculate zone metrics
+        const openTickets = zoneTickets.filter(t => t.status === 'open' || t.status === 'pending').length;
+        const closedTickets = zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed').length;
+        const totalTickets = zoneTickets.length;
+        const productivity = zoneData.productivityScore || 0;
+        const efficiency = totalTickets > 0 ? ((closedTickets - openTickets) / totalTickets * 100).toFixed(2) : 0;
+        
+        // Create zone detail item
+        const zoneItem = document.createElement('div');
+        zoneItem.className = 'zone-detail-item';
+        
+        zoneItem.innerHTML = `
+            <div class="zone-detail-header">
+                <h5 class="zone-detail-title">${zoneName}</h5>
+                <span class="zone-detail-badge">${zoneTeams.length} Teams</span>
+            </div>
+            
+            <div class="zone-detail-metrics">
+                <div class="zone-metric">
+                    <p class="zone-metric-value">${openTickets}</p>
+                    <p class="zone-metric-label">Open Tickets</p>
+                </div>
+                <div class="zone-metric">
+                    <p class="zone-metric-value">${closedTickets}</p>
+                    <p class="zone-metric-label">Closed Tickets</p>
+                </div>
+                <div class="zone-metric">
+                    <p class="zone-metric-value">${productivity}%</p>
+                    <p class="zone-metric-label">Productivity</p>
+                </div>
+                <div class="zone-metric">
+                    <p class="zone-metric-value">${efficiency}%</p>
+                    <p class="zone-metric-label">Efficiency</p>
+                </div>
+            </div>
+            
+            <div class="zone-detail-content">
+                <div class="zone-tickets-section">
+                    <h6 class="zone-section-title">
+                        <i class="fas fa-ticket-alt"></i>Recent Tickets
+                    </h6>
+                    ${zoneTickets.slice(0, 5).map(ticket => `
+                        <div class="zone-ticket-item">
+                            <div class="zone-item-info">
+                                <p class="zone-item-name">${ticket.ticketNumber || ticket._id}</p>
+                                <p class="zone-item-details">${ticket.description || 'No description'}</p>
+                            </div>
+                            <span class="zone-item-status status-${ticket.status}">${ticket.status}</span>
+                        </div>
+                    `).join('')}
+                    ${zoneTickets.length === 0 ? '<p class="text-muted text-center">No tickets in this zone</p>' : ''}
+                </div>
+                
+                <div class="zone-teams-section">
+                    <h6 class="zone-section-title">
+                        <i class="fas fa-users"></i>Teams in Zone
+                    </h6>
+                    ${zoneTeams.map(team => `
+                        <div class="zone-team-item">
+                            <div class="zone-item-info">
+                                <p class="zone-item-name">${team.name}</p>
+                                <p class="zone-item-details">${team.skills ? team.skills.join(', ') : 'No skills listed'}</p>
+                            </div>
+                            <span class="zone-item-status status-${team.status}">${team.status}</span>
+                        </div>
+                    `).join('')}
+                    ${zoneTeams.length === 0 ? '<p class="text-muted text-center">No teams in this zone</p>' : ''}
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(zoneItem);
     });
 }
 
-// Create Team Distribution Chart
-function createTeamDistributionChart(zones) {
-    const ctx = document.getElementById('teamDistributionChart');
-    if (!ctx) {
-        console.warn('⚠️ Team distribution chart canvas not found');
-        return;
-    }
-    
-    // Destroy existing chart instance if it exists
-    if (chartInstances.teamDistributionChart) {
-        chartInstances.teamDistributionChart.destroy();
-    }
-    
-    const zoneNames = Object.keys(zones);
-    const teamCounts = zoneNames.map(zoneName => {
-        const zone = zones[zoneName];
-        return zone.teams ? zone.teams.length : 0;
-    });
-    
-    const colors = [
-        'rgba(59, 130, 246, 0.8)',
-        'rgba(16, 185, 129, 0.8)',
-        'rgba(245, 158, 11, 0.8)',
-        'rgba(239, 68, 68, 0.8)',
-        'rgba(139, 92, 246, 0.8)',
-        'rgba(236, 72, 153, 0.8)'
-    ];
-    
-    chartInstances.teamDistributionChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: zoneNames,
-            datasets: [{
-                data: teamCounts,
-                backgroundColor: colors.slice(0, zoneNames.length),
-                borderColor: colors.slice(0, zoneNames.length).map(color => color.replace('0.8', '1')),
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Team Distribution by Zone'
-                },
-                legend: {
-                    display: true,
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-}
 
 async function loadZoneAnalytics() {
     console.log('Loading zone analytics...');
