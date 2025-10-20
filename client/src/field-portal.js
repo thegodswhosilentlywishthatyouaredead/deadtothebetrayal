@@ -1,4 +1,6 @@
 // Field Team Portal JavaScript
+console.log('🤖 Field Portal JavaScript loading...');
+
 // Global variables
 let currentUser = null;
 let myTickets = [];
@@ -1882,3 +1884,5 @@ Generated: ${new Date().toLocaleString()}
     
     showNotification(`Report downloaded: ${ticketNumber}`, 'success');
 }
+
+console.log('✅ Field Portal JavaScript loaded successfully');
