@@ -1362,11 +1362,16 @@ function populateTeamsZoneList(zonesData) {
 
 function populateTopPerformersFromZones(zonesData) {
     const container = document.getElementById('teams-top-performers');
-    if (!container) return;
+    if (!container) {
+        console.error('Top performers container not found');
+        return;
+    }
     
+    console.log('Populating top performers with zones data:', zonesData);
     container.innerHTML = '';
     
     if (!zonesData.zones || Object.keys(zonesData.zones).length === 0) {
+        console.log('No zones data available');
         container.innerHTML = '<p class="text-muted">No team data available</p>';
         return;
     }
@@ -1388,7 +1393,10 @@ function populateTopPerformersFromZones(zonesData) {
         }
     });
     
+    console.log('Extracted teams:', allTeams);
+    
     if (allTeams.length === 0) {
+        console.log('No teams found in zones');
         container.innerHTML = '<p class="text-muted">No teams found in zones</p>';
         return;
     }
@@ -1408,6 +1416,7 @@ function populateTopPerformersFromZones(zonesData) {
     
     // Take top 5 performers
     const topPerformers = sortedTeams.slice(0, 5);
+    console.log('Top performers:', topPerformers);
     
     topPerformers.forEach((team, index) => {
         const performerItem = document.createElement('div');
