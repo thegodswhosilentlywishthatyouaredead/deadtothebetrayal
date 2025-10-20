@@ -1487,7 +1487,7 @@
         }
 
         .zone-performance-content, .top-performers-content {
-            padding: 1.5rem;
+            padding: 1rem;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -2693,7 +2693,7 @@
         .zone-performance-list, .top-performers-list {
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.5rem;
             flex: 1;
         }
 
@@ -2701,9 +2701,9 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1.25rem 1.5rem;
+            padding: 0.75rem 1rem;
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid rgba(102, 126, 234, 0.1);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
@@ -2817,10 +2817,10 @@
             }
             
             .zone-item, .performer-item {
-                padding: 1rem;
+                padding: 0.75rem;
                 flex-direction: column;
                 align-items: flex-start;
-                gap: 0.75rem;
+                gap: 0.5rem;
             }
             
             .zone-metrics, .performer-metrics {
@@ -2831,6 +2831,41 @@
             .zone-performance-title, .top-performers-title {
                 font-size: 1rem;
             }
+
+            .kpi-card {
+                min-height: 100px;
+                padding: 1rem 0.75rem;
+            }
+
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+
+            .kpi-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .kpi-card {
+                min-height: 90px;
+                padding: 0.75rem 0.5rem;
+            }
+
+            .kpi-value {
+                font-size: 1.25rem;
+            }
+
+            .kpi-label {
+                font-size: 0.8rem;
+            }
+
+            .kpi-sublabel {
+                font-size: 0.7rem;
+            }
         }
 
         /* Enhanced Visual Hierarchy */
@@ -2839,7 +2874,7 @@
         }
 
         .performance-summary .row {
-            min-height: 400px;
+            min-height: 300px;
         }
 
         /* Loading States */
@@ -2852,6 +2887,85 @@
             height: 200px;
             color: #6b7280;
             font-style: italic;
+        }
+
+        /* Enhanced KPI Cards Layout */
+        .kpi-card {
+            height: 100%;
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 1.5rem 1rem;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .kpi-card:hover::before {
+            width: 6px;
+        }
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .kpi-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .kpi-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .kpi-sublabel {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            font-weight: 400;
         }
 
         .zone-name {
@@ -4265,10 +4379,10 @@
                                         <p class="performance-analytics-subtitle">Comprehensive analysis by states and zones</p>
                                     </div>
                                     
-                                    <!-- Performance KPI Cards -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-3">
-                                            <div class="kpi-card">
+                                    <!-- Performance KPI Cards - Enhanced Layout -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-lg-3 col-md-6 col-sm-6">
+                                            <div class="kpi-card h-100">
                                                 <div class="kpi-icon">
                                                     <i class="fas fa-users"></i>
                                                 </div>
@@ -4279,8 +4393,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="kpi-card">
+                                        <div class="col-lg-3 col-md-6 col-sm-6">
+                                            <div class="kpi-card h-100">
                                                 <div class="kpi-icon">
                                                     <i class="fas fa-chart-line"></i>
                                                 </div>
@@ -4291,8 +4405,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="kpi-card">
+                                        <div class="col-lg-3 col-md-6 col-sm-6">
+                                            <div class="kpi-card h-100">
                                                 <div class="kpi-icon">
                                                     <i class="fas fa-star"></i>
                                                 </div>
@@ -4303,8 +4417,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-3">
-                                            <div class="kpi-card">
+                                        <div class="col-lg-3 col-md-6 col-sm-6">
+                                            <div class="kpi-card h-100">
                                                 <div class="kpi-icon">
                                                     <i class="fas fa-clock"></i>
                                                 </div>
