@@ -7,6 +7,8 @@ let assignments = [];
 let chartInstances = {};
 
 // Test global variable to verify JavaScript is loading
+// Track which tab is active to avoid background refresh races
+let currentActiveTab = 'overview';
 window.JS_LOADED = true;
 console.log('✅ JavaScript file loaded successfully');
 
@@ -220,6 +222,28 @@ let currentProfileTeam = null;
 if (!window.chartInstances) {
     window.chartInstances = {};
 }
+// Utility: safely destroy a chart instance by key
+function destroyChartIfExists(key) {
+    try {
+        const ch = window.chartInstances[key];
+        if (ch && typeof ch.destroy === 'function') {
+            ch.destroy();
+            window.chartInstances[key] = undefined;
+        }
+    } catch (_) {}
+}
+
+// Extra safety: destroy chart attached to a specific canvas id using Chart.js registry
+function destroyChartByCanvasId(canvasId) {
+    try {
+        const el = document.getElementById(canvasId);
+        if (!el) return;
+        const existing = window.Chart && window.Chart.getChart ? window.Chart.getChart(el) : null;
+        if (existing && typeof existing.destroy === 'function') {
+            existing.destroy();
+        }
+    } catch (_) {}
+}
 // Local alias used by chart functions
 const chartRegistry = window.chartInstances;
 
@@ -270,14 +294,27 @@ document.addEventListener('DOMContentLoaded', function() {
     loadMaterialForecast(); // Pre-load Predictive Planning data
     loadTeamsPerformanceAnalytics(); // Pre-load Performance Analytics data
     
-    // Set up auto-refresh every 30 seconds for ALL tabs
-    setInterval(loadDashboardData, 30000);
-    setInterval(loadFieldTeams, 30000); // Auto-refresh Field Teams data
-    setInterval(loadTickets, 30000); // Auto-refresh Tickets data
-    setInterval(loadAssignments, 30000); // Auto-refresh Assignments data
-    setInterval(loadAnalytics, 30000); // Auto-refresh Analytics data
-    setInterval(loadMaterialForecast, 30000); // Auto-refresh Predictive Planning data
-    setInterval(loadTeamsPerformanceAnalytics, 30000); // Auto-refresh Performance Analytics data
+    // Debounced auto-refreshes (avoid overlapping fetches)
+    const SAFE_INTERVAL = 45000;
+    const makeSafeTimer = (fn) => {
+        let inFlight = false;
+        return async () => {
+            if (inFlight) return;
+            inFlight = true;
+            try { await fn(); } finally { inFlight = false; }
+        };
+    };
+    setInterval(makeSafeTimer(loadDashboardData), SAFE_INTERVAL);
+    setInterval(makeSafeTimer(loadFieldTeams), SAFE_INTERVAL);
+    setInterval(makeSafeTimer(loadTickets), SAFE_INTERVAL);
+    setInterval(makeSafeTimer(loadAssignments), SAFE_INTERVAL);
+    setInterval(makeSafeTimer(loadAnalytics), SAFE_INTERVAL);
+    setInterval(makeSafeTimer(loadMaterialForecast), SAFE_INTERVAL);
+    setInterval(async () => {
+        if (currentActiveTab !== 'tickets') return; // only refresh analysis while visible
+        await makeSafeTimer(loadTeamsPerformanceAnalytics)();
+        await makeSafeTimer(loadPerformanceAnalysis)();
+    }, SAFE_INTERVAL);
     
     console.log('✅ Dashboard initialization complete!');
 });
@@ -408,6 +445,13 @@ function showTab(tabName) {
             targetPane.classList.add('active');
             console.log('✅ Tab pane activated:', targetPane.id);
             console.log('✅ Tab pane classes:', targetPane.className);
+            currentActiveTab = tabName; // update active tab
+            // When switching to tickets/performance, force charts to resize after layout settles
+            if (tabName === 'tickets') {
+                requestAnimationFrame(() => {
+                    setTimeout(ensureChartsRendered, 150);
+                });
+            }
         } else {
             console.error('❌ Tab pane not found:', `${tabName}-tab`);
             console.error('❌ Available tab panes:', Array.from(document.querySelectorAll('.tab-pane')).map(p => p.id));
@@ -456,6 +500,26 @@ function showTab(tabName) {
             }
             refreshMap();
             break;
+    }
+}
+
+// Safely (re)size and update any created charts in case canvases were hidden during initial render
+function ensureChartsRendered() {
+    try {
+        const instances = Object.values(chartInstances || {});
+        if (!instances.length) return;
+        instances.forEach((ch) => {
+            if (!ch) return;
+            try {
+                ch.resize();
+                ch.update('none');
+            } catch (e) {
+                // ignore chart-specific errors
+            }
+        });
+        console.log('✅ Charts resized/updated after tab activation');
+    } catch (e) {
+        console.log('ensureChartsRendered error', e);
     }
 }
 
@@ -1673,7 +1737,10 @@ function loadSamplePerformanceAnalytics() {
     // Create charts with sample data
     createZonePerformanceChart(sampleZones);
     createStatePerformanceChart(sampleTeams);
-    createTeamProductivityChart(sampleTeams);
+    // Only create chart if canvas exists
+    if (document.getElementById('teamsProductivityChart')) {
+        createTeamProductivityChart(sampleTeams);
+    }
     createRatingDistributionChart(sampleTeams);
     
     // Populate tables with sample data
@@ -2074,56 +2141,41 @@ function populateTopPerformers(teams) {
     if (!container) return;
     
     container.innerHTML = '';
-    
-    if (teams && teams.length > 0) {
-        // Sort teams by tickets completed (descending) - normalize structures
-        const getCompleted = (t) => {
-            if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
-            if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') {
-                return t.productivity.totalTicketsCompleted;
-            }
-            if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
-            return 0;
-        };
-        const sortedTeams = [...teams].sort((a, b) => getCompleted(b) - getCompleted(a));
-        
-        // Take top 5 performers
-        const topPerformers = sortedTeams.slice(0, 5);
-        
-        topPerformers.forEach((team, index) => {
-            const performerItem = document.createElement('div');
-            performerItem.className = 'top-performer-item';
-            
-            const teamName = team.name || 'Unknown';
-            const teamState = team.state || 'Unknown';
-            const teamZone = team.zone || 'Unknown';
-            const ticketsCompleted = getCompleted(team);
-            const ratingValue = (typeof team.rating === 'number')
-                ? team.rating
-                : (team.productivity && typeof team.productivity.customerRating === 'number')
-                    ? team.productivity.customerRating
-                    : 4.5;
-            const rating = parseFloat(ratingValue).toFixed(2);
-            const ratingClass = rating >= 4.5 ? 'positive' : rating >= 4.0 ? 'neutral' : 'negative';
-            
-            performerItem.innerHTML = `
+    if (!teams || teams.length === 0) return;
+
+    // Normalize and sort by completed tickets
+    const getCompleted = (t) => {
+        if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
+        if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+        if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
+        return 0;
+    };
+
+    const sorted = [...teams].sort((a, b) => getCompleted(b) - getCompleted(a)).slice(0, 5);
+
+    // Use the same compact markup/styles as main dashboard for consistency
+    const html = sorted.map((team, i) => {
+        const name = team.name || 'Unknown';
+        const zone = team.zone || 'N/A';
+        const state = team.state || 'N/A';
+        const tickets = getCompleted(team);
+        const rating = (team.rating || team.productivity?.customerRating || 4.5).toFixed(1);
+        return `
+            <div class="performer-item">
+                <div class="performer-rank">${i + 1}</div>
                 <div class="performer-info">
-                    <div class="performer-name">${teamName}</div>
-                    <div class="performer-details">
-                        <span>${teamState}</span>
-                        <span>${teamZone} Zone</span>
-                        <span>${ticketsCompleted} tickets</span>
-                    </div>
+                    <div class="performer-name">${name}</div>
+                    <div class="performer-zone">${zone} - ${state}</div>
                 </div>
                 <div class="performer-metrics">
-                    <div class="performer-rating ${ratingClass}">${rating}</div>
-                    <div class="performer-stats">Rank #${index + 1}</div>
+                    <div class="performer-tickets">${tickets}</div>
+                    <div class="performer-rating">⭐ ${rating}</div>
                 </div>
-            `;
-            
-            container.appendChild(performerItem);
-        });
-    }
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = html;
 }
 
 // Build missing team performance from tickets
@@ -4862,8 +4914,119 @@ function refreshData() {
 }
 
 // Placeholder functions for future implementation
-function viewTicketDetails(ticketId) {
-    showNotification('Ticket details view - Coming soon!', 'info');
+// ==================== Ticket Details Drawer ====================
+let ticketDetailsDrawerEl;
+function ensureTicketDetailsDrawer() {
+    if (ticketDetailsDrawerEl) return ticketDetailsDrawerEl;
+    const el = document.createElement('div');
+    el.id = 'ticket-details-drawer';
+    el.style.position = 'fixed';
+    el.style.top = '0';
+    el.style.right = '0';
+    el.style.width = '420px';
+    el.style.height = '100%';
+    el.style.background = '#fff';
+    el.style.boxShadow = '0 0 24px rgba(0,0,0,0.12)';
+    el.style.transform = 'translateX(100%)';
+    el.style.transition = 'transform 220ms ease';
+    el.style.zIndex = '1050';
+    el.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e7eb">
+            <div style="font-weight:600">Ticket Details</div>
+            <button id="ticket-details-close" class="btn btn-sm btn-outline-secondary"><i class="fas fa-times"></i></button>
+        </div>
+        <div id="ticket-details-body" style="padding:12px 16px;overflow:auto;height:calc(100% - 52px)"></div>
+    `;
+    document.body.appendChild(el);
+    document.getElementById('ticket-details-close').onclick = closeTicketDetails;
+    ticketDetailsDrawerEl = el;
+    return el;
+}
+
+function openTicketDetails() {
+    ensureTicketDetailsDrawer();
+    ticketDetailsDrawerEl.style.transform = 'translateX(0)';
+}
+
+function closeTicketDetails() {
+    if (!ticketDetailsDrawerEl) return;
+    ticketDetailsDrawerEl.style.transform = 'translateX(100%)';
+}
+
+window.viewTicketDetails = async function(ticketId) {
+    try {
+        ensureTicketDetailsDrawer();
+        const body = document.getElementById('ticket-details-body');
+        body.innerHTML = '<div class="text-muted">Loading...</div>';
+        openTicketDetails();
+        
+        // Fetch latest ticket and teams to enrich
+        const [tRes, teamRes] = await Promise.all([
+            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/teams`)
+        ]);
+        const tData = await tRes.json();
+        const ticketsArr = tData.tickets || [];
+        const teamsArr = (await teamRes.json()).teams || [];
+        const ticket = ticketsArr.find(t => (t._id || t.id) === ticketId) || {};
+        const team = teamsArr.find(tm => (tm._id || tm.id) === (ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
+        
+        const coord = ticket.location?.coordinates || [ticket.location?.lng, ticket.location?.lat].filter(Boolean);
+        const lat = ticket.location?.lat || (Array.isArray(coord) ? coord[1] : undefined);
+        const lng = ticket.location?.lng || (Array.isArray(coord) ? coord[0] : undefined);
+        const slaHrs = ticket.slaHours || 4;
+        const etaMs = ticket.resolvedAt ? 0 : Math.max(0, new Date(ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
+        const etaStr = ticket.resolvedAt ? 'Resolved' : `${Math.ceil(etaMs/3600000)}h`;
+        
+        // Simple AI recommendation based on status/priority/aging
+        const openedHours = (Date.now() - new Date(ticket.createdAt).getTime())/3600000;
+        const priority = ticket.priority || 'medium';
+        let aiMsg = 'Ticket is within SLA. Continue monitoring and update progress.';
+        if (priority === 'emergency' || priority === 'high') {
+            aiMsg = 'High priority ticket: allocate experienced team and expedite troubleshooting.';
+        }
+        if (!ticket.resolvedAt && openedHours > slaHrs) {
+            aiMsg = 'SLA at risk/overdue: escalate to supervisor, consider adding resources and inform customer.';
+        }
+        
+        body.innerHTML = `
+            <div class="mb-3">
+                <div class="small text-muted">Ticket</div>
+                <div class="fw-semibold">${ticket.ticketNumber || ticket.id || ticket._id || 'N/A'} - ${ticket.title || ticket.category || 'Ticket'}</div>
+                <div class="text-muted">${ticket.description || 'No description provided.'}</div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Status & Priority</div>
+                <div><span class="badge bg-secondary me-2">${(ticket.status || 'unknown').toUpperCase()}</span>
+                <span class="badge bg-info">${(priority || 'medium').toUpperCase()}</span></div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Location</div>
+                <div>${ticket.location?.address || ticket.location?.state || 'Unknown'}, ${ticket.location?.zone || ''}</div>
+                <div class="text-muted">Coordinates: ${lat ? lat.toFixed(5) : 'N/A'}, ${lng ? lng.toFixed(5) : 'N/A'}</div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Assigned Team</div>
+                <div>${team?.name || 'Unassigned'}</div>
+                <div class="text-muted">Rating: ${(team?.rating || 4.5).toFixed(1)} • Status: ${team?.status || 'available'}</div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Root Cause</div>
+                <div>${ticket.rootCause || 'Pending diagnosis'}</div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">SLA / ETA</div>
+                <div>SLA: ${slaHrs}h • ETA: ${etaStr}</div>
+            </div>
+            <div class="mb-3 p-3" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+                <div class="fw-semibold mb-1"><i class="fas fa-robot me-2"></i>AI Recommendation</div>
+                <div>${aiMsg}</div>
+            </div>
+        `;
+    } catch (e) {
+        console.error('Error loading ticket details', e);
+        showNotification('Failed to load ticket details', 'danger');
+    }
 }
 
 function showAssignModal(ticketId) {
@@ -5073,7 +5236,12 @@ function showTicketsPerformanceAnalysis() {
 }
 
 // Main function to load all performance analysis data
+let perfLoadInFlight = false;
+let lastPerfData = { tickets: [], teams: [] };
+
 async function loadPerformanceAnalysis() {
+    if (perfLoadInFlight) return; // prevent overlap
+    perfLoadInFlight = true;
     try {
         const response = await fetch(`${API_BASE}/tickets`);
         const data = await response.json();
@@ -5083,35 +5251,83 @@ async function loadPerformanceAnalysis() {
         const teamsData = await teamsResponse.json();
         const allTeams = teamsData.teams || [];
         
+        // cache for consistency
+        lastPerfData = { tickets: allTickets, teams: allTeams };
+
         console.log('📊 Performance Analysis data:', { tickets: allTickets.length, teams: allTeams.length });
         
         // Update KPIs
         updatePerformanceKPIs(allTickets, allTeams);
         
-        // Create charts
-        createTicketTrendsChart(allTickets);
-        createStatusDistributionChart(allTickets);
-        createProductivityVsEfficiencyChart(allTickets, allTeams);
-        createZonePerformanceChart(allTickets);
-        createPriorityBreakdownChart(allTickets);
-        createCategoryDistributionChart(allTickets);
-        createTeamProductivityChart(allTeams);
-        createCostAnalysisChart(allTickets, allTeams);
-        createPeakHoursChart(allTickets);
-        createDayOfWeekChart(allTickets);
-        createCustomerRatingsChart(allTeams);
-        createProductivityMetricsChart(allTickets, allTeams);
-        createEfficiencyTrendsChart(allTickets);
+        // Create charts only when their canvases exist on the current page
+        if (document.getElementById('ticketTrendsChart')) createTicketTrendsChart(allTickets);
+        if (document.getElementById('statusDistChart')) createStatusDistributionChart(allTickets);
+        if (document.getElementById('productivityVsEfficiencyChart')) createProductivityVsEfficiencyChart(allTickets, allTeams);
+        // Zone performance expects zones aggregation, not raw tickets
+        if (document.getElementById('zonePerformanceChart')) {
+            const zonesAgg = allTickets.reduce((acc, t) => {
+                const zone = t.location?.zone || 'Unknown';
+                const z = acc[zone] || { productivityScore: 0, openTickets: 0, closedTickets: 0, count: 0 };
+                z.count += 1;
+                if (t.status === 'open' || t.status === 'in_progress' || t.status === 'pending') z.openTickets += 1;
+                if (t.status === 'resolved' || t.status === 'closed' || t.status === 'completed') z.closedTickets += 1;
+                acc[zone] = z;
+                return acc;
+            }, {});
+            // simple productivity proxy: closed / total * 100
+            Object.keys(zonesAgg).forEach(k => {
+                const z = zonesAgg[k];
+                const total = z.openTickets + z.closedTickets;
+                z.productivityScore = total > 0 ? Math.round((z.closedTickets / total) * 100) : 0;
+            });
+            createZonePerformanceChart(zonesAgg);
+        }
+        if (document.getElementById('priorityBreakdownChart')) createPriorityBreakdownChart(allTickets);
+        if (document.getElementById('categoryDistChart')) createCategoryDistributionChart(allTickets);
+        if (document.getElementById('teamsProductivityChart')) createTeamProductivityChart(allTeams);
+        if (document.getElementById('costAnalysisChart')) createCostAnalysisChart(allTickets, allTeams);
+        if (document.getElementById('peakHoursChart')) createPeakHoursChart(allTickets);
+        if (document.getElementById('dayOfWeekChart')) createDayOfWeekChart(allTickets);
+        if (document.getElementById('customerRatingsChart')) createCustomerRatingsChart(allTeams);
+        if (document.getElementById('productivityMetricsChart')) createProductivityMetricsChart(allTickets, allTeams);
+        if (document.getElementById('efficiencyTrendsChart')) createEfficiencyTrendsChart(allTickets);
         
         // Populate tables
         populatePerformanceSummaryTable(allTickets, allTeams);
-        populateTopPerformers(allTeams);
+        // Ensure top performers has productivity totals; enrich if missing
+        const teamsWithStats = allTeams.map(t => ({ ...t }));
+        const hasProductivity = teamsWithStats.some(t => t.productivity && typeof t.productivity.totalTicketsCompleted === 'number');
+        if (!hasProductivity) {
+            // derive completed counts from tickets
+            const completedStatuses = new Set(['resolved', 'closed', 'completed']);
+            const teamCompleted = new Map();
+            allTickets.forEach(ticket => {
+                const tid = ticket.assignedTeam || ticket.assignedTo || ticket.teamId || ticket.team_id;
+                if (!tid) return;
+                const prev = teamCompleted.get(tid) || 0;
+                teamCompleted.set(tid, prev + (completedStatuses.has(ticket.status) ? 1 : 0));
+            });
+            teamsWithStats.forEach(t => {
+                const tid = t._id || t.id || t.teamId;
+                const completed = teamCompleted.get(tid) || 0;
+                t.productivity = t.productivity || {};
+                t.productivity.totalTicketsCompleted = completed;
+            });
+        }
+        populateTopPerformers(teamsWithStats);
         populateAIInsights(allTickets, allTeams);
         
         console.log('✅ Performance Analysis loaded successfully');
         
     } catch (error) {
         console.error('❌ Error loading performance analysis:', error);
+        // fallback to last known good data if available
+        if (lastPerfData.tickets.length || lastPerfData.teams.length) {
+            console.log('Using cached performance data due to error');
+            updatePerformanceKPIs(lastPerfData.tickets, lastPerfData.teams);
+        }
+    } finally {
+        perfLoadInFlight = false;
     }
 }
 
@@ -5195,6 +5411,8 @@ function createTicketTrendsChart(tickets) {
         projections.push(recentAvg * (1 + Math.random() * 0.2 - 0.1)); // ±10% variance
     }
     
+    // Destroy before recreate
+    destroyChartIfExists('ticketTrends');
     chartInstances['ticketTrends'] = new Chart(ctx, {
         type: 'line',
         data: {
@@ -5300,6 +5518,7 @@ function createStatusDistributionChart(tickets) {
         closed: tickets.filter(t => t.status === 'closed').length
     };
     
+    destroyChartIfExists('statusDist');
     chartInstances['statusDist'] = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -5376,9 +5595,11 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
             return rDate >= date && rDate < nextDay;
         }).length;
         
-        const productivity = dayTickets.length > 0 
+        let productivity = dayTickets.length > 0 
             ? (dayResolved / dayTickets.length * 100)
             : 0;
+        // Keep within readable bounds
+        productivity = Math.max(0, Math.min(100, productivity));
         
         // Calculate efficiency (resolved within 2h target)
         const dayResolvedFast = tickets.filter(t => {
@@ -5391,9 +5612,10 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
             return hours <= 2;
         }).length;
         
-        const efficiency = dayResolved > 0
+        let efficiency = dayResolved > 0
             ? (dayResolvedFast / dayResolved * 100)
             : 0;
+        efficiency = Math.max(0, Math.min(100, efficiency));
         
         days.push(date.toLocaleDateString('en-MY', { month: 'short', day: 'numeric' }));
         productivityData.push(productivity);
@@ -5414,6 +5636,7 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
         currentEfficiency: currentEfficiency.toFixed(2)
     });
     
+    destroyChartIfExists('productivityVsEfficiency');
     chartInstances['productivityVsEfficiency'] = new Chart(ctx, {
         type: 'line',
         data: {
@@ -5423,23 +5646,25 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                     label: 'Productivity (Completion Rate)',
                     data: productivityData,
                     borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.25,
                     borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    spanGaps: true
                 },
                 {
                     label: 'Efficiency (< 2h Target)',
                     data: efficiencyData,
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
                     fill: true,
-                    tension: 0.4,
+                    tension: 0.25,
                     borderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6
+                    pointRadius: 2,
+                    pointHoverRadius: 5,
+                    spanGaps: true
                 }
             ]
         },
@@ -5455,18 +5680,17 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                     display: true,
                     position: 'top',
                     labels: {
-                        font: {
-                            size: 13,
-                            weight: '500'
-                        },
+                        font: { size: 12, weight: '500' },
                         usePointStyle: true,
-                        padding: 15
+                        padding: 10
                     }
                 },
                 tooltip: {
+                    padding: 10,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y.toFixed(2)}%`;
+                            const y = typeof context.parsed.y === 'number' ? context.parsed.y : 0;
+                            return `${context.dataset.label}: ${y.toFixed(1)}%`;
                         }
                     }
                 }
@@ -5474,38 +5698,31 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
             scales: {
                 y: { 
                     beginAtZero: true,
-                    max: 100,
+                    suggestedMax: 100,
                     ticks: {
-                        callback: function(value) {
-                            return value + '%';
-                        },
-                        font: {
-                            size: 12
-                        }
+                        stepSize: 10,
+                        callback: (value) => `${value}%`,
+                        font: { size: 11 }
                     },
                     title: {
                         display: true,
                         text: 'Percentage (%)',
                         font: {
-                            size: 13,
+                            size: 12,
                             weight: '600'
                         }
                     },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
-                    }
+                    grid: { color: 'rgba(0, 0, 0, 0.06)' }
                 },
                 x: {
                     ticks: {
-                        font: {
-                            size: 11
-                        },
-                        maxRotation: 45,
-                        minRotation: 45
+                        font: { size: 10 },
+                        maxRotation: 30,
+                        minRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 10
                     },
-                    grid: {
-                        display: false
-                    }
+                    grid: { display: false }
                 }
             }
         }
@@ -5535,9 +5752,7 @@ function createTeamsZonePerformanceChart(tickets) {
     });
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.teamsZonePerformanceChart) {
-        chartInstances.teamsZonePerformanceChart.destroy();
-    }
+    destroyChartIfExists('teamsZonePerformanceChart');
     
     chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
         type: 'bar',
@@ -5576,9 +5791,7 @@ function createPriorityBreakdownChart(tickets) {
     };
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.priorityBreakdownChart) {
-        chartInstances.priorityBreakdownChart.destroy();
-    }
+    destroyChartIfExists('priorityBreakdownChart');
     
     chartInstances.priorityBreakdownChart = new Chart(ctx, {
         type: 'pie',
@@ -5613,9 +5826,7 @@ function createCategoryDistributionChart(tickets) {
     });
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.categoryDistChart) {
-        chartInstances.categoryDistChart.destroy();
-    }
+    destroyChartIfExists('categoryDistChart');
     
     chartInstances.categoryDistChart = new Chart(ctx, {
         type: 'doughnut',
@@ -5638,7 +5849,8 @@ function createCategoryDistributionChart(tickets) {
 
 // Create Team Productivity Chart
 function createTeamProductivityChart(teams) {
-    const ctx = document.getElementById('teamsProductivityChart');
+    const canvasId = 'teamsProductivityChart';
+    const ctx = document.getElementById(canvasId);
     if (!ctx) {
         console.warn(`⚠️ Canvas not found for teamsProductivityChart`);
         return;
@@ -5655,9 +5867,8 @@ function createTeamProductivityChart(teams) {
     })));
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.teamsProductivityChart) {
-        chartInstances.teamsProductivityChart.destroy();
-    }
+    destroyChartIfExists('teamsProductivityChart');
+    destroyChartByCanvasId(canvasId);
     
     chartInstances.teamsProductivityChart = new Chart(ctx, {
         type: 'bar',
@@ -5723,9 +5934,7 @@ function createCostAnalysisChart(tickets, teams) {
     updateElement('cost-projected', `RM ${costProjected.toFixed(2)}`);
     
     // Destroy existing chart instance if it exists
-    if (chartInstances.costAnalysisChart) {
-        chartInstances.costAnalysisChart.destroy();
-    }
+    destroyChartIfExists('costAnalysisChart');
     
     chartInstances.costAnalysisChart = new Chart(ctx, {
         type: 'line',

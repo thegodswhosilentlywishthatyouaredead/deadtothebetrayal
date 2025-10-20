@@ -1555,8 +1555,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="src/config.js"></script>
-    <script src="src/field-portal.js"></script>
+    <script src="/src/config.js?v=1"></script>
+    <script>
+        // Force API to single backend port 8080 as a defensive override
+        window.API_BASE = 'http://localhost:8080/api';
+    </script>
+    <script src="/src/field-portal.js?v=1"></script>
     
     <!-- Fallback functions in case scripts don't load -->
     <script>
@@ -1601,7 +1605,7 @@
                 console.log('Fallback logout called');
                 if (confirm('Are you sure you want to logout?')) {
                     // Simple logout - redirect to main dashboard
-                    window.location.href = 'http://localhost:8081/public/index.html';
+                    window.location.href = 'http://localhost:8080/public/index.html';
                 }
             };
         }
@@ -1622,12 +1626,41 @@
             };
         }
         
+        if (typeof filterTickets === 'undefined') {
+            window.filterTickets = function(filter) {
+                console.log('Fallback filterTickets called with:', filter);
+                // Simple filter implementation
+                const ticketList = document.getElementById('ticket-list');
+                if (ticketList) {
+                    const tickets = ticketList.querySelectorAll('.ticket-item');
+                    tickets.forEach(ticket => {
+                        const status = ticket.dataset.status || '';
+                        if (filter === 'all' || status === filter) {
+                            ticket.style.display = 'block';
+                        } else {
+                            ticket.style.display = 'none';
+                        }
+                    });
+                }
+                
+                // Update button states
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                const activeBtn = document.querySelector(`[onclick*="${filter}"]`);
+                if (activeBtn) {
+                    activeBtn.classList.add('active');
+                }
+            };
+        }
+        
         // Debug script loading
         console.log('Field portal scripts loaded');
         console.log('showFieldTab available:', typeof showFieldTab !== 'undefined');
         console.log('toggleFieldAIWidget available:', typeof toggleFieldAIWidget !== 'undefined');
         console.log('logout available:', typeof logout !== 'undefined');
         console.log('sendFieldQuickQuery available:', typeof sendFieldQuickQuery !== 'undefined');
+        console.log('filterTickets available:', typeof filterTickets !== 'undefined');
     </script>
 </body>
 </html>

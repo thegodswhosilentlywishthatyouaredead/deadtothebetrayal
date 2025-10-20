@@ -6165,7 +6165,11 @@
     <script src="https://unpkg.com/leaflet.fullscreen@2.0.0/Control.FullScreen.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.0.0/Control.FullScreen.css" />
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="../src/config.js"></script>
-    <script src="../src/app.js"></script>
+    <script src="/src/config.js?v=1"></script>
+    <script>
+        // Force API to single backend port 8080 as a defensive override
+        window.API_BASE = 'http://localhost:8080/api';
+    </script>
+    <script src="/src/app.js?v=1"></script>
 </body>
 </html>

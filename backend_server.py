@@ -4,7 +4,7 @@ AIFF Backend Server - Clean Version
 Advanced Intelligence Field Force Systems - Python Flask Backend
 """
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import json
 import uuid
@@ -133,6 +133,17 @@ def load_sample_data():
                 "longitude": 101.6869
             }
         })
+
+# Static file serving routes
+@app.route('/')
+def serve_index():
+    """Serve the main dashboard"""
+    return send_from_directory('client/public', 'index.html')
+
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """Serve static files from client directory"""
+    return send_from_directory('client', filename)
 
 # API Routes
 @app.route('/health', methods=['GET'])
@@ -661,7 +672,8 @@ if __name__ == '__main__':
     print("🚀 Starting AIFF Backend Server...")
     print("📊 Sample data loaded successfully")
     print(f"📈 Loaded: {len(field_teams)} teams, {len(tickets)} tickets")
-    print("🌐 Server will be available at: http://localhost:5002")
+    print("🌐 Server will be available at: http://localhost:8080")
     print("🔗 API endpoints ready for frontend integration")
+    print("📁 Static files served from client directory")
     
-    app.run(host='0.0.0.0', port=5002, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
