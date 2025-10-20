@@ -1110,6 +1110,46 @@
             margin-bottom: 1.5rem;
         }
 
+        /* Analysis Card Styles */
+        .analysis-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--sidebar-border);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .analysis-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .analysis-card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--sidebar-border);
+        }
+
+        .analysis-card-header h5 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .analysis-card-body {
+            padding: 1.5rem;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .analysis-card-body canvas {
+            max-height: 250px;
+        }
+
         .zone-header {
             display: flex;
             justify-content: between;
@@ -4357,17 +4397,128 @@
                                     </button>
                                 </div>
 
-                                <!-- Zone View -->
+                                <!-- Zone View - Enhanced Layout -->
                                 <div id="zone-view">
-                                    <div class="zone-distribution-card">
-                                        <div class="zone-distribution-header">
-                                            <h5 class="zone-distribution-title">
-                                                <i class="fas fa-map-marked-alt me-2"></i>Team Distribution by Malaysian Zones
-                                            </h5>
+                                    <div class="performance-analytics-header">
+                                        <h5 class="performance-analytics-title">
+                                            <i class="fas fa-map-marked-alt me-2"></i>Zone Performance Analysis
+                                        </h5>
+                                        <p class="performance-analytics-subtitle">Comprehensive zone-based team performance and analytics</p>
+                                    </div>
+                                    
+                                    <!-- Zone KPI Cards - Field Teams Style Layout -->
+                                    <div class="domain-metrics">
+                                        <div class="metric-card">
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-map-marked-alt"></i>
+                                            </div>
+                                            <div class="metric-content">
+                                                <h3 class="metric-value" id="zone-total-zones">0</h3>
+                                                <p class="metric-label">Total Zones</p>
+                                                <div class="metric-trend">
+                                                    <span class="trend-indicator positive" id="zone-active-zones">0 Active</span>
+                                                    <span class="trend-text">currently operational</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="zone-distribution-content">
-                                            <div id="zones-container">
-                                                <!-- Zone breakdown will be loaded here -->
+
+                                        <div class="metric-card">
+                                            <div class="metric-icon green">
+                                                <i class="fas fa-users"></i>
+                                            </div>
+                                            <div class="metric-content">
+                                                <h3 class="metric-value" id="zone-total-teams">0</h3>
+                                                <p class="metric-label">Total Teams</p>
+                                                <div class="metric-trend">
+                                                    <span class="trend-indicator positive" id="zone-active-teams">0 Active</span>
+                                                    <span class="trend-text">field teams</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="metric-card">
+                                            <div class="metric-icon orange">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <div class="metric-content">
+                                                <h3 class="metric-value" id="zone-avg-productivity">0%</h3>
+                                                <p class="metric-label">Avg Productivity</p>
+                                                <div class="metric-trend">
+                                                    <span class="trend-indicator positive" id="zone-productivity-trend">+0%</span>
+                                                    <span class="trend-text">vs last week</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="metric-card">
+                                            <div class="metric-icon red">
+                                                <i class="fas fa-ticket-alt"></i>
+                                            </div>
+                                            <div class="metric-content">
+                                                <h3 class="metric-value" id="zone-total-tickets">0</h3>
+                                                <p class="metric-label">Total Tickets</p>
+                                                <div class="metric-trend">
+                                                    <span class="trend-indicator positive" id="zone-resolved-tickets">0 Resolved</span>
+                                                    <span class="trend-text">this month</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Zone Analysis Cards -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-lg-6">
+                                            <div class="zone-performance-card">
+                                                <div class="zone-performance-header">
+                                                    <h5 class="zone-performance-title">
+                                                        <i class="fas fa-chart-bar me-2"></i>Zone Performance Ranking
+                                                        <span class="ms-auto badge bg-white text-primary">Live</span>
+                                                    </h5>
+                                                </div>
+                                                <div class="zone-performance-content">
+                                                    <div class="zone-performance-list" id="teams-zone-list">
+                                                        <!-- Zone performance will be loaded here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="top-performers-card">
+                                                <div class="top-performers-header">
+                                                    <h5 class="top-performers-title">
+                                                        <i class="fas fa-trophy me-2"></i>Top Performing Teams
+                                                        <span class="ms-auto badge bg-white text-primary">Ranked</span>
+                                                    </h5>
+                                                </div>
+                                                <div class="top-performers-content">
+                                                    <div class="top-performers-list" id="teams-top-performers">
+                                                        <!-- Top performers will be loaded here -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Zone Analysis Charts -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-lg-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Coverage Analysis</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="zoneCoverageChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h5><i class="fas fa-chart-pie me-2"></i>Team Distribution by Zone</h5>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="teamDistributionChart"></canvas>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
