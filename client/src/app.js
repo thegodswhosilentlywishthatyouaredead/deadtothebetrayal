@@ -232,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadAssignments(); // Pre-load Assignments data
     loadAnalytics(); // Pre-load Analytics data
     loadMaterialForecast(); // Pre-load Predictive Planning data
+    loadTeamsPerformanceAnalytics(); // Pre-load Performance Analytics data
     
     // Set up auto-refresh every 30 seconds for ALL tabs
     setInterval(loadDashboardData, 30000);
@@ -240,6 +241,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(loadAssignments, 30000); // Auto-refresh Assignments data
     setInterval(loadAnalytics, 30000); // Auto-refresh Analytics data
     setInterval(loadMaterialForecast, 30000); // Auto-refresh Predictive Planning data
+    setInterval(loadTeamsPerformanceAnalytics, 30000); // Auto-refresh Performance Analytics data
     
     console.log('✅ Dashboard initialization complete!');
 });
@@ -5978,8 +5980,8 @@ function populatePerformanceSummaryTable(tickets, teams) {
     `).join('');
 }
 
-// Populate Top Performers
-function populateTopPerformers(teams) {
+// Populate Top Performers for Main Dashboard
+function populateTopPerformersMain(teams) {
     const container = document.getElementById('top-performers-list');
     if (!container) return;
     
