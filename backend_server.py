@@ -335,6 +335,70 @@ def get_planning_forecast():
         print(f"Error in planning forecast: {e}")
         return jsonify({'error': 'Internal server error'}), 500
 
+@app.route('/api/planning/zone-materials', methods=['GET'])
+def get_zone_materials():
+    """Get zone-specific material requirements"""
+    try:
+        # Mock zone materials data
+        zone_materials = {
+            'zones': {
+                'Central': {
+                    'fiberCable': 150,
+                    'cpeUnits': 25,
+                    'connectors': 45,
+                    'cables': 30,
+                    'priority': 'high'
+                },
+                'Northern': {
+                    'fiberCable': 80,
+                    'cpeUnits': 15,
+                    'connectors': 25,
+                    'cables': 20,
+                    'priority': 'medium'
+                },
+                'Southern': {
+                    'fiberCable': 120,
+                    'cpeUnits': 20,
+                    'connectors': 35,
+                    'cables': 25,
+                    'priority': 'high'
+                },
+                'Eastern': {
+                    'fiberCable': 60,
+                    'cpeUnits': 12,
+                    'connectors': 20,
+                    'cables': 15,
+                    'priority': 'medium'
+                },
+                'Sabah': {
+                    'fiberCable': 90,
+                    'cpeUnits': 18,
+                    'connectors': 30,
+                    'cables': 22,
+                    'priority': 'medium'
+                },
+                'Sarawak': {
+                    'fiberCable': 70,
+                    'cpeUnits': 14,
+                    'connectors': 25,
+                    'cables': 18,
+                    'priority': 'medium'
+                }
+            },
+            'totalRequirements': {
+                'fiberCable': 570,
+                'cpeUnits': 104,
+                'connectors': 180,
+                'cables': 130
+            },
+            'lastUpdated': '2024-01-20T10:30:00Z'
+        }
+        
+        return jsonify(zone_materials)
+    except Exception as e:
+        print(f"Error in zone materials: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/api/assignments/analytics/performance', methods=['GET'])
 def get_assignments_analytics_performance():
     """Get assignments analytics performance"""

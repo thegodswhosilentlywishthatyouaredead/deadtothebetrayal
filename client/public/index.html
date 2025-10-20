@@ -737,6 +737,36 @@
             left: 100%;
         }
 
+        /* Five-minute progress bar (fixed) */
+        .five-min-progress {
+            position: fixed;
+            right: 16px;
+            bottom: 16px;
+            width: 260px;
+            background: #f1f5f9;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+            z-index: 1040;
+            overflow: hidden;
+        }
+        .five-min-progress .bar {
+            height: 10px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            width: 0%;
+            transition: width 0.8s ease;
+        }
+        .five-min-progress .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 10px 10px 10px;
+            font-size: 12px;
+            color: #334155;
+        }
+        .five-min-progress .meta .pct { font-weight: 700; }
+        .five-min-progress .meta .label { opacity: .8; }
+
         .tab-button:hover::before {
             opacity: 1;
         }
@@ -6165,11 +6195,37 @@
     <script src="https://unpkg.com/leaflet.fullscreen@2.0.0/Control.FullScreen.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet.fullscreen@2.0.0/Control.FullScreen.css" />
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="/src/config.js?v=1"></script>
+    <script src="/src/config.js?v=3"></script>
     <script>
         // Force API to single backend port 8080 as a defensive override
-        window.API_BASE = 'http://localhost:8080/api';
+        window.API_BASE = 'http://localhost:8085/api';
     </script>
     <script src="/src/app.js?v=1"></script>
+
+    <!-- Five-minute progress bar -->
+    <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
+        <div class="bar" id="five-min-progress-bar"></div>
+        <div class="meta">
+            <span class="label">Refresh cycle</span>
+            <span class="pct" id="five-min-progress-pct">0%</span>
+        </div>
+    </div>
+    <script>
+        (function () {
+            const BAR = document.getElementById('five-min-progress-bar');
+            const PCT = document.getElementById('five-min-progress-pct');
+            if (!BAR || !PCT) return;
+            const TOTAL_MS = 5 * 60 * 1000; // 5 minutes
+            let start = Date.now();
+            function tick() {
+                const elapsed = (Date.now() - start) % TOTAL_MS;
+                const pct = Math.min(100, Math.max(0, Math.floor(elapsed / TOTAL_MS * 100)));
+                BAR.style.width = pct + '%';
+                PCT.textContent = pct + '%';
+                requestAnimationFrame(tick);
+            }
+            tick();
+        })();
+    </script>
 </body>
 </html>

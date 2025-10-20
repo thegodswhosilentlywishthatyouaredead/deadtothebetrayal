@@ -1,7 +1,7 @@
 // Configuration for different environments
 const CONFIG = {
     development: {
-        image.png        API_BASE: 'http://localhost:8080/api'
+        API_BASE: 'http://localhost:8085/api'
     },
     production: {
         // For GitHub Pages, you'll need to deploy the backend separately

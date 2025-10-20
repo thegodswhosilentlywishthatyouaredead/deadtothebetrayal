@@ -2220,6 +2220,26 @@ function enrichTeamsWithTicketStats(teams, tickets) {
     });
 }
 
+// Utility: sort teams by performance (completed tickets desc, then rating desc)
+function sortTeamsByPerformance(teams) {
+    const getCompleted = (t) => {
+        if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
+        if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+        if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
+        return 0;
+    };
+    const getRating = (t) => {
+        if (typeof t.rating === 'number') return t.rating;
+        if (t.productivity && typeof t.productivity.customerRating === 'number') return t.productivity.customerRating;
+        return 0;
+    };
+    return [...teams].sort((a, b) => {
+        const diff = getCompleted(b) - getCompleted(a);
+        if (diff !== 0) return diff;
+        return getRating(b) - getRating(a);
+    });
+}
+
 async function loadFieldTeams() {
     try {
         // Fetch teams data
@@ -2239,8 +2259,11 @@ async function loadFieldTeams() {
         // Derive team stats from tickets when missing
         enrichTeamsWithTicketStats(fieldTeams, allTickets);
 
+        // Sort by performance before rendering (completed tickets desc, then rating)
+        const sortedByPerformance = sortTeamsByPerformance(fieldTeams);
+
         // Update Field Teams tab metrics
-        updateFieldTeamsMetrics(fieldTeams, allTickets, zonesData);
+        updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
         console.log('👥 First team sample:', fieldTeams[0]);
@@ -2343,7 +2366,7 @@ async function loadFieldTeams() {
             ];
         }
         
-        displayFieldTeams(fieldTeams);
+        displayFieldTeams(sortedByPerformance);
     } catch (error) {
         console.error('Error loading field teams:', error);
         // Show sample data on error
@@ -2385,11 +2408,12 @@ async function loadFieldTeams() {
                 }
             }
         ];
-        displayFieldTeams(fieldTeams);
+        displayFieldTeams(sortTeamsByPerformance(fieldTeams));
     }
 }
 
 function displayFieldTeams(teamsToShow) {
+    // Always render sorted by performance while maintaining all data shown
     const container = document.getElementById('teams-grid');
     container.innerHTML = '';
     
@@ -2401,7 +2425,7 @@ function displayFieldTeams(teamsToShow) {
         return;
     }
     
-    teamsToShow.forEach((team, index) => {
+    sortTeamsByPerformance(teamsToShow).forEach((team, index) => {
         try {
             console.log(`🔧 Creating team card for index ${index}:`, team.name || team._id || team.id);
         const teamElement = createTeamCard(team);
@@ -3252,7 +3276,21 @@ function createZoneDetailsList(zones, teams, tickets) {
         console.log(`🔍 Processing zone: ${zoneName}`, zoneData);
         
         // Get teams in this zone
-        const zoneTeams = zoneData.teams || [];
+        let zoneTeams = zoneData.teams || [];
+        // Sort teams by performance (tickets completed, then rating) while maintaining displayed fields
+        const getCompleted = (t) => {
+            if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
+            if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+            if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
+            return 0;
+        };
+        zoneTeams = [...zoneTeams].sort((a, b) => {
+            const byCompleted = getCompleted(b) - getCompleted(a);
+            if (byCompleted !== 0) return byCompleted;
+            const ar = typeof a.rating === 'number' ? a.rating : (a.productivity?.customerRating || 0);
+            const br = typeof b.rating === 'number' ? b.rating : (b.productivity?.customerRating || 0);
+            return br - ar;
+        });
         
         // Get tickets for this zone using location.zone
         const zoneTickets = tickets.filter(ticket => 

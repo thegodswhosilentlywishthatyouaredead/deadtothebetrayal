@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: aiff
+      POSTGRES_PASSWORD: aiffpass
+      POSTGRES_DB: aiff_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aiff"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4:7
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.test
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8083:80"
+    depends_on:
+      - postgres
+
+  gateway:
+    build: ./services/gateway
+    environment:
+      GATEWAY_PORT: 8085
+      AUTH_URL: http://auth:8000
+      TICKETS_URL: http://tickets:8001
+      ANALYTICS_URL: http://analytics:8002
+      AI_URL: http://ai:8003
+      CORS_ORIGINS: http://localhost:8080
+    ports:
+      - "8085:8085"
+    depends_on:
+      - auth
+      - tickets
+      - analytics
+      - ai
+
+  auth:
+    build: ./services/auth
+    environment:
+      SERVICE_PORT: 8000
+      DATABASE_URL: postgresql+psycopg://aiff:aiffpass@postgres:5432/aiff_db
+      JWT_SECRET: supersecretlocal
+    depends_on:
+      - postgres
+
+  tickets:
+    build: ./services/tickets
+    environment:
+      SERVICE_PORT: 8001
+      DATABASE_URL: postgresql+psycopg://aiff:aiffpass@postgres:5432/aiff_db
+    depends_on:
+      - postgres
+
+  analytics:
+    build: ./services/analytics
+    environment:
+      SERVICE_PORT: 8002
+      DATABASE_URL: postgresql+psycopg://aiff:aiffpass@postgres:5432/aiff_db
+    depends_on:
+      - postgres
+
+  ai:
+    build: ./services/ai
+    environment:
+      SERVICE_PORT: 8003
+    depends_on:
+      - tickets
+
+volumes:
+  pgdata:
+
+
+
