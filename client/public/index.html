@@ -1426,26 +1426,71 @@
             background: linear-gradient(135deg, #e67e22, #f39c12);
         }
 
-        /* Field Teams Performance Cards */
+        /* Field Teams Performance Cards - Enhanced Layout */
         .zone-performance-card, .top-performers-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            border: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 3px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 102, 204, 0.1);
             overflow: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .zone-performance-card::before, .top-performers-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
         }
 
         .zone-performance-card:hover, .top-performers-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12), 0 5px 15px rgba(0, 0, 0, 0.08);
+            transform: translateY(-4px);
+        }
+
+        .zone-performance-card:hover::before, .top-performers-card:hover::before {
+            width: 6px;
         }
 
         .zone-performance-header, .top-performers-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+            border-bottom: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .zone-performance-title, .top-performers-title {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .zone-performance-title .badge, .top-performers-title .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        .zone-performance-content, .top-performers-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .zone-performance-title, .top-performers-title {
@@ -2644,26 +2689,169 @@
             color: var(--primary-color);
         }
 
-        /* Zone Performance and Top Performers Styles */
+        /* Zone Performance and Top Performers Styles - Enhanced */
         .zone-performance-list, .top-performers-list {
             display: flex;
             flex-direction: column;
-            gap: 1rem;
+            gap: 0.75rem;
+            flex: 1;
         }
 
         .zone-item, .performer-item {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 1rem;
-            background: rgba(0, 102, 204, 0.05);
-            border-radius: 8px;
-            transition: all 0.3s ease;
+            padding: 1.25rem 1.5rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .zone-item::before, .performer-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
         }
 
         .zone-item:hover, .performer-item:hover {
-            background: rgba(0, 102, 204, 0.1);
-            transform: translateX(5px);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%);
+            transform: translateX(4px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15);
+        }
+
+        .zone-item:hover::before, .performer-item:hover::before {
+            width: 5px;
+        }
+
+        /* Zone Item Specific Styles */
+        .zone-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .zone-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1rem;
+        }
+
+        .zone-metrics {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .zone-productivity {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #667eea;
+        }
+
+        .zone-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        /* Performer Item Specific Styles */
+        .performer-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .performer-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1rem;
+        }
+
+        .performer-details {
+            font-size: 0.875rem;
+            color: #6b7280;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .performer-metrics {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .performer-rating {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #10b981;
+        }
+
+        .performer-rank {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive Design Improvements */
+        @media (max-width: 768px) {
+            .zone-performance-card, .top-performers-card {
+                margin-bottom: 1rem;
+            }
+            
+            .zone-performance-content, .top-performers-content {
+                padding: 1rem;
+            }
+            
+            .zone-item, .performer-item {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            
+            .zone-metrics, .performer-metrics {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .zone-performance-title, .top-performers-title {
+                font-size: 1rem;
+            }
+        }
+
+        /* Enhanced Visual Hierarchy */
+        .performance-summary {
+            margin-bottom: 2rem;
+        }
+
+        .performance-summary .row {
+            min-height: 400px;
+        }
+
+        /* Loading States */
+        .zone-performance-list:empty::after,
+        .top-performers-list:empty::after {
+            content: 'Loading performance data...';
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: #6b7280;
+            font-style: italic;
         }
 
         .zone-name {
@@ -4006,14 +4194,15 @@
                                     </div>
                                 </div>
 
-                                <!-- Teams Performance Summary -->
-                                <div class="performance-summary">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="zone-performance-card">
+                                <!-- Teams Performance Summary - Enhanced Layout -->
+                                <div class="performance-summary mb-4">
+                                    <div class="row g-4">
+                                        <div class="col-lg-6">
+                                            <div class="zone-performance-card h-100">
                                                 <div class="zone-performance-header">
                                                     <h5 class="zone-performance-title">
                                                         <i class="fas fa-chart-bar me-2"></i>Zone Performance
+                                                        <span class="ms-auto badge bg-white text-primary">Live</span>
                                                     </h5>
                                                 </div>
                                                 <div class="zone-performance-content">
@@ -4023,11 +4212,12 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="top-performers-card">
+                                        <div class="col-lg-6">
+                                            <div class="top-performers-card h-100">
                                                 <div class="top-performers-header">
                                                     <h5 class="top-performers-title">
-                                                        <i class="fas fa-users me-2"></i>Top Performers
+                                                        <i class="fas fa-trophy me-2"></i>Top Performers
+                                                        <span class="ms-auto badge bg-white text-primary">Ranked</span>
                                                     </h5>
                                                 </div>
                                                 <div class="top-performers-content">
