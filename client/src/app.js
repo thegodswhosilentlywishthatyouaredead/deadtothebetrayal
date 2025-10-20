@@ -210,19 +210,24 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeMap();
     initializeViewControls(); // Initialize standardized view controls
     
-    // Test tab functionality
-    console.log('🧪 Testing tab functionality...');
+    // Ensure overview tab is active on page load
+    console.log('🏠 Setting overview tab as default...');
     setTimeout(() => {
-        console.log('🧪 Testing showTab function...');
         if (typeof showTab === 'function') {
             console.log('✅ showTab function is available');
-            // Test switching to tickets tab
-            console.log('🧪 Testing tab switch to tickets...');
-            showTab('tickets');
+            // Ensure overview tab is active
+            showTab('overview');
         } else {
             console.error('❌ showTab function is not available');
         }
-    }, 1000);
+    }, 100);
+    
+    // Ensure main dashboard cards are visible
+    const mainDashboardCards = document.getElementById('main-dashboard-cards');
+    if (mainDashboardCards) {
+        mainDashboardCards.style.display = 'grid';
+        console.log('✅ Main dashboard cards set to visible');
+    }
     
     // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
