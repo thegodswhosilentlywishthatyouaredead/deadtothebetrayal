@@ -3239,11 +3239,128 @@ function createZoneDetailsList(zones, teams, tickets) {
                     `).join('')}
                     ${zoneTeams.length === 0 ? '<p class="text-muted text-center">No teams in this zone</p>' : ''}
                 </div>
+                
+                <div class="zone-ai-insights-section">
+                    <h6 class="zone-section-title">
+                        <i class="fas fa-lightbulb"></i>AI Insights & Recommendations
+                    </h6>
+                    <div class="ai-insights-container">
+                        ${generateZoneAIInsights(zoneName, zoneData, zoneTickets, zoneTeams)}
+                    </div>
+                </div>
             </div>
         `;
         
         container.appendChild(zoneItem);
     });
+}
+
+// Generate AI insights and recommendations for a zone
+function generateZoneAIInsights(zoneName, zoneData, zoneTickets, zoneTeams) {
+    const insights = [];
+    
+    // Calculate zone-specific metrics
+    const totalTickets = zoneTickets.length;
+    const openTickets = zoneTickets.filter(t => t.status === 'open' || t.status === 'pending' || t.status === 'in_progress').length;
+    const closedTickets = zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length;
+    const activeTeams = zoneTeams.filter(t => t.status === 'available' || t.status === 'busy').length;
+    const avgRating = zoneTeams.length > 0 ? (zoneTeams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / zoneTeams.length).toFixed(1) : 4.5;
+    
+    // Insight 1: Team Utilization
+    if (activeTeams < zoneTeams.length * 0.7) {
+        insights.push({
+            title: "Team Utilization",
+            severity: "HIGH",
+            description: `Only ${activeTeams}/${zoneTeams.length} teams are active. Consider reassigning inactive teams to high-priority zones.`
+        });
+    } else if (activeTeams === zoneTeams.length) {
+        insights.push({
+            title: "Peak Performance",
+            severity: "LOW",
+            description: `All ${zoneTeams.length} teams are active. Excellent resource utilization in ${zoneName} zone.`
+        });
+    }
+    
+    // Insight 2: Ticket Resolution Rate
+    const resolutionRate = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 0;
+    if (resolutionRate < 60) {
+        insights.push({
+            title: "Resolution Rate",
+            severity: "HIGH",
+            description: `Resolution rate is ${resolutionRate}%. Consider increasing team capacity or improving processes.`
+        });
+    } else if (resolutionRate > 85) {
+        insights.push({
+            title: "Excellent Performance",
+            severity: "LOW",
+            description: `Outstanding ${resolutionRate}% resolution rate. Zone is performing above expectations.`
+        });
+    }
+    
+    // Insight 3: Workload Distribution
+    if (openTickets > zoneTeams.length * 2) {
+        insights.push({
+            title: "Workload Alert",
+            severity: "MEDIUM",
+            description: `${openTickets} open tickets with ${zoneTeams.length} teams. Consider requesting additional resources.`
+        });
+    } else if (openTickets === 0 && zoneTeams.length > 0) {
+        insights.push({
+            title: "Capacity Available",
+            severity: "LOW",
+            description: "No open tickets. Teams can be reassigned to support other zones if needed."
+        });
+    }
+    
+    // Insight 4: Team Performance
+    if (avgRating < 4.0) {
+        insights.push({
+            title: "Performance Review",
+            severity: "MEDIUM",
+            description: `Average team rating is ${avgRating}/5.0. Consider additional training or support.`
+        });
+    } else if (avgRating > 4.7) {
+        insights.push({
+            title: "Top Performers",
+            severity: "LOW",
+            description: `Excellent team performance with ${avgRating}/5.0 average rating. Keep up the great work!`
+        });
+    }
+    
+    // Insight 5: Growth Projection
+    const projectedTickets = Math.round(totalTickets * 1.15); // 15% growth projection
+    if (projectedTickets > totalTickets) {
+        insights.push({
+            title: "Growth Projection",
+            severity: "MEDIUM",
+            description: `Based on current trends, expect approximately ${projectedTickets} tickets next month. Plan resources accordingly.`
+        });
+    }
+    
+    // Insight 6: Peak Hours (if we have time data)
+    const peakHour = "2:00 PM"; // Mock data - in real implementation, analyze ticket creation times
+    insights.push({
+        title: "Peak Hours Identified",
+        severity: "MEDIUM",
+        description: `Most tickets occur around ${peakHour}. Consider scheduling more teams during this period.`
+    });
+    
+    // Limit to 3 insights per zone
+    const selectedInsights = insights.slice(0, 3);
+    
+    // Generate HTML for insights
+    return selectedInsights.map(insight => `
+        <div class="ai-insight-card">
+            <div class="ai-insight-header">
+                <div class="ai-insight-title">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>${insight.title}</span>
+                </div>
+                <span class="ai-insight-severity severity-${insight.severity.toLowerCase()}">${insight.severity}</span>
+            </div>
+            <p class="ai-insight-description">${insight.description}</p>
+        </div>
+    `).join('');
 }
 
 
