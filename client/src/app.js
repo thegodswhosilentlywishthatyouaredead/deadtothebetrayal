@@ -1504,6 +1504,9 @@ async function loadTeamsPerformanceAnalytics() {
         // Create charts with error handling
         try {
             console.log('📊 Creating new charts...');
+            console.log('📊 Teams data for charts:', teams.length, 'teams');
+            console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
+            
             createTeamsZonePerformanceChart(tickets); // Pass tickets array, not zones object
             createStatePerformanceChart(teams);
             createTeamProductivityChart(teams);
@@ -1511,6 +1514,7 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('✅ All charts created successfully');
         } catch (chartError) {
             console.error('❌ Error creating charts:', chartError);
+            console.error('❌ Chart error details:', chartError.stack);
             showErrorMessage('Error creating charts. Please refresh the page.');
         }
         
@@ -2380,17 +2384,22 @@ function displayFieldTeams(teamsToShow) {
     
     teamsToShow.forEach((team, index) => {
         try {
+            console.log(`🔧 Creating team card for index ${index}:`, team.name || team._id);
             const teamElement = createTeamCard(team);
+            console.log(`🔧 Team element created:`, teamElement ? 'SUCCESS' : 'FAILED', teamElement);
+            
             if (teamElement && teamElement.nodeType === Node.ELEMENT_NODE) {
                 container.appendChild(teamElement);
+                console.log(`✅ Team card appended successfully for:`, team.name || team._id);
             } else {
-                console.warn(`Failed to create team card for team at index ${index}:`, team);
+                console.warn(`❌ Failed to create team card for team at index ${index}:`, team);
+                console.warn(`❌ Element type:`, typeof teamElement, 'Node type:', teamElement?.nodeType);
                 // Create a fallback card
                 const fallbackElement = createFallbackTeamCard(team);
                 container.appendChild(fallbackElement);
             }
         } catch (error) {
-            console.warn(`Error creating team card for team at index ${index}:`, team, 'Error:', error);
+            console.error(`❌ Error creating team card for team at index ${index}:`, team, 'Error:', error);
             // Create a fallback card
             const fallbackElement = createFallbackTeamCard(team);
             container.appendChild(fallbackElement);
@@ -5429,11 +5438,19 @@ function createCategoryDistributionChart(tickets) {
 function createTeamProductivityChart(teams) {
     const ctx = document.getElementById('teamsProductivityChart');
     if (!ctx) {
-        console.warn(`⚠️ Canvas not found for chart`);
+        console.warn(`⚠️ Canvas not found for teamsProductivityChart`);
         return;
     }
     
+    console.log('📊 Creating team productivity chart with teams:', teams.length);
+    console.log('📊 First few teams:', teams.slice(0, 3));
+    
     const topTeams = teams.slice(0, 10);
+    console.log('📊 Top teams for chart:', topTeams.length);
+    console.log('📊 Top teams data:', topTeams.map(t => ({
+        name: t.name,
+        tickets: t.productivity?.totalTicketsCompleted || 0
+    })));
     
     // Destroy existing chart instance if it exists
     if (chartInstances.teamsProductivityChart) {
@@ -5446,7 +5463,7 @@ function createTeamProductivityChart(teams) {
             labels: topTeams.map(t => t.name),
             datasets: [{
                 label: 'Tickets Completed',
-                data: topTeams.map(t => t.productivity?.ticketsCompleted || 0),
+                data: topTeams.map(t => t.productivity?.totalTicketsCompleted || 0),
                 backgroundColor: '#10b981'
             }]
         },
@@ -5838,7 +5855,7 @@ function populateTopPerformers(teams) {
     if (!container) return;
     
     const sortedTeams = teams
-        .sort((a, b) => (b.productivity?.ticketsCompleted || 0) - (a.productivity?.ticketsCompleted || 0))
+        .sort((a, b) => (b.productivity?.totalTicketsCompleted || 0) - (a.productivity?.totalTicketsCompleted || 0))
         .slice(0, 5);
     
     container.innerHTML = sortedTeams.map((team, index) => `
@@ -5849,7 +5866,7 @@ function populateTopPerformers(teams) {
                 <div class="performer-zone">${team.zone || 'N/A'} - ${team.state || 'N/A'}</div>
             </div>
             <div class="performer-metrics">
-                <div class="performer-tickets">${team.productivity?.ticketsCompleted || 0}</div>
+                <div class="performer-tickets">${team.productivity?.totalTicketsCompleted || 0}</div>
                 <div class="performer-rating">⭐ ${(team.rating || 4.5).toFixed(1)}</div>
             </div>
         </div>
