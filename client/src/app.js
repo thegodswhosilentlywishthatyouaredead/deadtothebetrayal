@@ -5396,6 +5396,28 @@ function closeTicketDetails() {
     ticketDetailsDrawerEl.style.transform = 'translateX(100%)';
 }
 
+// Test function to debug ticket details
+window.testTicketDetails = function() {
+    console.log('🧪 Testing ticket details function...');
+    console.log('🔍 API_BASE:', window.API_BASE);
+    
+    // Test with first ticket
+    fetch(`${window.API_BASE}/tickets`)
+        .then(res => res.json())
+        .then(data => {
+            console.log('📊 Tickets API response:', data);
+            if (data.tickets && data.tickets.length > 0) {
+                const firstTicket = data.tickets[0];
+                console.log('🎫 First ticket:', firstTicket);
+                console.log('🆔 Ticket ID:', firstTicket.id);
+                console.log('🔢 Ticket Number:', firstTicket.ticket_number);
+                // Test the viewTicketDetails function
+                window.viewTicketDetails(firstTicket.id);
+            }
+        })
+        .catch(err => console.error('❌ Test failed:', err));
+};
+
 window.viewTicketDetails = async function(ticketId) {
     try {
         console.log('🔍 Loading ticket details for:', ticketId);
@@ -5405,25 +5427,64 @@ window.viewTicketDetails = async function(ticketId) {
         openTicketDetails();
         
         // Fetch tickets list, teams, and productivity data
+        console.log('🔍 Fetching data from APIs...');
         const [ticketsRes, teamRes, productivityRes] = await Promise.all([
             fetch(`${API_BASE}/tickets`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
         
+        console.log('📊 API Response Status:', {
+            tickets: ticketsRes.status,
+            teams: teamRes.status,
+            productivity: productivityRes.status
+        });
+        
         if (!ticketsRes.ok) {
             throw new Error(`Failed to fetch tickets: ${ticketsRes.status}`);
         }
         
+        if (!teamRes.ok) {
+            console.warn('⚠️ Teams API returned:', teamRes.status);
+        }
+        if (!productivityRes.ok) {
+            console.warn('⚠️ Productivity API returned:', productivityRes.status);
+        }
+        
         const ticketsData = await ticketsRes.json();
         const ticketsArr = ticketsData.tickets || [];
-        const ticket = ticketsArr.find(t => (t._id || t.id) === ticketId);
+        
+        // Handle both string and numeric IDs
+        const ticket = ticketsArr.find(t => {
+            const tId = t._id || t.id;
+            return tId == ticketId || tId === ticketId || tId === parseInt(ticketId);
+        });
         
         if (!ticket) {
+            console.error('❌ Ticket not found:', { ticketId, availableIds: ticketsArr.map(t => t._id || t.id) });
             throw new Error(`Ticket with ID ${ticketId} not found`);
         }
-        const teamsArr = (await teamRes.json()).teams || [];
-        const productivityArr = (await productivityRes.json()).teams || [];
+        // Handle teams data with fallback
+        let teamsArr = [];
+        try {
+            if (teamRes.ok) {
+                const teamData = await teamRes.json();
+                teamsArr = teamData.teams || [];
+            }
+        } catch (e) {
+            console.warn('⚠️ Failed to parse teams data:', e);
+        }
+        
+        // Handle productivity data with fallback
+        let productivityArr = [];
+        try {
+            if (productivityRes.ok) {
+                const productivityData = await productivityRes.json();
+                productivityArr = productivityData.teams || [];
+            }
+        } catch (e) {
+            console.warn('⚠️ Failed to parse productivity data:', e);
+        }
         
         console.log('🎫 Ticket data:', ticket);
         console.log('👥 Teams data:', teamsArr.length);
@@ -5543,8 +5604,17 @@ window.viewTicketDetails = async function(ticketId) {
             </div>
         `;
     } catch (e) {
-        console.error('Error loading ticket details', e);
-        showNotification('Failed to load ticket details', 'danger');
+        console.error('❌ Error loading ticket details:', e);
+        const body = document.getElementById('ticket-details-body');
+        if (body) {
+            body.innerHTML = `
+                <div class="alert alert-danger">
+                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Error Loading Ticket Details</h6>
+                    <p class="mb-0">${e.message || 'Failed to load ticket details. Please try again.'}</p>
+                </div>
+            `;
+        }
+        showNotification('Failed to load ticket details: ' + (e.message || 'Unknown error'), 'danger');
     }
 }
 
