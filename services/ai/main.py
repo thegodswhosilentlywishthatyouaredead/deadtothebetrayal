@@ -11,9 +11,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="AI Service", version="1.0.0")
 
-# Service URLs
-TICKETS_URL = os.getenv("TICKETS_URL", "http://localhost:8001")
-ANALYTICS_URL = os.getenv("ANALYTICS_URL", "http://localhost:8002")
+# Service URLs - Use internal Docker network
+TICKETS_URL = os.getenv("TICKETS_URL", "http://tickets:8001")
+ANALYTICS_URL = os.getenv("ANALYTICS_URL", "http://analytics:8002")
 
 @app.get("/health")
 async def health_check():
@@ -25,7 +25,8 @@ async def get_tickets_data() -> List[Dict[str, Any]]:
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{TICKETS_URL}/tickets")
             if response.status_code == 200:
-                return response.json()
+                data = response.json()
+                return data.get('tickets', [])
             return []
     except Exception as e:
         logger.error(f"Error fetching tickets: {e}")
@@ -159,22 +160,143 @@ async def get_ai_insights():
         logger.error(f"Error generating AI insights: {e}")
         raise HTTPException(status_code=500, detail="Error generating AI insights")
 
+async def generate_contextual_response(message: str, tickets_data: List[Dict], analytics_data: Dict, context: str) -> str:
+    """Generate contextual AI response based on real system data"""
+    try:
+        lower_message = message.lower()
+        
+        # Analyze tickets data
+        total_tickets = len(tickets_data)
+        open_tickets = len([t for t in tickets_data if t.get('status') in ['open', 'pending', 'in_progress']])
+        completed_tickets = len([t for t in tickets_data if t.get('status') in ['completed', 'resolved', 'closed']])
+        completion_rate = (completed_tickets / total_tickets * 100) if total_tickets > 0 else 0
+        
+        # Performance analysis
+        if "performance" in lower_message or "how are we doing" in lower_message:
+            if completion_rate >= 80:
+                performance_status = "excellent"
+                recommendation = "Keep up the great work! Consider optimizing team assignments for even better efficiency."
+            elif completion_rate >= 60:
+                performance_status = "good"
+                recommendation = "Good performance! Focus on completing pending tickets to improve completion rate."
+            else:
+                performance_status = "needs improvement"
+                recommendation = "Performance needs attention. Prioritize urgent tickets and consider additional resources."
+            
+            return f"""📊 **Performance Analysis:**
+            
+**Current Status:** {performance_status.title()}
+- Total Tickets: {total_tickets}
+- Open Tickets: {open_tickets}
+- Completed Tickets: {completed_tickets}
+- Completion Rate: {completion_rate:.1f}%
+
+**Recommendation:** {recommendation}
+
+Would you like me to analyze specific areas for improvement?"""
+
+        # Ticket analysis
+        elif "tickets" in lower_message or "ticket" in lower_message:
+            urgent_tickets = len([t for t in tickets_data if t.get('priority') in ['high', 'emergency']])
+            overdue_tickets = len([t for t in tickets_data if t.get('status') in ['open', 'pending']])
+            
+            return f"""🎫 **Ticket Analysis:**
+            
+**Current Ticket Status:**
+- Total Tickets: {total_tickets}
+- Open/Pending: {open_tickets}
+- Completed: {completed_tickets}
+- Urgent Priority: {urgent_tickets}
+- Overdue: {overdue_tickets}
+
+**Recommendations:**
+1. Focus on urgent tickets first
+2. Address overdue tickets to improve SLA compliance
+3. Balance workload across teams
+
+Would you like specific ticket details or team assignments?"""
+
+        # Team performance
+        elif "team" in lower_message or "teams" in lower_message:
+            return f"""👥 **Team Performance:**
+            
+**Current Metrics:**
+- Total Tickets: {total_tickets}
+- Completion Rate: {completion_rate:.1f}%
+- Open Tickets: {open_tickets}
+
+**Team Optimization:**
+- Ensure balanced workload distribution
+- Monitor team capacity and availability
+- Focus on high-priority assignments
+
+Would you like team-specific analysis or assignment recommendations?"""
+
+        # Recommendations
+        elif "recommend" in lower_message or "suggest" in lower_message or "optimize" in lower_message:
+            return f"""💡 **Optimization Recommendations:**
+            
+**Based on Current Data:**
+- Completion Rate: {completion_rate:.1f}%
+- Open Tickets: {open_tickets}
+- Total Tickets: {total_tickets}
+
+**Key Recommendations:**
+1. **Priority Management:** Focus on urgent tickets first
+2. **Resource Allocation:** Balance workload across teams
+3. **SLA Compliance:** Monitor and address overdue tickets
+4. **Performance Tracking:** Regular review of completion rates
+
+**Next Steps:**
+- Review team assignments
+- Prioritize urgent tickets
+- Monitor SLA compliance
+- Optimize resource allocation
+
+Would you like detailed analysis of any specific area?"""
+
+        # General help
+        else:
+            return f"""🤖 **NRO-Bots - Your AI Assistant**
+            
+**Current System Status:**
+- Total Tickets: {total_tickets}
+- Open Tickets: {open_tickets}
+- Completion Rate: {completion_rate:.1f}%
+
+**I can help you with:**
+- 📊 Performance analysis and metrics
+- 🎫 Ticket management and prioritization
+- 👥 Team optimization and assignments
+- 💡 System recommendations and insights
+- 📈 Trend analysis and forecasting
+
+**Try asking:**
+- "How is our performance?"
+- "Show me ticket analysis"
+- "Give me optimization recommendations"
+- "What's our team status?"
+
+How can I assist you today?"""
+
+    except Exception as e:
+        logger.error(f"Error generating contextual response: {e}")
+        return "I apologize, but I'm having trouble accessing the current system data. Please try again in a moment."
+
 @app.post("/ai/chat")
 async def ai_chat(request: Dict[str, Any]):
     """AI chat endpoint for NRO-Bots"""
     try:
-        query = request.get("query", "")
-        context = request.get("context", {})
+        message = request.get("message", "")
+        context = request.get("context", "dashboard")
+        history = request.get("history", [])
         
-        # Simple AI response generation (can be enhanced with actual LLM)
-        if "performance" in query.lower():
-            response = "Based on current data, your team performance is good. Consider focusing on urgent tickets to improve completion rates."
-        elif "tickets" in query.lower():
-            response = "I can help you analyze ticket trends, prioritize work, and optimize team assignments. What specific aspect would you like to know about?"
-        elif "recommendations" in query.lower():
-            response = "Here are my top recommendations: 1) Prioritize urgent tickets, 2) Balance workload across zones, 3) Monitor SLA compliance."
-        else:
-            response = "I'm NRO-Bots, your AI assistant for field operations. I can help with performance analysis, ticket management, and optimization recommendations. How can I assist you?"
+        # Fetch real system data
+        tickets_data = await get_tickets_data()
+        analytics_data = await get_analytics_data()
+        
+        # Generate context-aware response based on real data
+        response = await generate_contextual_response(message, tickets_data, analytics_data, context)
         
         return {
             "response": response,
