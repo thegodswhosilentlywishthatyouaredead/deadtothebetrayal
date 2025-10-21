@@ -1952,16 +1952,15 @@ function populateTeamsZoneList(zonesData) {
             const zoneItem = document.createElement('div');
             zoneItem.className = 'zone-item';
             zoneItem.innerHTML = `
-                <div class="zone-item-info">
-                    <div class="zone-item-name">
-                        #${index + 1} ${zone.zoneName || zone.zone}
+                <div class="zone-rank">${index + 1}</div>
+                <div class="zone-info">
+                    <div class="zone-name">
+                        ${zone.zoneName || zone.zone}
                         <small class="text-muted ms-2">${rankIcon} ${rankText}</small>
                     </div>
-                    <div class="zone-item-details">
-                        Teams: ${zone.activeTeams || 0} | Open: ${zone.openTickets || 0} | Closed: ${zone.closedTickets || 0}
-                    </div>
+                    <div class="zone-location">Teams: ${zone.activeTeams || 0} | Open: ${zone.openTickets || 0} | Closed: ${zone.closedTickets || 0}</div>
                 </div>
-                <div class="zone-item-metrics">
+                <div class="zone-metrics">
                     <div class="zone-productivity">${productivity}%</div>
                     <div class="zone-efficiency">${efficiency}%</div>
                     <div class="zone-status">Active</div>
