@@ -2570,13 +2570,15 @@ function createZonePerformanceAnalysisChart(zones) {
                     data: productivityScores,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    yAxisID: 'y'
                 }, {
                     label: 'Efficiency %',
                     data: efficiencyScores,
                     backgroundColor: 'rgba(16, 185, 129, 0.8)',
                     borderColor: 'rgba(16, 185, 129, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
@@ -2585,7 +2587,7 @@ function createZonePerformanceAnalysisChart(zones) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Zone Performance Analysis - Productivity & Efficiency',
+                        text: 'Zone Performance Analysis - Dual Axis Chart',
                         font: {
                             size: 14,
                             weight: 'bold'
@@ -2608,9 +2610,9 @@ function createZonePerformanceAnalysisChart(zones) {
                                 const value = context.parsed.y || 0;
                                 const zoneName = context.label || '';
                                 if (label === 'Productivity Score') {
-                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0`;
+                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0 (Left Axis)`;
                                 } else {
-                                    return `${zoneName} - ${label}: ${value.toFixed(1)}%`;
+                                    return `${zoneName} - ${label}: ${value.toFixed(1)}% (Right Axis)`;
                                 }
                             }
                         }
@@ -2618,10 +2620,45 @@ function createZonePerformanceAnalysisChart(zones) {
                 },
                 scales: {
                     y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
                         beginAtZero: true,
+                        max: 5,
                         title: {
                             display: true,
-                            text: 'Performance Score'
+                            text: 'Productivity Score (1-5)',
+                            color: 'rgba(59, 130, 246, 1)'
+                        },
+                        ticks: {
+                            color: 'rgba(59, 130, 246, 1)',
+                            callback: function(value) {
+                                return value.toFixed(1);
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(59, 130, 246, 0.1)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efficiency (%)',
+                            color: 'rgba(16, 185, 129, 1)'
+                        },
+                        ticks: {
+                            color: 'rgba(16, 185, 129, 1)',
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false,
                         }
                     },
                     x: {
