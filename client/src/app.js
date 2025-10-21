@@ -1350,15 +1350,15 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     
     // Calculate metrics
     const totalTeams = teams.length;
-    const activeTeams = teams.filter(t => t.status === 'active' || t.status === 'available').length;
+    const activeTeams = teams.filter(t => t.is_active === true || t.status === 'active' || t.status === 'available').length;
     
     // Calculate average productivity from zones
     let totalProductivity = 0;
     let zoneCount = 0;
     if (zonesData.zones) {
         Object.values(zonesData.zones).forEach(zone => {
-            if (zone.productivityScore) {
-                totalProductivity += zone.productivityScore;
+            if (zone.productivity) {
+                totalProductivity += zone.productivity;
                 zoneCount++;
             }
         });
@@ -1461,13 +1461,13 @@ function populateTeamsZoneList(zonesData) {
             ...zoneData
         }));
         
-        const sortedZones = zonesArray.sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
+        const sortedZones = zonesArray.sort((a, b) => (b.productivity || 0) - (a.productivity || 0));
         
         sortedZones.forEach(zone => {
             const zoneItem = document.createElement('div');
             zoneItem.className = 'zone-item';
             
-            const productivity = parseFloat(zone.productivityScore || 0).toFixed(2);
+            const productivity = parseFloat(zone.productivity || 0).toFixed(2);
             const trendClass = productivity >= 70 ? 'trend-up' : productivity >= 50 ? 'trend-neutral' : 'trend-down';
             const trendIcon = productivity >= 70 ? '↑' : productivity >= 50 ? '→' : '↓';
             
@@ -2510,7 +2510,7 @@ function createTeamCard(team) {
     const div = document.createElement('div');
     div.className = 'col-md-6 col-lg-4 mb-4';
     
-    const statusClass = team.status === 'active' ? 'success' : 
+    const statusClass = (team.is_active === true || team.status === 'active') ? 'success' : 
                        team.status === 'busy' ? 'warning' : 
                        team.status === 'offline' ? 'danger' : 'secondary';
     
@@ -2522,7 +2522,7 @@ function createTeamCard(team) {
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <h5 class="card-title mb-0">${team.name || team._id || team.id || 'Unknown'}</h5>
-                    <span class="badge bg-${statusClass}">${team.status || 'unknown'}</span>
+                    <span class="badge bg-${statusClass}">${team.is_active === true ? 'active' : team.status || 'unknown'}</span>
                 </div>
                 <p class="text-muted mb-2">
                     <i class="fas fa-map-marker-alt me-1"></i>${team.zone || 'Unknown Zone'}<br>
