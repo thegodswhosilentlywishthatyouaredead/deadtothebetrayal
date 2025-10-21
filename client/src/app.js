@@ -284,6 +284,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('✅ NRO-Bots tab hidden by default');
     }
     
+    // Debug API_BASE
+    console.log('🔧 Current API_BASE:', window.API_BASE);
+    
     // Load initial tab content for ALL tabs immediately
     loadRecentTickets();
     loadTeamStatusOverview();
@@ -1077,11 +1080,14 @@ function displaySampleZonePerformance() {
 // Ticket functions
 async function loadTickets() {
     try {
+        console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE);
         const response = await fetch(`${API_BASE}/tickets`);
+        console.log('🔧 loadTickets: Response status:', response.status);
         const data = await response.json();
         tickets = data.tickets || [];
         
         console.log('🎫 Loading tickets tab data:', tickets.length);
+        console.log('🎫 Sample ticket:', tickets[0]);
         
         // Update Tickets tab metrics
         updateTicketsTabMetrics(tickets);
@@ -2254,6 +2260,8 @@ function sortTeamsByPerformance(teams) {
 
 async function loadFieldTeams() {
     try {
+        console.log('🔧 loadFieldTeams: Starting with API_BASE:', API_BASE);
+        
         // Fetch teams data with productivity metrics
         const [teamsResponse, productivityResponse, ticketsResponse, zonesResponse] = await Promise.all([
             fetch(`${API_BASE}/teams`),
@@ -2261,6 +2269,13 @@ async function loadFieldTeams() {
             fetch(`${API_BASE}/tickets`),
             fetch(`${API_BASE}/teams/analytics/zones`)
         ]);
+        
+        console.log('🔧 loadFieldTeams: API responses:', {
+            teams: teamsResponse.status,
+            productivity: productivityResponse.status,
+            tickets: ticketsResponse.status,
+            zones: zonesResponse.status
+        });
         
         const teamsData = await teamsResponse.json();
         const productivityData = await productivityResponse.json();
