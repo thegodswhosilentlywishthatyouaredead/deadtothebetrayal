@@ -2286,6 +2286,14 @@ async function loadFieldTeams() {
         const productivityTeams = productivityData.teams || [];
         const allTickets = ticketsData.tickets || [];
         
+        console.log('🔧 loadFieldTeams: Data fetched:', {
+            basicTeams: basicTeams.length,
+            productivityTeams: productivityTeams.length,
+            tickets: allTickets.length
+        });
+        console.log('🔧 Sample basic team:', basicTeams[0]);
+        console.log('🔧 Sample productivity team:', productivityTeams[0]);
+        
         // Merge basic team data with productivity data
         fieldTeams = basicTeams.map(team => {
             const productivityTeam = productivityTeams.find(p => p.teamId === team.id);
