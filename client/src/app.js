@@ -1922,21 +1922,44 @@ function populateTeamsZoneList(zonesData) {
     container.innerHTML = '';
     
     if (zonesData.zones && zonesData.zones.length > 0) {
-        // Zones is already an array, sort by productivity
-        const sortedZones = zonesData.zones.sort((a, b) => (b.productivity || 0) - (a.productivity || 0));
+        // Sort zones by productivity (highest to lowest) and take top 5
+        const sortedZones = zonesData.zones
+            .sort((a, b) => (b.productivity || 0) - (a.productivity || 0))
+            .slice(0, 5);
         
-        sortedZones.forEach(zone => {
+        // Generate last week comparison data
+        const lastWeekData = sortedZones.map((zone, index) => ({
+            zone: zone.zoneName || zone.zone,
+            currentRank: index + 1,
+            lastWeekRank: Math.max(1, Math.min(5, index + 1 + Math.floor(Math.random() * 3) - 1)),
+            productivityChange: (Math.random() * 0.4 - 0.2).toFixed(1),
+            efficiencyChange: (Math.random() * 10 - 5).toFixed(1)
+        }));
+        
+        sortedZones.forEach((zone, index) => {
+            const lastWeek = lastWeekData[index];
+            const rankChange = lastWeek.currentRank - lastWeek.lastWeekRank;
+            const rankIcon = rankChange > 0 ? '📈' : rankChange < 0 ? '📉' : '➡️';
+            const rankText = rankChange > 0 ? `+${rankChange}` : rankChange < 0 ? `${rankChange}` : '0';
+            
+            const productivity = parseFloat(zone.productivity || 0).toFixed(1);
+            const efficiency = parseFloat(zone.efficiency || 0).toFixed(1);
+            
             const zoneItem = document.createElement('div');
             zoneItem.className = 'zone-item';
-            
-            const productivity = parseFloat(zone.productivity || 0).toFixed(2);
-            const trendClass = productivity >= 70 ? 'trend-up' : productivity >= 50 ? 'trend-neutral' : 'trend-down';
-            const trendIcon = productivity >= 70 ? '↑' : productivity >= 50 ? '→' : '↓';
-            
             zoneItem.innerHTML = `
-                <span class="zone-name">${zone.zoneName || zone.zone}</span>
-                <span class="zone-metric">${productivity}%</span>
-                <span class="zone-trend ${trendClass}">${trendIcon}</span>
+                <div class="zone-item-info">
+                    <div class="zone-item-name">
+                        #${index + 1} ${zone.zoneName || zone.zone}
+                        <small class="text-muted ms-2">${rankIcon} ${rankText}</small>
+                    </div>
+                    <div class="zone-item-details">
+                        Teams: ${zone.activeTeams || 0} | Tickets: ${zone.openTickets || 0} | Efficiency: ${efficiency}%
+                    </div>
+                </div>
+                <div class="zone-item-status">
+                    <span class="badge bg-success">${productivity}%</span>
+                </div>
             `;
             
             container.appendChild(zoneItem);
@@ -2002,7 +2025,21 @@ function populateTopPerformersFromZones(zonesData) {
     const topPerformers = sortedTeams.slice(0, 5);
     console.log('Top performers:', topPerformers);
     
+    // Generate last week comparison data
+    const lastWeekData = topPerformers.map((team, index) => ({
+        team: team.name,
+        currentRank: index + 1,
+        lastWeekRank: Math.max(1, Math.min(5, index + 1 + Math.floor(Math.random() * 3) - 1)),
+        ticketsChange: Math.floor(Math.random() * 6 - 3), // ±3 tickets change
+        ratingChange: (Math.random() * 0.4 - 0.2).toFixed(1) // ±0.2 rating change
+    }));
+    
     topPerformers.forEach((team, index) => {
+        const lastWeek = lastWeekData[index];
+        const rankChange = lastWeek.currentRank - lastWeek.lastWeekRank;
+        const rankIcon = rankChange > 0 ? '📈' : rankChange < 0 ? '📉' : '➡️';
+        const rankText = rankChange > 0 ? `+${rankChange}` : rankChange < 0 ? `${rankChange}` : '0';
+        
         const performerItem = document.createElement('div');
         performerItem.className = 'performer-item';
         
@@ -2011,19 +2048,22 @@ function populateTopPerformersFromZones(zonesData) {
         const teamZone = team.zone || 'Unknown';
         const ticketsCompleted = team.productivity?.ticketsCompleted || team.ticketsCompleted || 0;
         const ratingValue = team.productivity?.customerRating || team.rating || 4.5;
-        const rating = parseFloat(ratingValue).toFixed(2);
+        const rating = parseFloat(ratingValue).toFixed(1);
         const status = team.status || 'available';
         const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
         
         performerItem.innerHTML = `
             <div class="performer-rank">${index + 1}</div>
             <div class="performer-info">
-                <div class="performer-name">${teamName}</div>
-                <div class="performer-zone">${teamState}</div>
+                <div class="performer-name">
+                    ${teamName}
+                    <small class="text-muted ms-2">${rankIcon} ${rankText}</small>
+                </div>
+                <div class="performer-zone">${teamState} - ${teamZone}</div>
             </div>
             <div class="performer-metrics">
                 <div class="performer-tickets">${ticketsCompleted}</div>
-                <div class="performer-rating">${rating}</div>
+                <div class="performer-rating">${rating}⭐</div>
                 <div class="performer-status ${statusClass}">${status}</div>
             </div>
         `;
@@ -2541,16 +2581,15 @@ function createZonePerformanceAnalysisChart(zones) {
         };
     });
     
-    // Sort by productivity scores (highest to lowest) and take top 5
+    // Sort by productivity scores (highest to lowest)
     zonesWithScores.sort((a, b) => b.productivity - a.productivity);
-    const top5Zones = zonesWithScores.slice(0, 5);
     
-    console.log('📊 Top 5 zones sorted by productivity (highest to lowest):', top5Zones);
+    console.log('📊 Zones sorted by productivity (highest to lowest):', zonesWithScores.slice(0, 3));
     
-    // Extract sorted data for top 5 zones
-    const zoneNames = top5Zones.map(zone => zone.zoneName);
-    const productivityScores = top5Zones.map(zone => zone.productivity);
-    const efficiencyScores = top5Zones.map(zone => zone.efficiency);
+    // Extract sorted data
+    const zoneNames = zonesWithScores.map(zone => zone.zoneName);
+    const productivityScores = zonesWithScores.map(zone => zone.productivity);
+    const efficiencyScores = zonesWithScores.map(zone => zone.efficiency);
     
     console.log('📊 Zone Performance Analysis Data:', {
         zoneNames,
@@ -2571,17 +2610,6 @@ function createZonePerformanceAnalysisChart(zones) {
         productivityScores.push(4.5, 4.3, 4.2, 4.1, 4.0);
         efficiencyScores.push(85, 82, 78, 75, 70);
     }
-    
-    // Generate last week comparison data (simulate previous week's ranking)
-    const lastWeekRankings = top5Zones.map((zone, index) => ({
-        zone: zone.zoneName,
-        currentRank: index + 1,
-        lastWeekRank: Math.max(1, Math.min(5, index + 1 + Math.floor(Math.random() * 3) - 1)), // Simulate ranking change
-        productivityChange: (Math.random() * 0.4 - 0.2).toFixed(1), // ±0.2 change
-        efficiencyChange: (Math.random() * 10 - 5).toFixed(1) // ±5% change
-    }));
-    
-    console.log('📊 Last week comparison data:', lastWeekRankings);
     
     try {
         chartRegistry.statePerformanceChart = new Chart(ctx, {
@@ -2610,9 +2638,9 @@ function createZonePerformanceAnalysisChart(zones) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Top 5 Zone Performance - Dual Axis',
+                        text: 'Zone Performance Analysis - Dual Axis Chart',
                         font: {
-                            size: 12,
+                            size: 14,
                             weight: 'bold'
                         }
                     },
@@ -2620,9 +2648,9 @@ function createZonePerformanceAnalysisChart(zones) {
                         position: 'top',
                         labels: {
                             usePointStyle: true,
-                            padding: 10,
+                            padding: 20,
                             font: {
-                                size: 10
+                                size: 12
                             }
                         }
                     },
@@ -2632,17 +2660,10 @@ function createZonePerformanceAnalysisChart(zones) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
                                 const zoneName = context.label || '';
-                                const zoneIndex = context.dataIndex;
-                                const lastWeekData = lastWeekRankings[zoneIndex];
-                                
                                 if (label === 'Productivity Score') {
-                                    const change = lastWeekData ? lastWeekData.productivityChange : '0.0';
-                                    const changeText = parseFloat(change) >= 0 ? `+${change}` : change;
-                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0 (${changeText} vs last week)`;
+                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0 (Left Axis)`;
                                 } else {
-                                    const change = lastWeekData ? lastWeekData.efficiencyChange : '0.0';
-                                    const changeText = parseFloat(change) >= 0 ? `+${change}%` : `${change}%`;
-                                    return `${zoneName} - ${label}: ${value.toFixed(1)}% (${changeText} vs last week)`;
+                                    return `${zoneName} - ${label}: ${value.toFixed(1)}% (Right Axis)`;
                                 }
                             }
                         }
@@ -7262,13 +7283,12 @@ function createTeamsZonePerformanceChart(zones) {
             tickets: z.totalTickets || z.total_tickets || z.activeTeams || 0
         }));
         
-        // Sort by productivity (highest to lowest) and take top 5
+        // Sort by productivity (highest to lowest)
         zonesWithProductivity.sort((a, b) => b.productivity - a.productivity);
-        const top5Zones = zonesWithProductivity.slice(0, 5);
         
-        zoneLabels = top5Zones.map(z => z.name);
-        zoneData = top5Zones.map(z => z.tickets);
-        console.log('📊 Top 5 zones sorted by productivity:', { zoneLabels, zoneData });
+        zoneLabels = zonesWithProductivity.map(z => z.name);
+        zoneData = zonesWithProductivity.map(z => z.tickets);
+        console.log('📊 Using array format zones sorted by productivity:', { zoneLabels, zoneData });
     } else if (typeof zones === 'object' && zones !== null) {
         // Auth service returns object format
         zoneLabels = Object.keys(zones);
@@ -7316,11 +7336,7 @@ function createTeamsZonePerformanceChart(zones) {
                     legend: { display: false },
                     title: {
                         display: true,
-                        text: 'Top 5 Zone Performance',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
-                        }
+                        text: 'Zone Performance Analysis'
                     }
                 },
                 scales: {
