@@ -6970,21 +6970,36 @@ function createTeamsZonePerformanceChart(tickets) {
         zones[zone] = (zones[zone] || 0) + 1;
     });
     
-    console.log('📊 Zone Performance Chart Data:', {
-        zones: zones,
-        zoneLabels: Object.keys(zones),
-        zoneData: Object.values(zones)
-    });
+    // Handle both array and object formats for zones
+    let zoneLabels, zoneData;
+    
+    if (Array.isArray(zones)) {
+        // Analytics service returns array format
+        zoneLabels = zones.map(z => z.zone || z.zoneName || 'Unknown Zone');
+        zoneData = zones.map(z => z.totalTickets || z.total_tickets || 0);
+        console.log('📊 Using array format zones:', { zoneLabels, zoneData });
+    } else if (typeof zones === 'object' && zones !== null) {
+        // Auth service returns object format
+        zoneLabels = Object.keys(zones);
+        zoneData = Object.values(zones);
+        console.log('📊 Using object format zones:', { zoneLabels, zoneData });
+    } else {
+        console.warn('⚠️ No zone data available, using sample data');
+        zoneLabels = ['Kuala Lumpur Central', 'Selangor Central', 'Penang Central', 'Johor Central', 'Perak Central'];
+        zoneData = [15, 12, 8, 6, 4];
+    }
     
     // Ensure we have data
-    if (Object.keys(zones).length === 0) {
+    if (zoneLabels.length === 0) {
         console.warn('⚠️ No zone data available, using sample data');
-        zones['Kuala Lumpur Central'] = 15;
-        zones['Selangor Central'] = 12;
-        zones['Penang Island'] = 8;
-        zones['Johor Central'] = 10;
-        zones['Sabah East'] = 6;
+        zoneLabels = ['Kuala Lumpur Central', 'Selangor Central', 'Penang Central', 'Johor Central', 'Perak Central'];
+        zoneData = [15, 12, 8, 6, 4];
     }
+    
+    console.log('📊 Zone Performance Chart Data:', {
+        zoneLabels,
+        zoneData
+    });
     
     // Destroy existing chart instance if it exists
     destroyChartIfExists('teamsZonePerformanceChart');
@@ -6993,10 +7008,10 @@ function createTeamsZonePerformanceChart(tickets) {
         chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: Object.keys(zones),
+                labels: zoneLabels,
                 datasets: [{
                     label: 'Tickets by Zone',
-                    data: Object.values(zones),
+                    data: zoneData,
                     backgroundColor: '#3b82f6',
                     borderColor: '#2563eb',
                     borderWidth: 1
