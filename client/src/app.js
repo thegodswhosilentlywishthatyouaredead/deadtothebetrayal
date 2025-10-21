@@ -3170,9 +3170,11 @@ function populateTopPerformers(teams) {
         const status = team.status || 'available';
         const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
         
-        // Use actual performance data from API if available
-        const responseTime = team.productivity?.responseTime || Math.floor(Math.random() * 30) + 15;
-        const completionRate = team.productivity?.completionRate || (85 + Math.random() * 15).toFixed(1);
+        // Use actual performance data from API if available, with better fallbacks
+        const responseTime = team.productivity?.responseTime || team.responseTime || Math.floor(Math.random() * 30) + 15;
+        const completionRate = team.productivity?.completionRate || team.completionRate || (85 + Math.random() * 15).toFixed(1);
+        
+        console.log(`🔍 Team ${i + 1}: ${name} - Zone: ${zone} - Tickets: ${tickets} - Rating: ${rating} - Status: ${status}`);
         
         return `
             <div class="performer-item">
@@ -3318,8 +3320,8 @@ async function loadFieldTeams() {
         // Update Field Teams tab metrics
         await updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
         
-        // Populate top performers with team data
-        populateTopPerformers(sortedByPerformance);
+        // Populate top performers with team data - use the basic teams data which has the correct structure
+        populateTopPerformers(basicTeams);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
         console.log('👥 First team sample:', fieldTeams[0]);
