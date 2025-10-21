@@ -2806,6 +2806,167 @@
             opacity: 0.8;
         }
 
+        /* Ticket Assignment Controls */
+        .ticket-assignment-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .assignment-mode-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .assignment-mode-toggle .btn-group {
+            box-shadow: none;
+        }
+
+        .assignment-mode-toggle .btn-check:checked + .btn {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .assignment-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ticket-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        /* Manual Assignment Modal Styles */
+        .manual-assignment-modal .modal-dialog {
+            max-width: 800px;
+        }
+
+        .zone-teams-section {
+            margin-bottom: 20px;
+        }
+
+        .zone-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .zone-teams-list {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .team-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background-color 0.2s ease;
+        }
+
+        .team-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .team-item:last-child {
+            border-bottom: none;
+        }
+
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .team-details {
+            font-size: 12px;
+            color: #6b7280;
+            display: flex;
+            gap: 12px;
+        }
+
+        .team-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.active {
+            background-color: #10b981;
+        }
+
+        .status-dot.inactive {
+            background-color: #ef4444;
+        }
+
+        .status-dot.busy {
+            background-color: #f59e0b;
+        }
+
+        .team-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .team-assign-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #374151;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .team-assign-btn:hover {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+
+        .team-assign-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .zone-stats {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
         /* Tab content styling */
         .tab-content {
             position: relative;
@@ -4550,35 +4711,6 @@
 
                                 <!-- List View -->
                                 <div id="tickets-list-view">
-                                    <!-- Assignment Controls -->
-                                    <div class="row mb-3">
-                                        <div class="col-md-12">
-                                            <div class="assignment-controls">
-                                                <div class="assignment-mode">
-                                                    <label class="form-label">Assignment Mode:</label>
-                                                    <div class="btn-group" role="group">
-                                                        <input type="radio" class="btn-check" name="assignment-mode" id="auto-assignment" value="auto" checked onchange="toggleAssignmentMode()">
-                                                        <label class="btn btn-outline-success" for="auto-assignment">
-                                                            <i class="fas fa-robot me-1"></i>Auto Assignment
-                                                        </label>
-                                                        <input type="radio" class="btn-check" name="assignment-mode" id="manual-assignment" value="manual" onchange="toggleAssignmentMode()">
-                                                        <label class="btn btn-outline-primary" for="manual-assignment">
-                                                            <i class="fas fa-user me-1"></i>Manual Assignment
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                                <div class="assignment-actions">
-                                                    <button type="button" class="btn btn-success" id="auto-assign-btn" onclick="autoAssignTickets()">
-                                                        <i class="fas fa-magic me-1"></i>Auto Assign All
-                                                    </button>
-                                                    <button type="button" class="btn btn-info" id="manual-assign-btn" onclick="showManualAssignmentModal()" style="display: none;">
-                                                        <i class="fas fa-hand-paper me-1"></i>Manual Assign
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
                                     <!-- Filters -->
                                     <div class="row mb-3">
                                         <div class="col-md-3">

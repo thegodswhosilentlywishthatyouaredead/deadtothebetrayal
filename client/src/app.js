@@ -1344,15 +1344,31 @@ function createTicketElement(ticket, isCompact = false) {
                         Created: ${new Date(ticket.created_at || ticket.createdAt || Date.now()).toLocaleDateString()}
                     </small>
                 </div>
-                <div class="assignment-actions">
-                    ${ticketStatus === 'open' ? `
-                        <button class="ticket-assign-btn auto" onclick="autoAssignTicket('${ticket.id}')" title="Intelligent Auto Assignment">
-                            <i class="fas fa-magic me-1"></i>Auto Assign
-                        </button>
-                        <button class="ticket-assign-btn manual" onclick="showManualAssignmentModal('${ticket.id}')" title="Manual Team Assignment">
-                            <i class="fas fa-hand-paper me-1"></i>Manual Assign
-                        </button>
-                    ` : ''}
+                ${ticketStatus === 'open' ? `
+                    <div class="ticket-assignment-controls">
+                        <div class="assignment-mode-toggle">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <input type="radio" class="btn-check" name="assignment-mode-${ticket.id}" id="auto-${ticket.id}" value="auto" checked>
+                                <label class="btn btn-outline-success btn-sm" for="auto-${ticket.id}">
+                                    <i class="fas fa-robot me-1"></i>Auto
+                                </label>
+                                <input type="radio" class="btn-check" name="assignment-mode-${ticket.id}" id="manual-${ticket.id}" value="manual">
+                                <label class="btn btn-outline-primary btn-sm" for="manual-${ticket.id}">
+                                    <i class="fas fa-user me-1"></i>Manual
+                                </label>
+                            </div>
+                        </div>
+                        <div class="assignment-actions">
+                            <button class="ticket-assign-btn auto" onclick="autoAssignTicket('${ticket.id}')" title="Intelligent Auto Assignment">
+                                <i class="fas fa-magic me-1"></i>Auto Assign
+                            </button>
+                            <button class="ticket-assign-btn manual" onclick="showManualAssignmentModal('${ticket.id}')" title="Manual Team Assignment">
+                                <i class="fas fa-hand-paper me-1"></i>Manual Assign
+                            </button>
+                        </div>
+                    </div>
+                ` : ''}
+                <div class="ticket-actions">
                     <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket.id}')">
                         <i class="fas fa-eye me-1"></i>View Details
                     </button>
@@ -1546,10 +1562,201 @@ async function autoAssignTicket(ticketId) {
 }
 
 // Show Manual Assignment Modal
-function showManualAssignmentModal(ticketId) {
-    // This would open a modal for manual team selection
-    console.log(`Manual assignment for ticket ${ticketId}`);
-    showNotification('Manual assignment modal would open here', 'info');
+async function showManualAssignmentModal(ticketId) {
+    try {
+        console.log(`🔍 Opening manual assignment modal for ticket ${ticketId}`);
+        
+        // Fetch ticket, teams, and zones data
+        const [ticketsRes, teamsRes, zonesRes] = await Promise.all([
+            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/teams`),
+            fetch(`${API_BASE}/teams/analytics/zones`)
+        ]);
+        
+        const ticketsData = await ticketsRes.json();
+        const teamsData = await teamsRes.json();
+        const zonesData = await zonesRes.json();
+        
+        const ticket = ticketsData.tickets.find(t => (t._id || t.id) == ticketId);
+        const teams = teamsData.teams || [];
+        const zones = zonesData.zones || [];
+        
+        if (!ticket) {
+            showNotification('Ticket not found', 'error');
+            return;
+        }
+        
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade manual-assignment-modal" id="manualAssignmentModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-hand-paper me-2"></i>Manual Team Assignment
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="ticket-info mb-3">
+                                <h6>${ticket.ticket_number || ticket.id} - ${ticket.title}</h6>
+                                <p class="text-muted mb-0">${ticket.description}</p>
+                                <small class="text-muted">Location: ${ticket.location || 'Unknown'}</small>
+                            </div>
+                            
+                            <div class="zones-teams-container">
+                                ${generateZonesTeamsHTML(zones, teams, ticket)}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        const existingModal = document.getElementById('manualAssignmentModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to page
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('manualAssignmentModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('❌ Error opening manual assignment modal:', error);
+        showNotification('Failed to load team data for manual assignment', 'error');
+    }
+}
+
+// Generate zones and teams HTML
+function generateZonesTeamsHTML(zones, teams, ticket) {
+    if (!zones || zones.length === 0) {
+        return '<div class="alert alert-info">No zones data available</div>';
+    }
+    
+    // Group teams by zone
+    const teamsByZone = {};
+    teams.forEach(team => {
+        const zone = team.zone || 'Unknown';
+        if (!teamsByZone[zone]) {
+            teamsByZone[zone] = [];
+        }
+        teamsByZone[zone].push(team);
+    });
+    
+    // Get ticket zone for prioritization
+    const ticketZone = extractZoneFromLocation(ticket.location || '');
+    
+    // Sort zones (ticket's zone first, then by productivity)
+    const sortedZones = Object.keys(teamsByZone).sort((a, b) => {
+        if (a === ticketZone) return -1;
+        if (b === ticketZone) return 1;
+        return 0;
+    });
+    
+    return sortedZones.map(zone => {
+        const zoneTeams = teamsByZone[zone];
+        const isTicketZone = zone === ticketZone;
+        
+        return `
+            <div class="zone-teams-section">
+                <div class="zone-header">
+                    <div>
+                        <i class="fas fa-map-marker-alt me-2"></i>${zone}
+                        ${isTicketZone ? '<span class="badge bg-warning ms-2">Ticket Zone</span>' : ''}
+                    </div>
+                    <div class="zone-stats">
+                        ${zoneTeams.filter(t => t.is_active).length}/${zoneTeams.length} Active
+                    </div>
+                </div>
+                <div class="zone-teams-list">
+                    ${zoneTeams.map(team => generateTeamItemHTML(team, ticket.id)).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// Generate team item HTML
+function generateTeamItemHTML(team, ticketId) {
+    const isActive = team.is_active === true;
+    const statusClass = isActive ? 'active' : 'inactive';
+    const statusText = isActive ? 'Available' : 'Inactive';
+    const rating = team.rating || team.productivity?.customerRating || 4.5;
+    
+    return `
+        <div class="team-item">
+            <div class="team-info">
+                <div class="team-name">${team.name}</div>
+                <div class="team-details">
+                    <div class="team-status">
+                        <span class="status-dot ${statusClass}"></span>
+                        <span>${statusText}</span>
+                    </div>
+                    <div class="team-rating">
+                        <i class="fas fa-star"></i>
+                        <span>${rating.toFixed(1)}</span>
+                    </div>
+                    <div>
+                        <i class="fas fa-users"></i>
+                        <span>${team.members?.length || 0} members</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <button class="team-assign-btn" 
+                        onclick="assignTicketToTeam('${ticketId}', '${team.id}', '${team.name}')"
+                        ${!isActive ? 'disabled' : ''}>
+                    ${isActive ? 'Assign' : 'Unavailable'}
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Assign ticket to specific team
+async function assignTicketToTeam(ticketId, teamId, teamName) {
+    try {
+        console.log(`🔧 Assigning ticket ${ticketId} to team ${teamName} (${teamId})`);
+        
+        const response = await fetch(`${API_BASE}/tickets/${ticketId}/assign`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                teamId: teamId,
+                assignmentType: 'manual'
+            })
+        });
+        
+        if (response.ok) {
+            showNotification(`Ticket assigned to ${teamName}`, 'success');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('manualAssignmentModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Refresh ticket list
+            loadTickets();
+        } else {
+            const error = await response.json();
+            showNotification(`Failed to assign ticket: ${error.message || 'Unknown error'}`, 'error');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error assigning ticket to team:', error);
+        showNotification('Failed to assign ticket to team', 'error');
+    }
 }
 
 function filterTickets() {
