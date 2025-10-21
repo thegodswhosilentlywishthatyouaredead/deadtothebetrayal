@@ -3689,29 +3689,23 @@
         .zone-item {
             display: flex;
             align-items: center;
-            padding: 1rem;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.9rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         
         .zone-rank {
-            font-weight: 700;
-            color: #ffffff;
-            font-size: 1rem;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 1.1rem;
             margin-right: 1rem;
-            min-width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-width: 1.5rem;
+            text-align: center;
         }
         
         .zone-info {
@@ -3739,21 +3733,21 @@
         }
         
         .zone-productivity {
-            font-weight: 700;
+            font-weight: 600;
             color: #059669;
-            font-size: 1rem;
-            background: rgba(5, 150, 105, 0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            font-size: 0.9rem;
         }
 
         .zone-efficiency {
-            font-weight: 600;
+            font-weight: 500;
             color: #0d9488;
-            font-size: 0.9rem;
-            background: rgba(13, 148, 136, 0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .zone-performance {
+            font-weight: 500;
+            color: #6b7280;
+            font-size: 0.8rem;
         }
         
         .zone-status {
@@ -3763,38 +3757,32 @@
         }
 
         .zone-item:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+            border-color: #d1d5db;
         }
 
         /* Clean Top Performers Table Structure */
         .performer-item {
             display: flex;
             align-items: center;
-            padding: 1rem;
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            margin-bottom: 0.75rem;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-size: 0.9rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            padding: 1.25rem;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         }
         
         .performer-rank {
-            font-weight: 700;
-            color: #ffffff;
-            font-size: 1rem;
+            font-weight: 600;
+            color: #6b7280;
+            font-size: 1.1rem;
             margin-right: 1rem;
-            min-width: 2rem;
-            height: 2rem;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            min-width: 1.5rem;
+            text-align: center;
         }
         
         .performer-info {
@@ -3822,21 +3810,15 @@
         }
         
         .performer-tickets {
-            font-weight: 700;
+            font-weight: 600;
             color: #059669;
-            font-size: 1rem;
-            background: rgba(5, 150, 105, 0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            font-size: 0.9rem;
         }
 
         .performer-rating {
-            font-weight: 600;
+            font-weight: 500;
             color: #f59e0b;
-            font-size: 0.9rem;
-            background: rgba(245, 158, 11, 0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
+            font-size: 0.85rem;
         }
         
         .performer-status {
@@ -3857,9 +3839,9 @@
         }
 
         .performer-item:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            transform: translateY(-2px);
-            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transform: translateY(-1px);
+            border-color: #d1d5db;
         }
 
         .performer-rank {
@@ -6954,7 +6936,7 @@
         // Force API to single backend port 8080 as a defensive override
         window.API_BASE = 'http://localhost:8085/api';
     </script>
-    <script src="/src/app.js?v=3"></script>
+    <script src="/src/app.js?v=4"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
