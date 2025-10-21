@@ -3163,10 +3163,12 @@ function populateTopPerformers(teams) {
         const zone = team.zone || 'Unknown Zone';
         const tickets = getCompleted(team);
         const rating = (team.productivity?.customerRating || team.rating || (4.0 + Math.random() * 1.0)).toFixed(1);
+        const status = team.status || 'available';
+        const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
         
-        // Generate realistic performance metrics
-        const responseTime = Math.floor(Math.random() * 30) + 15; // 15-45 minutes
-        const completionRate = (85 + Math.random() * 15).toFixed(1); // 85-100%
+        // Use actual performance data from API if available
+        const responseTime = team.productivity?.responseTime || Math.floor(Math.random() * 30) + 15;
+        const completionRate = team.productivity?.completionRate || (85 + Math.random() * 15).toFixed(1);
         
         return `
             <div class="performer-item">
@@ -3178,7 +3180,7 @@ function populateTopPerformers(teams) {
                 <div class="performer-metrics">
                     <div class="performer-tickets">${tickets}</div>
                     <div class="performer-rating">${rating}⭐</div>
-                    <div class="performer-status status-available">active</div>
+                    <div class="performer-status ${statusClass}">${status}</div>
                 </div>
             </div>
         `;
