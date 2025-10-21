@@ -6869,13 +6869,29 @@ async function processAIQuery(query) {
     hideAITyping();
     
     try {
-        // Get current system data
-        const systemData = await getCurrentSystemData();
+        console.log('🤖 Processing AI query:', query);
         
-        // Process the query and generate response
-        const response = await generateAIResponse(query, systemData);
+        // Call the AI chat API
+        const response = await fetch(`${API_BASE}/ai/chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: query,
+                context: 'dashboard',
+                history: aiChatHistory
+            })
+        });
         
-        addAIMessage(response);
+        if (!response.ok) {
+            throw new Error(`AI service error: ${response.status}`);
+        }
+        
+        const aiResponse = await response.json();
+        console.log('🤖 AI response:', aiResponse);
+        
+        addAIMessage(aiResponse.response || 'I apologize, but I could not process your request.');
         
     } catch (error) {
         console.error('Error processing AI query:', error);

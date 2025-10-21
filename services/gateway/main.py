@@ -186,6 +186,52 @@ async def get_zone_materials():
             logger.error(f"Planning service error: {e}")
             raise HTTPException(status_code=503, detail="Planning service unavailable")
 
+# AI endpoints
+@app.get("/api/ai/insights")
+async def get_ai_insights():
+    logger.info("AI insights endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{AI_URL}/ai/insights")
+            logger.info(f"AI service response: {response.status_code}")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"AI service error: {e}")
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+
+@app.post("/api/ai/chat")
+async def ai_chat(request: dict):
+    logger.info("AI chat endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(f"{AI_URL}/ai/chat", json=request)
+            logger.info(f"AI service response: {response.status_code}")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"AI service error: {e}")
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+
+@app.post("/api/ai/recommendations")
+async def ai_recommendations(request: dict):
+    logger.info("AI recommendations endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(f"{AI_URL}/ai/recommendations", json=request)
+            logger.info(f"AI service response: {response.status_code}")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"AI service error: {e}")
+            raise HTTPException(status_code=503, detail="AI service unavailable")
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("GATEWAY_PORT", 8085))

@@ -1499,18 +1499,15 @@ async function sendFieldAIMessage(customQuery = null) {
         const context = await getFieldTeamContext();
         
         // Send to AI API
-        const response = await fetch(`${API_BASE}/ai/query`, {
+        const response = await fetch(`${API_BASE}/ai/chat`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                query: query,
-                context: {
-                    userType: 'field_team',
-                    userName: currentUser.name,
-                    teamData: context
-                }
+                message: query,
+                context: 'field_portal',
+                history: fieldAIChatHistory
             })
         });
         
@@ -1520,7 +1517,7 @@ async function sendFieldAIMessage(customQuery = null) {
         removeFieldAITyping();
         
         // Add AI response
-        addFieldAIMessage(data.response, 'assistant');
+        addFieldAIMessage(data.response || 'I apologize, but I could not process your request.', 'assistant');
         
         // Store in history
         fieldAIChatHistory.push({
