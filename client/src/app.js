@@ -1348,7 +1348,7 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     console.log('📊 Updating Field Teams metrics with:', {
         teams: teams.length,
         tickets: tickets.length,
-        zones: zonesData.zones ? Object.keys(zonesData.zones).length : 0
+        zones: zonesData.zones ? zonesData.zones.length : 0
     });
     
     // Calculate metrics
@@ -1358,8 +1358,8 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     // Calculate average productivity from zones
     let totalProductivity = 0;
     let zoneCount = 0;
-    if (zonesData.zones) {
-        Object.values(zonesData.zones).forEach(zone => {
+    if (zonesData.zones && Array.isArray(zonesData.zones)) {
+        zonesData.zones.forEach(zone => {
             if (zone.productivity) {
                 totalProductivity += zone.productivity;
                 zoneCount++;
@@ -1457,14 +1457,9 @@ function populateTeamsZoneList(zonesData) {
     
     container.innerHTML = '';
     
-    if (zonesData.zones && Object.keys(zonesData.zones).length > 0) {
-        // Convert zones object to array and sort by productivity
-        const zonesArray = Object.entries(zonesData.zones).map(([zoneName, zoneData]) => ({
-            zone: zoneName,
-            ...zoneData
-        }));
-        
-        const sortedZones = zonesArray.sort((a, b) => (b.productivity || 0) - (a.productivity || 0));
+    if (zonesData.zones && zonesData.zones.length > 0) {
+        // Zones is already an array, sort by productivity
+        const sortedZones = zonesData.zones.sort((a, b) => (b.productivity || 0) - (a.productivity || 0));
         
         sortedZones.forEach(zone => {
             const zoneItem = document.createElement('div');
@@ -1495,7 +1490,7 @@ function populateTopPerformersFromZones(zonesData) {
     console.log('Populating top performers with zones data:', zonesData);
     container.innerHTML = '';
     
-    if (!zonesData.zones || Object.keys(zonesData.zones).length === 0) {
+    if (!zonesData.zones || zonesData.zones.length === 0) {
         console.log('No zones data available');
         container.innerHTML = '<p class="text-muted">No team data available</p>';
         return;
@@ -1503,14 +1498,14 @@ function populateTopPerformersFromZones(zonesData) {
     
     // Extract all teams from zones data (same as main dashboard)
     const allTeams = [];
-    Object.entries(zonesData.zones).forEach(([zoneName, zoneData]) => {
+    zonesData.zones.forEach(zoneData => {
         if (zoneData.teams && Array.isArray(zoneData.teams)) {
             zoneData.teams.forEach(team => {
                 allTeams.push({
                     ...team,
-                    zone: zoneName,
+                    zone: zoneData.zoneName,
                     // Add zone-level data to team
-                    zoneProductivity: zoneData.productivityScore || 0,
+                    zoneProductivity: zoneData.productivity || 0,
                     zoneOpenTickets: zoneData.openTickets || 0,
                     zoneClosedTickets: zoneData.closedTickets || 0
                 });
