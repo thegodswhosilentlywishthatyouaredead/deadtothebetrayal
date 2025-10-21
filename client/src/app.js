@@ -2109,7 +2109,19 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
             createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
-            createZoneDistributionChart(zones); // Pass zones array for zone distribution analysis
+            // Add delay to ensure DOM is ready for zone distribution chart
+            setTimeout(() => {
+                createZoneDistributionChart(zones);
+            }, 100);
+            
+            // Retry after a longer delay if the first attempt fails
+            setTimeout(() => {
+                const canvas = document.getElementById('statePerformanceChart');
+                if (canvas && !chartRegistry.statePerformanceChart) {
+                    console.log('🔄 Retrying zone distribution chart creation...');
+                    createZoneDistributionChart(zones);
+                }
+            }, 500);
             createTeamProductivityChart(teams); // Pass teams array for productivity analysis
             createRatingDistributionChart(teams); // Pass teams array for rating analysis
             console.log('✅ All charts created successfully');
@@ -2481,10 +2493,30 @@ function createZonePerformanceChart(zones) {
 
 // Create Zone Distribution Chart (replaces state performance chart)
 function createZoneDistributionChart(zones) {
-    const ctx = document.getElementById('statePerformanceChart');
-    if (!ctx) {
+    const canvas = document.getElementById('statePerformanceChart');
+    if (!canvas) {
         console.error('❌ Canvas "statePerformanceChart" not found in DOM');
         console.log('Available canvas elements:', document.querySelectorAll('canvas'));
+        console.log('Current DOM state:', document.readyState);
+        return;
+    }
+    
+    // Check if the performance analytics tab is visible
+    const performanceTab = document.getElementById('teams-performance-analytics');
+    if (performanceTab && performanceTab.style.display === 'none') {
+        console.warn('⚠️ Performance analytics tab is hidden, chart may not render properly');
+        return;
+    }
+    
+    // Check if the canvas is visible (not hidden)
+    const canvasContainer = canvas.closest('.analysis-card-body');
+    if (canvasContainer && canvasContainer.offsetParent === null) {
+        console.warn('⚠️ Canvas container is hidden, chart may not render properly');
+    }
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('❌ Could not get 2D context from canvas element');
         return;
     }
     
