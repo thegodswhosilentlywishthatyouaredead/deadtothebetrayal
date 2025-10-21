@@ -1809,6 +1809,13 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
                 zoneCount++;
             }
         });
+    } else if (zonesData.zones && typeof zonesData.zones === 'object') {
+        Object.values(zonesData.zones).forEach(zone => {
+            if (zone.productivity) {
+                totalProductivity += zone.productivity;
+                zoneCount++;
+            }
+        });
     }
     
     // If no zones data, calculate from teams
@@ -2060,11 +2067,18 @@ async function loadTeamsPerformanceAnalytics() {
         console.log('Teams:', teamsData);
         console.log('Tickets:', ticketsData);
         
-        const zones = zonesData.zones || {};
+        const zones = zonesData.zones || [];
         const teams = teamsData.teams || [];
         const tickets = ticketsData.tickets || [];
         
-        console.log('📊 Data loaded:', { zones: Object.keys(zones).length, teams: teams.length, tickets: tickets.length });
+        console.log('📊 Data loaded:', { 
+            zones: Array.isArray(zones) ? zones.length : Object.keys(zones).length, 
+            teams: teams.length, 
+            tickets: tickets.length 
+        });
+        console.log('📊 Zones structure:', zones);
+        console.log('📊 Teams structure:', teams.slice(0, 2));
+        console.log('📊 Tickets structure:', tickets.slice(0, 2));
         
         // Update KPI cards
         updateAnalyticsKPIs(teams, zones, tickets);
@@ -2094,10 +2108,10 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Teams data for charts:', teams.length, 'teams');
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
-            createTeamsZonePerformanceChart(tickets); // Pass tickets array, not zones object
-            createStatePerformanceChart(teams);
-            createTeamProductivityChart(teams);
-            createRatingDistributionChart(teams);
+            createTeamsZonePerformanceChart(tickets); // Pass tickets array for zone analysis
+            createStatePerformanceChart(teams); // Pass teams array for state analysis
+            createTeamProductivityChart(teams); // Pass teams array for productivity analysis
+            createRatingDistributionChart(teams); // Pass teams array for rating analysis
             console.log('✅ All charts created successfully');
         } catch (chartError) {
             console.error('❌ Error creating charts:', chartError);
@@ -2226,7 +2240,16 @@ function updateAnalyticsKPIs(teams, zones, tickets) {
     let totalProductivity = 0;
     let zoneCount = 0;
     
-    if (zones && typeof zones === 'object') {
+    if (zones && Array.isArray(zones)) {
+        // Zones is an array
+        zones.forEach(zone => {
+            if (zone.productivityScore || zone.productivity) {
+                totalProductivity += (zone.productivityScore || zone.productivity || 0);
+                zoneCount++;
+            }
+        });
+    } else if (zones && typeof zones === 'object') {
+        // Zones is an object
         Object.values(zones).forEach(zone => {
             if (zone.productivityScore || zone.productivity) {
                 totalProductivity += (zone.productivityScore || zone.productivity || 0);
@@ -6887,6 +6910,8 @@ function createTeamsZonePerformanceChart(tickets) {
         return;
     }
     
+    console.log('📊 Original tickets data:', tickets.slice(0, 3));
+    
     // Enrich tickets with zone data if missing
     const enrichedTickets = tickets.map(ticket => {
         if (!ticket.location?.zone || ticket.location?.zone === 'Unknown') {
@@ -6897,6 +6922,8 @@ function createTeamsZonePerformanceChart(tickets) {
         }
         return ticket;
     });
+    
+    console.log('📊 Enriched tickets data:', enrichedTickets.slice(0, 3));
     
     const zones = {};
     enrichedTickets.forEach(t => {
