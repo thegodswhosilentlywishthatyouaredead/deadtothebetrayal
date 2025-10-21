@@ -6822,7 +6822,7 @@ function addAIMessage(message) {
                 <i class="fas fa-robot"></i>
             </div>
             <div class="ai-content">
-                ${message}
+                ${formatAIMessage(message)}
             </div>
         `;
         messagesContainer.appendChild(messageDiv);
@@ -6830,6 +6830,66 @@ function addAIMessage(message) {
     }
     
     aiChatHistory.push({ role: 'assistant', content: message });
+}
+
+function formatAIMessage(content) {
+    if (!content) return '';
+    
+    // Convert markdown-like formatting to HTML
+    let formatted = content
+        // Bold text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        // Italic text
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Code blocks
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        // Inline code
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Headers
+        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+        // Lists
+        .replace(/^\- (.*$)/gm, '<li>$1</li>')
+        .replace(/^\* (.*$)/gm, '<li>$1</li>')
+        // Line breaks
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph if not already wrapped
+    if (!formatted.includes('<p>') && !formatted.includes('<h') && !formatted.includes('<ul>') && !formatted.includes('<pre>')) {
+        formatted = `<p>${formatted}</p>`;
+    }
+    
+    // Add performance status classes
+    formatted = formatted
+        .replace(/Excellent/g, '<span class="status-excellent">Excellent</span>')
+        .replace(/Good/g, '<span class="status-good">Good</span>')
+        .replace(/Needs Improvement/g, '<span class="status-needs-improvement">Needs Improvement</span>');
+    
+    // Add metric highlighting
+    formatted = formatted
+        .replace(/(\d+\.?\d*%)/g, '<span class="metric-highlight">$1</span>')
+        .replace(/(\d+ tickets?)/gi, '<span class="metric-highlight">$1</span>')
+        .replace(/(\d+\.?\d*% completion rate)/gi, '<span class="metric-highlight">$1</span>');
+    
+    // Wrap performance analysis in cards
+    if (formatted.includes('**Performance Analysis:**')) {
+        formatted = formatted.replace(
+            /(\*\*Performance Analysis:\*\*[\s\S]*?)(?=\*\*|$)/g,
+            '<div class="performance-card">$1</div>'
+        );
+    }
+    
+    // Wrap recommendations in boxes
+    if (formatted.includes('**Recommendation:**') || formatted.includes('**Recommendations:**')) {
+        formatted = formatted.replace(
+            /(\*\*Recommendation[s]?:\*\*[\s\S]*?)(?=\*\*|$)/g,
+            '<div class="recommendation-box">$1</div>'
+        );
+    }
+    
+    return formatted;
 }
 
 function showAITyping() {
