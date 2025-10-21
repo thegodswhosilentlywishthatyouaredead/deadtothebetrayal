@@ -6187,6 +6187,8 @@ async function loadPerformanceAnalysis() {
         
         // Populate tables
         populatePerformanceSummaryTable(allTickets, allTeams);
+        // Populate top performers for performance analysis
+        populateTopPerformersForAnalysis(allTeams);
         // Ensure top performers has productivity totals; enrich if missing
         const teamsWithStats = allTeams.map(t => ({ ...t }));
         const hasProductivity = teamsWithStats.some(t => t.productivity && typeof t.productivity.ticketsCompleted === 'number');
@@ -6382,6 +6384,16 @@ function createTicketTrendsChart(tickets) {
                 intersect: false
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Ticket Trends & Projections',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     display: true, 
                     position: 'top',
@@ -6516,6 +6528,16 @@ function createStatusDistributionChart(tickets) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Priority Breakdown',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     position: 'bottom',
                     labels: {
@@ -6694,6 +6716,16 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                 intersect: false
             },
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Productivity vs Efficiency Trends',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     display: true,
                     position: 'top',
@@ -6875,6 +6907,16 @@ function createPriorityBreakdownChart(tickets) {
             maintainAspectRatio: false,
             cutout: '60%',
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Priority Breakdown',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     position: 'bottom',
                     labels: {
@@ -6976,6 +7018,16 @@ function createCategoryDistributionChart(tickets) {
             maintainAspectRatio: false,
             cutout: '60%',
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Priority Breakdown',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     position: 'bottom',
                     labels: {
@@ -7125,17 +7177,108 @@ function createCostAnalysisChart(tickets, teams) {
                 borderColor: '#ef4444',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                borderWidth: 3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ef4444',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: '#dc2626',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
+                shadowOffsetX: 0,
+                shadowOffsetY: 2,
+                shadowBlur: 4,
+                shadowColor: 'rgba(239, 68, 68, 0.3)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: true }
+                legend: { 
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: { size: 12, weight: '500' },
+                        usePointStyle: true,
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `Cost: RM ${context.parsed.y.toFixed(2)}`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                delay: (context) => {
+                    let delay = 0;
+                    if (context.type === 'data' && context.mode === 'default') {
+                        delay = context.dataIndex * 30;
+                    }
+                    return delay;
+                }
             },
             scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Cost (RM)' } }
+                y: { 
+                    beginAtZero: true, 
+                    title: { 
+                        display: true, 
+                        text: 'Cost (RM)',
+                        font: { size: 12, weight: '600' },
+                        color: '#374151'
+                    },
+                    ticks: {
+                        font: { size: 11, weight: '500' },
+                        color: '#6b7280',
+                        callback: function(value) {
+                            return 'RM ' + value.toFixed(0);
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: { size: 10, weight: '500' },
+                        color: '#6b7280',
+                        maxRotation: 45,
+                        minRotation: 0
+                    },
+                    grid: {
+                        display: false
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBorderWidth: 3
+                }
             }
         }
     });
@@ -7456,6 +7599,72 @@ function populatePerformanceSummaryTable(tickets, teams) {
             <td><span class="badge bg-${m.status}">${m.status === 'success' ? 'On Track' : 'Needs Attention'}</span></td>
         </tr>
     `).join('');
+}
+
+// Populate Top Performers for Performance Analysis
+function populateTopPerformersForAnalysis(teams) {
+    const container = document.getElementById('top-performers-list');
+    if (!container) {
+        console.warn('⚠️ Top performers container not found for performance analysis');
+        return;
+    }
+    
+    if (!teams || teams.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center py-3">No team data available</div>';
+        return;
+    }
+    
+    // Sort teams by productivity score
+    const sortedTeams = teams
+        .filter(team => team.is_active === true)
+        .sort((a, b) => {
+            const aScore = a.productivity?.customerRating || a.rating || 0;
+            const bScore = b.productivity?.customerRating || b.rating || 0;
+            return bScore - aScore;
+        })
+        .slice(0, 5);
+    
+    if (sortedTeams.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center py-3">No active teams found</div>';
+        return;
+    }
+    
+    container.innerHTML = sortedTeams.map((team, index) => {
+        const rating = team.productivity?.customerRating || team.rating || 0;
+        const ticketsCompleted = team.productivity?.ticketsCompleted || 0;
+        const efficiency = team.productivity?.efficiency || 0;
+        
+        return `
+            <div class="performer-item">
+                <div class="performer-rank">
+                    <span class="rank-badge rank-${index + 1}">${index + 1}</span>
+                </div>
+                <div class="performer-info">
+                    <div class="performer-name">${team.name}</div>
+                    <div class="performer-details">
+                        <span class="performer-zone">${team.zone || 'Unknown Zone'}</span>
+                        <span class="performer-members">${team.members?.length || 0} members</span>
+                    </div>
+                </div>
+                <div class="performer-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">${rating.toFixed(1)}</span>
+                        <span class="stat-label">Rating</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${ticketsCompleted}</span>
+                        <span class="stat-label">Tickets</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">${efficiency.toFixed(1)}%</span>
+                        <span class="stat-label">Efficiency</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    console.log('✅ Top performers populated for performance analysis:', sortedTeams.length);
 }
 
 // Populate Top Performers for Main Dashboard
