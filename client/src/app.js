@@ -1241,9 +1241,9 @@ function createTicketElement(ticket, isCompact = false) {
     const div = document.createElement('div');
     
     // Handle different data structures from backend
-    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
-    const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
-    const locationAddress = ticket.location?.address || 'N/A';
+    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || (ticket._id ? ticket._id.substring(0, 8) : ticket.id);
+    const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+    const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     
     if (isCompact) {
         div.className = 'ticket-card';
@@ -1289,15 +1289,15 @@ function createTicketElement(ticket, isCompact = false) {
             <div class="mt-3">
                 <div class="btn-group" role="group">
                         ${ticket.status === 'open' ? `
-                            <button class="btn btn-sm btn-primary" onclick="autoAssignTicket('${ticket._id}')">
+                            <button class="btn btn-sm btn-primary" onclick="autoAssignTicket('${ticket.id}')">
                                 <i class="fas fa-magic me-1"></i>Auto Assign
                             </button>
                         ` : ''}
-                        <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket._id}')">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket.id}')">
                             <i class="fas fa-eye me-1"></i>View Details
                         </button>
                         ${ticket.status === 'open' ? `
-                            <button class="btn btn-sm btn-outline-warning" onclick="showAssignModal('${ticket._id}')">
+                            <button class="btn btn-sm btn-outline-warning" onclick="showAssignModal('${ticket.id}')">
                                 <i class="fas fa-user-plus me-1"></i>Manual Assign
                             </button>
                         ` : ''}
@@ -3346,7 +3346,7 @@ function createZoneDetailsList(zones, teams, tickets) {
                     ${zoneTickets.slice(0, 5).map(ticket => `
                         <div class="zone-ticket-item">
                             <div class="zone-item-info">
-                                <p class="zone-item-name">${ticket.ticketNumber || ticket._id}</p>
+                                <p class="zone-item-name">${ticket.ticket_number || ticket.ticketNumber || ticket.id}</p>
                                 <p class="zone-item-details">${ticket.description || 'No description'}</p>
                             </div>
                             <span class="zone-item-status status-${ticket.status}">${ticket.status}</span>
@@ -5030,7 +5030,7 @@ window.viewTicketDetails = async function(ticketId) {
         body.innerHTML = `
             <div class="mb-3">
                 <div class="small text-muted">Ticket</div>
-                <div class="fw-semibold">${ticket.ticketNumber || ticket.id || ticket._id || 'N/A'} - ${ticket.title || ticket.category || 'Ticket'}</div>
+                <div class="fw-semibold">${ticket.ticket_number || ticket.ticketNumber || ticket.id || 'N/A'} - ${ticket.title || ticket.category || 'Ticket'}</div>
                 <div class="text-muted">${ticket.description || 'No description provided.'}</div>
             </div>
             <div class="mb-3">
@@ -5531,7 +5531,9 @@ function createTicketTrendsChart(tickets) {
     const projectedTotal = Math.round(projections.reduce((a, b) => a + b, 0));
     const teamsNeeded = Math.ceil(projectedTotal / 3);
     const projectedCost = projectedTotal * 67.5;
-    const growthRate = ((projectedTotal - counts.filter(c => c !== null).slice(-7).reduce((a, b) => a + b, 0)) / counts.filter(c => c !== null).slice(-7).reduce((a, b) => a + b, 0) * 100).toFixed(1);
+    const recentCounts = counts.filter(c => c !== null).slice(-7);
+    const recentTotal = recentCounts.length > 0 ? recentCounts.reduce((a, b) => a + b, 0) : 1;
+    const growthRate = ((projectedTotal - recentTotal) / recentTotal * 100).toFixed(1);
     
     updateElement('forecast-tickets', projectedTotal);
     updateElement('forecast-teams', teamsNeeded);
@@ -6331,8 +6333,10 @@ function populateAIInsights(tickets, teams) {
     
     // Aging tickets insight
     const oldTickets = tickets.filter(t => {
-        const hours = (new Date() - new Date(t.createdAt)) / (1000 * 60 * 60);
-        return hours > 48 && t.status !== 'resolved' && t.status !== 'closed';
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return false;
+        const hours = (new Date() - new Date(createdDate)) / (1000 * 60 * 60);
+        return hours > 48 && t.status !== 'completed' && t.status !== 'closed';
     }).length;
     
     if (oldTickets > 5) {
@@ -6345,11 +6349,13 @@ function populateAIInsights(tickets, teams) {
     
     // Peak time insight
     const peakHour = tickets.reduce((acc, t) => {
-        const hour = new Date(t.createdAt).getHours();
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return acc;
+        const hour = new Date(createdDate).getHours();
         acc[hour] = (acc[hour] || 0) + 1;
         return acc;
     }, {});
-    const maxHour = Object.keys(peakHour).reduce((a, b) => peakHour[a] > peakHour[b] ? a : b);
+    const maxHour = Object.keys(peakHour).length > 0 ? Object.keys(peakHour).reduce((a, b) => peakHour[a] > peakHour[b] ? a : b) : 12;
     
     insights.push({
         title: 'Peak Hours Identified',
@@ -6358,9 +6364,14 @@ function populateAIInsights(tickets, teams) {
     });
     
     // Efficiency insight
-    const resolved = tickets.filter(t => t.resolvedAt);
+    const resolved = tickets.filter(t => t.completed_at || t.resolvedAt);
     const avgTime = resolved.length > 0 
-        ? (resolved.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) / resolved.length / (1000 * 60 * 60))
+        ? (resolved.reduce((sum, t) => {
+            const completedDate = t.completed_at || t.resolvedAt;
+            const createdDate = t.created_at || t.createdAt;
+            if (!completedDate || !createdDate) return sum;
+            return sum + (new Date(completedDate) - new Date(createdDate));
+        }, 0) / resolved.length / (1000 * 60 * 60))
         : 0;
     
     if (avgTime < 2) {
