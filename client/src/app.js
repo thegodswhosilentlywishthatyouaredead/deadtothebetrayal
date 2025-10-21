@@ -1989,6 +1989,7 @@ async function populateTopPerformersFromZones(zonesData) {
         const allTeams = teamsData.teams || [];
         
         console.log('Fetched teams data:', allTeams.length, 'teams');
+        console.log('🔍 First team from API:', allTeams[0]);
         
         if (allTeams.length === 0) {
             console.log('No teams data available');
@@ -3143,6 +3144,9 @@ function populateTopTeamsTable(teams) {
 function populateTopPerformers(teams) {
     const container = document.getElementById('teams-top-performers');
     if (!container) return;
+    
+    console.log('🔍 populateTopPerformers called with:', teams.length, 'teams');
+    console.log('🔍 First team data:', teams[0]);
     
     container.innerHTML = '';
     if (!teams || teams.length === 0) return;
