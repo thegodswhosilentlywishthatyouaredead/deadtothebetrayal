@@ -2187,7 +2187,7 @@ function enrichTeamsWithTicketStats(teams, tickets) {
     const completedStatuses = new Set(['resolved', 'closed', 'completed']);
     
     tickets.forEach(ticket => {
-        const teamId = ticket.assignedTeam || ticket.assignedTo || ticket.teamId || ticket.team_id;
+        const teamId = ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId || ticket.team_id;
         if (!teamId) return;
         if (!teamIdToStats.has(teamId)) {
             teamIdToStats.set(teamId, { completed: 0, total: 0, ratingSum: 0, ratingCount: 0 });
@@ -2582,11 +2582,11 @@ function createTeamStatusElement(team) {
     
     div.innerHTML = `
         <div>
-            <strong><a href="#" class="team-member-name" onclick="showTeamProfile('${team._id || team.id}'); return false;">${team.name}</a></strong>
+            <strong><a href="#" class="team-member-name" onclick="showTeamProfile('${team.id}'); return false;">${team.name}</a></strong>
             <br>
-            <small class="text-muted">${team.skills.join(', ')}</small>
+            <small class="text-muted">${team.zone || 'Unknown Zone'}</small>
         </div>
-        <span class="badge bg-${statusClass}">${team.status}</span>
+        <span class="badge bg-${statusClass}">${team.status || 'active'}</span>
     `;
     
     return div;
@@ -2847,7 +2847,7 @@ function refreshMap() {
                             <p><strong>Category:</strong> ${ticket.category}</p>
                             <p><strong>Status:</strong> ${ticket.status}</p>
                             <p><strong>Location:</strong> ${ticket.location.address}</p>
-                            <p><strong>Created:</strong> ${new Date(ticket.createdAt).toLocaleDateString('en-MY')}</p>
+                            <p><strong>Created:</strong> ${new Date(ticket.created_at || ticket.createdAt).toLocaleDateString('en-MY')}</p>
                         </div>
                         <div class="popup-actions">
                             <button class="btn btn-sm btn-primary" onclick="showTicketDetails('${ticket.id}')">
@@ -5013,11 +5013,11 @@ window.viewTicketDetails = async function(ticketId) {
         const lat = ticket.location?.lat || (Array.isArray(coord) ? coord[1] : undefined);
         const lng = ticket.location?.lng || (Array.isArray(coord) ? coord[0] : undefined);
         const slaHrs = ticket.slaHours || 4;
-        const etaMs = ticket.resolvedAt ? 0 : Math.max(0, new Date(ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
+        const etaMs = ticket.resolvedAt ? 0 : Math.max(0, new Date(ticket.created_at || ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
         const etaStr = ticket.resolvedAt ? 'Resolved' : `${Math.ceil(etaMs/3600000)}h`;
         
         // Simple AI recommendation based on status/priority/aging
-        const openedHours = (Date.now() - new Date(ticket.createdAt).getTime())/3600000;
+        const openedHours = (Date.now() - new Date(ticket.created_at || ticket.createdAt).getTime())/3600000;
         const priority = ticket.priority || 'medium';
         let aiMsg = 'Ticket is within SLA. Continue monitoring and update progress.';
         if (priority === 'emergency' || priority === 'high') {
@@ -5638,7 +5638,9 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
         
         // Get tickets for this day
         const dayTickets = tickets.filter(t => {
-            const ticketDate = new Date(t.createdAt);
+            const createdDate = t.created_at || t.createdAt;
+            if (!createdDate) return false;
+            const ticketDate = new Date(createdDate);
             return ticketDate >= date && ticketDate < nextDay;
         });
         
@@ -6027,7 +6029,9 @@ function createPeakHoursChart(tickets) {
     
     const hours = Array(24).fill(0);
     tickets.forEach(t => {
-        const hour = new Date(t.createdAt).getHours();
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return;
+        const hour = new Date(createdDate).getHours();
         hours[hour]++;
     });
     
@@ -6071,7 +6075,9 @@ function createDayOfWeekChart(tickets) {
     const counts = Array(7).fill(0);
     
     tickets.forEach(t => {
-        const day = new Date(t.createdAt).getDay();
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return;
+        const day = new Date(createdDate).getDay();
         counts[day]++;
     });
     
@@ -6237,7 +6243,7 @@ function createEfficiencyTrendsChart(tickets) {
         
         const resolved = weekTickets.filter(t => t.resolvedAt);
         const efficient = resolved.filter(t => {
-            const hours = (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60);
+            const hours = (new Date(t.resolvedAt) - new Date(t.created_at || t.createdAt)) / (1000 * 60 * 60);
             return hours <= 2;
         }).length;
         

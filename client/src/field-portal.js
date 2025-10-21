@@ -273,9 +273,9 @@ function createTicketCard(ticket) {
     card.className = 'ticket-card';
     
     // Handle different data structures from backend
-    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
-    const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
-    const locationAddress = ticket.location?.address || 'N/A';
+    const ticketNumber = ticket.ticket_number || ticket.ticket_number || ticket.ticketNumber || (ticket._id ? ticket._id.substring(0, 8) : ticket.id);
+    const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+    const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     const estimatedDuration = ticket.estimatedDuration || 90;
     
     const priorityClass = `priority-${ticket.priority}`;
@@ -410,13 +410,13 @@ function getTicketActionButtons(ticket) {
 function startTicketWork(ticketId) {
     console.log('▶️ Starting work on ticket:', ticketId);
     
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (!ticket) {
         console.error('Ticket not found:', ticketId);
         return;
     }
     
-    const ticketNum = ticket.ticketNumber || ticketId.substring(0, 8);
+    const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticketId.substring(0, 8);
     
     // Confirm start
     if (confirm(`Start work on ${ticketNum}?\n\n${ticket.title}\n${ticket.location?.address || ''}`)) {
@@ -441,13 +441,13 @@ function startTicketWork(ticketId) {
 function completeTicketWork(ticketId) {
     console.log('✅ Completing ticket:', ticketId);
     
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (!ticket) {
         console.error('Ticket not found:', ticketId);
         return;
     }
     
-    const ticketNum = ticket.ticketNumber || ticketId.substring(0, 8);
+    const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticketId.substring(0, 8);
     
     // Confirm completion
     if (confirm(`Mark ${ticketNum} as complete?\n\n${ticket.title}\n\nThis will update the ticket status to resolved.`)) {
@@ -737,7 +737,7 @@ function updateRouteList(tickets) {
         routeItem.className = 'route-item';
         routeItem.style.cursor = 'pointer';
         const duration = ticket.estimatedDuration || 90;
-        const ticketNum = ticket.ticketNumber || ticket._id.substring(0, 8);
+        const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
         
         routeItem.innerHTML = `
             <div class="route-number">${index + 1}</div>
@@ -811,7 +811,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 let currentRouteLayer = null;
 
 function showRouteToTicket(ticket, index) {
-    console.log('🗺️ Showing route to ticket:', ticket.ticketNumber || ticket._id);
+    console.log('🗺️ Showing route to ticket:', ticket.ticket_number || ticket.ticketNumber || ticket._id);
     
     // Get coordinates
     const lat = ticket.location?.coordinates?.lat || ticket.location?.latitude || 3.1390;
@@ -855,7 +855,7 @@ function showRouteToTicket(ticket, index) {
     const distance = calculateDistance(startLat, startLng, lat, lng);
     const travelTime = Math.round(distance / 40 * 60); // Assuming 40 km/h average speed
     const duration = ticket.estimatedDuration || 90;
-    const ticketNum = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
     
     // Fit map to show route
     routeMap.fitBounds([
@@ -1291,7 +1291,7 @@ function showFieldTab(tabName) {
 
 // Ticket actions
 function startTicket(ticketId) {
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'in-progress';
         displayMyTickets();
@@ -1300,7 +1300,7 @@ function startTicket(ticketId) {
 }
 
 function completeTicket(ticketId) {
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'completed';
         ticket.completedAt = new Date().toISOString();
@@ -1311,7 +1311,7 @@ function completeTicket(ticketId) {
 }
 
 function pauseTicket(ticketId) {
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'assigned';
         displayMyTickets();
@@ -1320,7 +1320,7 @@ function pauseTicket(ticketId) {
 }
 
 function viewTicketDetails(ticketId) {
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         alert(`Ticket Details:\n\nTitle: ${ticket.title}\nDescription: ${ticket.description}\nCustomer: ${ticket.customer.name}\nPhone: ${ticket.customer.phone}\nAddress: ${ticket.location.address}`);
     }
@@ -1639,7 +1639,7 @@ let currentReportTicket = null;
 function viewTicketDetails(ticketId) {
     console.log('📄 Opening ticket report for:', ticketId);
     
-    const ticket = myTickets.find(t => t._id === ticketId);
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (!ticket) {
         console.error('Ticket not found:', ticketId);
         return;
@@ -1724,7 +1724,7 @@ function populateReportDetails(ticket) {
     const detailsContainer = document.getElementById('reportDetails');
     if (!detailsContainer) return;
     
-    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
     const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location?.address || 'N/A';
     const created = new Date(ticket.created_at || ticket.createdAt).toLocaleString();
@@ -1845,7 +1845,7 @@ function downloadTicketReport() {
     if (!currentReportTicket) return;
     
     const ticket = currentReportTicket;
-    const ticketNumber = ticket.ticketNumber || ticket._id.substring(0, 8);
+    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
     
     // Create report content
     const reportContent = `
