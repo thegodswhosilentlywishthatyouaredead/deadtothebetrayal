@@ -1781,7 +1781,7 @@ function filterTickets() {
 }
 
 // Field Team functions
-function updateFieldTeamsMetrics(teams, tickets, zonesData) {
+async function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     console.log('📊 Updating Field Teams metrics with:', {
         teams: teams.length,
         tickets: tickets.length,
@@ -1911,8 +1911,8 @@ function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     // Populate zone performance list
     populateTeamsZoneList(zonesData);
     
-    // Populate top performers list using zones data (same as main dashboard)
-    populateTopPerformersFromZones(zonesData);
+    // Populate top performers list using teams API data
+    await populateTopPerformersFromZones(zonesData);
 }
 
 function populateTeamsZoneList(zonesData) {
@@ -1972,114 +1972,102 @@ function populateTeamsZoneList(zonesData) {
     }
 }
 
-function populateTopPerformersFromZones(zonesData) {
+async function populateTopPerformersFromZones(zonesData) {
     const container = document.getElementById('teams-top-performers');
     if (!container) {
         console.error('Top performers container not found');
         return;
     }
     
-    console.log('Populating top performers with zones data:', zonesData);
+    console.log('Populating top performers with teams API data...');
     container.innerHTML = '';
     
-    if (!zonesData.zones || zonesData.zones.length === 0) {
-        console.log('No zones data available');
-        container.innerHTML = '<p class="text-muted">No team data available</p>';
-        return;
-    }
-    
-    // Extract all teams from zones data (same as main dashboard)
-    const allTeams = [];
-    zonesData.zones.forEach(zoneData => {
-        if (zoneData.teams && Array.isArray(zoneData.teams)) {
-            zoneData.teams.forEach(team => {
-                allTeams.push({
-                    ...team,
-                    zone: zoneData.zoneName,
-                    // Add zone-level data to team
-                    zoneProductivity: zoneData.productivity || 0,
-                    zoneOpenTickets: zoneData.openTickets || 0,
-                    zoneClosedTickets: zoneData.closedTickets || 0
-                });
-            });
+    try {
+        // Fetch teams data directly from teams API for better performance data
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const allTeams = teamsData.teams || [];
+        
+        console.log('Fetched teams data:', allTeams.length, 'teams');
+        
+        if (allTeams.length === 0) {
+            console.log('No teams data available');
+            container.innerHTML = '<p class="text-muted">No team data available</p>';
+            return;
         }
-    });
-    
-    console.log('Extracted teams:', allTeams);
-    
-    if (allTeams.length === 0) {
-        console.log('No teams found in zones');
-        container.innerHTML = '<p class="text-muted">No teams found in zones</p>';
-        return;
-    }
-    
-    // Sort teams by productivity score (from zone data) or tickets completed
-    const sortedTeams = allTeams.sort((a, b) => {
-        // First try zone productivity score
-        const aScore = a.zoneProductivity || 0;
-        const bScore = b.zoneProductivity || 0;
-        if (aScore !== bScore) return bScore - aScore;
         
-        // Then by tickets completed if available
-        const aCompleted = a.productivity?.ticketsCompleted || a.ticketsCompleted || 0;
-        const bCompleted = b.productivity?.ticketsCompleted || b.ticketsCompleted || 0;
-        return bCompleted - aCompleted;
-    });
-    
-    // Take top 5 performers
-    const topPerformers = sortedTeams.slice(0, 5);
-    console.log('Top performers:', topPerformers);
-    
-    // Generate last week comparison data
-    const lastWeekData = topPerformers.map((team, index) => ({
-        team: team.name,
-        currentRank: index + 1,
-        lastWeekRank: Math.max(1, Math.min(5, index + 1 + Math.floor(Math.random() * 3) - 1)),
-        ticketsChange: Math.floor(Math.random() * 6 - 3), // ±3 tickets change
-        ratingChange: (Math.random() * 0.4 - 0.2).toFixed(1) // ±0.2 rating change
-    }));
-    
-    topPerformers.forEach((team, index) => {
-        const lastWeek = lastWeekData[index];
-        const rankChange = lastWeek.currentRank - lastWeek.lastWeekRank;
-        const rankIcon = rankChange > 0 ? '📈' : rankChange < 0 ? '📉' : '➡️';
-        const rankText = rankChange > 0 ? `+${rankChange}` : rankChange < 0 ? `${rankChange}` : '0';
+        // Sort teams by productivity score and tickets completed
+        const sortedTeams = allTeams.sort((a, b) => {
+            // First by tickets completed
+            const aTickets = a.productivity?.ticketsCompleted || 0;
+            const bTickets = b.productivity?.ticketsCompleted || 0;
+            if (aTickets !== bTickets) return bTickets - aTickets;
+            
+            // Then by customer rating
+            const aRating = a.productivity?.customerRating || 0;
+            const bRating = b.productivity?.customerRating || 0;
+            return bRating - aRating;
+        });
         
-        const performerItem = document.createElement('div');
-        performerItem.className = 'performer-item';
+        // Take top 5 performers
+        const topPerformers = sortedTeams.slice(0, 5);
+        console.log('Top performers:', topPerformers);
         
-        const teamName = team.name || 'Unknown Team';
-        const teamZone = team.zone || 'Unknown Zone';
-        const ticketsCompleted = team.productivity?.ticketsCompleted || team.ticketsCompleted || Math.floor(Math.random() * 50) + 10;
-        const ratingValue = team.productivity?.customerRating || team.rating || (4.0 + Math.random() * 1.0);
-        const rating = parseFloat(ratingValue).toFixed(1);
-        const status = team.status || 'available';
-        const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
+        // Generate last week comparison data
+        const lastWeekData = topPerformers.map((team, index) => ({
+            team: team.name,
+            currentRank: index + 1,
+            lastWeekRank: Math.max(1, Math.min(5, index + 1 + Math.floor(Math.random() * 3) - 1)),
+            ticketsChange: Math.floor(Math.random() * 6 - 3), // ±3 tickets change
+            ratingChange: (Math.random() * 0.4 - 0.2).toFixed(1) // ±0.2 rating change
+        }));
         
-        // Generate realistic performance metrics
-        const responseTime = Math.floor(Math.random() * 30) + 15; // 15-45 minutes
-        const completionRate = (85 + Math.random() * 15).toFixed(1); // 85-100%
-        
-        performerItem.innerHTML = `
-            <div class="performer-rank">${index + 1}</div>
-            <div class="performer-info">
-                <div class="performer-name">
-                    ${teamName}
-                    <small class="text-muted ms-2">${rankIcon} ${rankText}</small>
+        topPerformers.forEach((team, index) => {
+            const lastWeek = lastWeekData[index];
+            const rankChange = lastWeek.currentRank - lastWeek.lastWeekRank;
+            const rankIcon = rankChange > 0 ? '📈' : rankChange < 0 ? '📉' : '➡️';
+            const rankText = rankChange > 0 ? `+${rankChange}` : rankChange < 0 ? `${rankChange}` : '0';
+            
+            const performerItem = document.createElement('div');
+            performerItem.className = 'performer-item';
+            
+            const teamName = team.name || 'Unknown Team';
+            const teamZone = team.zone || 'Unknown Zone';
+            const ticketsCompleted = team.productivity?.ticketsCompleted || 0;
+            const ratingValue = team.productivity?.customerRating || 0;
+            const rating = parseFloat(ratingValue).toFixed(1);
+            const status = team.status || 'available';
+            const statusClass = status === 'busy' ? 'status-busy' : status === 'offline' ? 'status-offline' : 'status-available';
+            
+            // Use actual performance data from API
+            const responseTime = team.productivity?.responseTime || 0;
+            const completionRate = team.productivity?.completionRate || 0;
+            
+            performerItem.innerHTML = `
+                <div class="performer-rank">${index + 1}</div>
+                <div class="performer-info">
+                    <div class="performer-name">
+                        ${teamName}
+                        <small class="text-muted ms-2">${rankIcon} ${rankText}</small>
+                    </div>
+                    <div class="performer-zone">${teamZone} | ${responseTime}min | ${completionRate}%</div>
                 </div>
-                <div class="performer-zone">${teamZone} | ${responseTime}min | ${completionRate}%</div>
-            </div>
-            <div class="performer-metrics">
-                <div class="performer-tickets">${ticketsCompleted}</div>
-                <div class="performer-rating">${rating}⭐</div>
-                <div class="performer-status ${statusClass}">${status}</div>
-            </div>
-        `;
+                <div class="performer-metrics">
+                    <div class="performer-tickets">${ticketsCompleted}</div>
+                    <div class="performer-rating">${rating}⭐</div>
+                    <div class="performer-status ${statusClass}">${status}</div>
+                </div>
+            `;
+            
+            container.appendChild(performerItem);
+        });
         
-        container.appendChild(performerItem);
-    });
-    
-    console.log('🏆 Top performers populated:', topPerformers.length, 'teams from zones data');
+        console.log('🏆 Top performers populated:', topPerformers.length, 'teams from teams API');
+        
+    } catch (error) {
+        console.error('Error loading top performers:', error);
+        container.innerHTML = '<p class="text-muted">Error loading team data</p>';
+    }
 }
 
 // Load comprehensive teams performance analytics
@@ -3322,7 +3310,7 @@ async function loadFieldTeams() {
         const sortedByPerformance = sortTeamsByPerformance(fieldTeams);
 
         // Update Field Teams tab metrics
-        updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
+        await updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
         
         // Populate top performers with team data
         populateTopPerformers(sortedByPerformance);
