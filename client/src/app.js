@@ -5181,23 +5181,29 @@ window.viewTicketDetails = async function(ticketId) {
         body.innerHTML = '<div class="text-muted">Loading...</div>';
         openTicketDetails();
         
-        // Fetch latest ticket and teams to enrich
-        const [tRes, teamRes] = await Promise.all([
+        // Fetch latest ticket, teams, and productivity data to enrich
+        const [tRes, teamRes, productivityRes] = await Promise.all([
             fetch(`${API_BASE}/tickets`),
-            fetch(`${API_BASE}/teams`)
+            fetch(`${API_BASE}/teams`),
+            fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
         const tData = await tRes.json();
         const ticketsArr = tData.tickets || [];
         const teamsArr = (await teamRes.json()).teams || [];
+        const productivityArr = (await productivityRes.json()).teams || [];
         const ticket = ticketsArr.find(t => (t._id || t.id) === ticketId) || {};
-        const team = teamsArr.find(tm => (tm._id || tm.id) === (ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
+        const team = teamsArr.find(tm => (tm._id || tm.id) === (ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
+        const teamProductivity = productivityArr.find(p => p.teamId === (ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
         
-        const coord = ticket.location?.coordinates || [ticket.location?.lng, ticket.location?.lat].filter(Boolean);
-        const lat = ticket.location?.lat || (Array.isArray(coord) ? coord[1] : undefined);
-        const lng = ticket.location?.lng || (Array.isArray(coord) ? coord[0] : undefined);
-        const slaHrs = ticket.slaHours || 4;
-        const etaMs = ticket.resolvedAt ? 0 : Math.max(0, new Date(ticket.created_at || ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
-        const etaStr = ticket.resolvedAt ? 'Resolved' : `${Math.ceil(etaMs/3600000)}h`;
+        // Handle location data - API returns location as string and coordinates as string
+        const locationStr = ticket.location || '';
+        const coordStr = ticket.coordinates || '0,0';
+        const coordParts = coordStr.split(',').map(c => parseFloat(c.trim()));
+        const lat = coordParts[1] || 0;
+        const lng = coordParts[0] || 0;
+        const slaHrs = ticket.sla_hours || 4;
+        const etaMs = ticket.completed_at ? 0 : Math.max(0, new Date(ticket.created_at || ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
+        const etaStr = ticket.completed_at ? 'Resolved' : `${Math.ceil(etaMs/3600000)}h`;
         
         // Simple AI recommendation based on status/priority/aging
         const openedHours = (Date.now() - new Date(ticket.created_at || ticket.createdAt).getTime())/3600000;
@@ -5206,7 +5212,7 @@ window.viewTicketDetails = async function(ticketId) {
         if (priority === 'emergency' || priority === 'high') {
             aiMsg = 'High priority ticket: allocate experienced team and expedite troubleshooting.';
         }
-        if (!ticket.resolvedAt && openedHours > slaHrs) {
+        if (!ticket.completed_at && openedHours > slaHrs) {
             aiMsg = 'SLA at risk/overdue: escalate to supervisor, consider adding resources and inform customer.';
         }
         
@@ -5223,13 +5229,13 @@ window.viewTicketDetails = async function(ticketId) {
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Location</div>
-                <div>${ticket.location?.address || ticket.location?.state || 'Unknown'}, ${ticket.location?.zone || ''}</div>
-                <div class="text-muted">Coordinates: ${lat ? lat.toFixed(5) : 'N/A'}, ${lng ? lng.toFixed(5) : 'N/A'}</div>
+                <div>${locationStr || 'Unknown'}</div>
+                <div class="text-muted">Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Assigned Team</div>
                 <div>${team?.name || 'Unassigned'}</div>
-                <div class="text-muted">Rating: ${(team?.rating || 4.5).toFixed(1)} • Status: ${team?.status || 'available'}</div>
+                <div class="text-muted">Rating: ${(teamProductivity?.productivity?.customerRating || 4.5).toFixed(1)} • Status: ${team?.is_active ? 'active' : 'inactive'}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Root Cause</div>
