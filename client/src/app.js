@@ -2109,19 +2109,7 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
             createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
-            // Add delay to ensure DOM is ready for zone distribution chart
-            setTimeout(() => {
-                createZoneDistributionChart(zones);
-            }, 100);
-            
-            // Retry after a longer delay if the first attempt fails
-            setTimeout(() => {
-                const canvas = document.getElementById('statePerformanceChart');
-                if (canvas && !chartRegistry.statePerformanceChart) {
-                    console.log('🔄 Retrying zone distribution chart creation...');
-                    createZoneDistributionChart(zones);
-                }
-            }, 500);
+            createZonePerformanceAnalysisChart(zones); // Pass zones array for zone performance analysis
             createTeamProductivityChart(teams); // Pass teams array for productivity analysis
             createRatingDistributionChart(teams); // Pass teams array for rating analysis
             console.log('✅ All charts created successfully');
@@ -2491,8 +2479,8 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create Zone Distribution Chart (replaces state performance chart)
-function createZoneDistributionChart(zones) {
+// Create Zone Performance Analysis Chart (shows productivity and efficiency)
+function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
     if (!canvas) {
         console.error('❌ Canvas "statePerformanceChart" not found in DOM');
@@ -2535,68 +2523,60 @@ function createZoneDistributionChart(zones) {
         return;
     }
     
-    console.log('📊 Original zones data for distribution:', zones.slice(0, 3));
+    console.log('📊 Original zones data for performance analysis:', zones.slice(0, 3));
     
-    // Extract zone names and team counts
+    // Extract zone names and performance metrics
     const zoneNames = zones.map(zone => {
         // Extract state name from "State, Malaysia" format
         const name = zone.zoneName || zone.zone || 'Unknown Zone';
         return name.split(',')[0].trim();
     });
     
-    const activeTeams = zones.map(zone => zone.activeTeams || zone.totalTeams || 0);
-    const totalTickets = zones.map(zone => (zone.openTickets || 0) + (zone.closedTickets || 0));
     const productivityScores = zones.map(zone => zone.productivity || 0);
-    
-    console.log('📊 Zone Distribution Chart Data:', {
-        zoneNames,
-        activeTeams,
-        totalTickets,
-        productivityScores
+    const efficiencyScores = zones.map(zone => {
+        // Calculate efficiency based on closed tickets vs total tickets
+        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+        const closedTickets = zone.closedTickets || 0;
+        return totalTickets > 0 ? (closedTickets / totalTickets * 100) : 0;
     });
     
-    console.log('📊 Zone Distribution Summary:', {
+    console.log('📊 Zone Performance Analysis Data:', {
+        zoneNames,
+        productivityScores,
+        efficiencyScores
+    });
+    
+    console.log('📊 Zone Performance Summary:', {
         totalZones: zoneNames.length,
-        totalActiveTeams: activeTeams.reduce((a, b) => a + b, 0),
-        avgProductivity: (productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length).toFixed(2)
+        avgProductivity: (productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length).toFixed(2),
+        avgEfficiency: (efficiencyScores.reduce((a, b) => a + b, 0) / efficiencyScores.length).toFixed(2)
     });
     
     // Ensure we have data
     if (zoneNames.length === 0) {
         console.warn('⚠️ No zone data available, using sample data');
         zoneNames.push('Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah');
-        activeTeams.push(5, 4, 3, 2, 1);
-        totalTickets.push(25, 20, 15, 10, 8);
         productivityScores.push(4.5, 4.3, 4.2, 4.1, 4.0);
+        efficiencyScores.push(85, 82, 78, 75, 70);
     }
     
     try {
         chartRegistry.statePerformanceChart = new Chart(ctx, {
-            type: 'doughnut',
+            type: 'bar',
             data: {
                 labels: zoneNames,
                 datasets: [{
-                    label: 'Active Teams by Zone',
-                    data: activeTeams,
-                    backgroundColor: [
-                        'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(239, 68, 68, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(6, 182, 212, 0.8)',
-                        'rgba(168, 85, 247, 0.8)',
-                        'rgba(236, 72, 153, 0.8)',
-                        'rgba(34, 197, 94, 0.8)',
-                        'rgba(251, 146, 60, 0.8)',
-                        'rgba(99, 102, 241, 0.8)',
-                        'rgba(14, 165, 233, 0.8)',
-                        'rgba(20, 184, 166, 0.8)',
-                        'rgba(245, 101, 101, 0.8)'
-                    ],
-                    borderWidth: 2,
-                    borderColor: '#fff',
-                    hoverOffset: 4
+                    label: 'Productivity Score',
+                    data: productivityScores,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 1
+                }, {
+                    label: 'Efficiency %',
+                    data: efficiencyScores,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 1
                 }]
             },
             options: {
@@ -2605,14 +2585,14 @@ function createZoneDistributionChart(zones) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Team Distribution by Zone',
+                        text: 'Zone Performance Analysis - Productivity & Efficiency',
                         font: {
                             size: 14,
                             weight: 'bold'
                         }
                     },
                     legend: {
-                        position: 'bottom',
+                        position: 'top',
                         labels: {
                             usePointStyle: true,
                             padding: 20,
@@ -2624,20 +2604,36 @@ function createZoneDistributionChart(zones) {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const label = context.label || '';
-                                const value = context.parsed || 0;
-                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                const zoneIndex = context.dataIndex;
-                                const productivity = productivityScores[zoneIndex] || 0;
-                                return `${label}: ${value} teams (${percentage}%) - Productivity: ${productivity}`;
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                const zoneName = context.label || '';
+                                if (label === 'Productivity Score') {
+                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0`;
+                                } else {
+                                    return `${zoneName} - ${label}: ${value.toFixed(1)}%`;
+                                }
                             }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Performance Score'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Zones'
                         }
                     }
                 }
             }
         });
-        console.log('✅ Zone Distribution Chart created successfully');
+        console.log('✅ Zone Performance Analysis Chart created successfully');
     } catch (error) {
         console.error('❌ Error creating zone distribution chart:', error);
     }
