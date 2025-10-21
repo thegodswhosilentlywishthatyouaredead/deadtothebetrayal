@@ -2109,7 +2109,7 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
             createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
-            createStatePerformanceChart(teams); // Pass teams array for state analysis
+            createZoneDistributionChart(zones); // Pass zones array for zone distribution analysis
             createTeamProductivityChart(teams); // Pass teams array for productivity analysis
             createRatingDistributionChart(teams); // Pass teams array for rating analysis
             console.log('✅ All charts created successfully');
@@ -2479,7 +2479,133 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create state performance chart
+// Create Zone Distribution Chart (replaces state performance chart)
+function createZoneDistributionChart(zones) {
+    const ctx = document.getElementById('statePerformanceChart');
+    if (!ctx) {
+        console.error('❌ Canvas "statePerformanceChart" not found in DOM');
+        console.log('Available canvas elements:', document.querySelectorAll('canvas'));
+        return;
+    }
+    
+    if (chartRegistry.statePerformanceChart) {
+        chartRegistry.statePerformanceChart.destroy();
+    }
+    
+    // Also destroy from chartInstances if it exists
+    if (chartInstances.statePerformanceChart) {
+        chartInstances.statePerformanceChart.destroy();
+        delete chartInstances.statePerformanceChart;
+    }
+    
+    if (!zones || zones.length === 0) {
+        console.warn('⚠️ No zones data available for zone distribution chart');
+        return;
+    }
+    
+    console.log('📊 Original zones data for distribution:', zones.slice(0, 3));
+    
+    // Extract zone names and team counts
+    const zoneNames = zones.map(zone => {
+        // Extract state name from "State, Malaysia" format
+        const name = zone.zoneName || zone.zone || 'Unknown Zone';
+        return name.split(',')[0].trim();
+    });
+    
+    const activeTeams = zones.map(zone => zone.activeTeams || zone.totalTeams || 0);
+    const totalTickets = zones.map(zone => (zone.openTickets || 0) + (zone.closedTickets || 0));
+    const productivityScores = zones.map(zone => zone.productivity || 0);
+    
+    console.log('📊 Zone Distribution Chart Data:', {
+        zoneNames,
+        activeTeams,
+        totalTickets,
+        productivityScores
+    });
+    
+    // Ensure we have data
+    if (zoneNames.length === 0) {
+        console.warn('⚠️ No zone data available, using sample data');
+        zoneNames.push('Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah');
+        activeTeams.push(5, 4, 3, 2, 1);
+        totalTickets.push(25, 20, 15, 10, 8);
+        productivityScores.push(4.5, 4.3, 4.2, 4.1, 4.0);
+    }
+    
+    try {
+        chartRegistry.statePerformanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: zoneNames,
+                datasets: [{
+                    label: 'Active Teams by Zone',
+                    data: activeTeams,
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(6, 182, 212, 0.8)',
+                        'rgba(168, 85, 247, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(251, 146, 60, 0.8)',
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(14, 165, 233, 0.8)',
+                        'rgba(20, 184, 166, 0.8)',
+                        'rgba(245, 101, 101, 0.8)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Team Distribution by Zone',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                const zoneIndex = context.dataIndex;
+                                const productivity = productivityScores[zoneIndex] || 0;
+                                return `${label}: ${value} teams (${percentage}%) - Productivity: ${productivity}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ Zone Distribution Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating zone distribution chart:', error);
+    }
+}
+
+// Create state performance chart (DEPRECATED - replaced by zone distribution)
 function createStatePerformanceChart(teams) {
     const ctx = document.getElementById('statePerformanceChart');
     if (!ctx) {
