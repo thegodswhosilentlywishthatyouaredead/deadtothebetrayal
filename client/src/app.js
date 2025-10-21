@@ -1257,14 +1257,37 @@ function createTicketElement(ticket, isCompact = false) {
     const ticketNumber = ticket.ticket_number || ticket.ticketNumber || (ticket._id ? ticket._id.substring(0, 8) : ticket.id);
     const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location || ticket.location?.address || 'N/A';
+    const ticketStatus = ticket.status || 'open';
+    const assignedTeam = ticket.assigned_team_id || ticket.assignedTeam || 'Unassigned';
+    
+    // Get status display info
+    const getStatusInfo = (status) => {
+        switch (status.toLowerCase()) {
+            case 'open': return { text: 'Open', class: 'open', icon: 'fas fa-circle' };
+            case 'assigned': return { text: 'Assigned', class: 'assigned', icon: 'fas fa-user-check' };
+            case 'in_progress': return { text: 'In Progress', class: 'in-progress', icon: 'fas fa-spinner' };
+            case 'completed': return { text: 'Completed', class: 'completed', icon: 'fas fa-check-circle' };
+            case 'pending': return { text: 'Pending', class: 'pending', icon: 'fas fa-clock' };
+            default: return { text: 'Open', class: 'open', icon: 'fas fa-circle' };
+        }
+    };
+    
+    const statusInfo = getStatusInfo(ticketStatus);
     
     if (isCompact) {
         div.className = 'ticket-card';
         div.innerHTML = `
             <div class="ticket-header">
                 <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
-                <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
+                <div class="ticket-header-right">
+                    <span class="ticket-status ${statusInfo.class}">
+                        <span class="ticket-status-dot"></span>
+                        <i class="${statusInfo.icon}"></i>
+                        ${statusInfo.text}
+                    </span>
+                    <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
                 </div>
+            </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
@@ -1275,6 +1298,10 @@ function createTicketElement(ticket, isCompact = false) {
                     <i class="fas fa-map-marker-alt"></i>
                     <span>${locationAddress}</span>
                 </div>
+                <div class="ticket-detail">
+                    <i class="fas fa-users"></i>
+                    <span>${assignedTeam}</span>
+                </div>
             </div>
         `;
     } else {
@@ -1282,8 +1309,15 @@ function createTicketElement(ticket, isCompact = false) {
         div.innerHTML = `
             <div class="ticket-header">
                 <h3 class="ticket-title">${ticketNumber} - ${ticket.title}</h3>
-                <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
-                    </div>
+                <div class="ticket-header-right">
+                    <span class="ticket-status ${statusInfo.class}">
+                        <span class="ticket-status-dot"></span>
+                        <i class="${statusInfo.icon}"></i>
+                        ${statusInfo.text}
+                    </span>
+                    <span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span>
+                </div>
+            </div>
             <p class="ticket-description">${ticket.description}</p>
             <div class="ticket-details">
                 <div class="ticket-detail">
@@ -1298,28 +1332,224 @@ function createTicketElement(ticket, isCompact = false) {
                     <i class="fas fa-tag"></i>
                     <span>${ticket.category}</span>
                 </div>
+                <div class="ticket-detail">
+                    <i class="fas fa-users"></i>
+                    <span>${assignedTeam}</span>
+                </div>
             </div>
-            <div class="mt-3">
-                <div class="btn-group" role="group">
-                        ${ticket.status === 'open' ? `
-                            <button class="btn btn-sm btn-primary" onclick="autoAssignTicket('${ticket.id}')">
-                                <i class="fas fa-magic me-1"></i>Auto Assign
-                            </button>
-                        ` : ''}
-                        <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket.id}')">
-                            <i class="fas fa-eye me-1"></i>View Details
+            <div class="ticket-assignment">
+                <div class="assignment-info">
+                    <small class="text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Created: ${new Date(ticket.created_at || ticket.createdAt || Date.now()).toLocaleDateString()}
+                    </small>
+                </div>
+                <div class="assignment-actions">
+                    ${ticketStatus === 'open' ? `
+                        <button class="ticket-assign-btn auto" onclick="autoAssignTicket('${ticket.id}')" title="Intelligent Auto Assignment">
+                            <i class="fas fa-magic me-1"></i>Auto Assign
                         </button>
-                        ${ticket.status === 'open' ? `
-                            <button class="btn btn-sm btn-outline-warning" onclick="showAssignModal('${ticket.id}')">
-                                <i class="fas fa-user-plus me-1"></i>Manual Assign
-                            </button>
-                        ` : ''}
+                        <button class="ticket-assign-btn manual" onclick="showManualAssignmentModal('${ticket.id}')" title="Manual Team Assignment">
+                            <i class="fas fa-hand-paper me-1"></i>Manual Assign
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket.id}')">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </button>
                 </div>
             </div>
         `;
     }
     
     return div;
+}
+
+// Assignment Mode Toggle
+function toggleAssignmentMode() {
+    const autoMode = document.getElementById('auto-assignment').checked;
+    const autoBtn = document.getElementById('auto-assign-btn');
+    const manualBtn = document.getElementById('manual-assign-btn');
+    
+    if (autoMode) {
+        autoBtn.style.display = 'inline-block';
+        manualBtn.style.display = 'none';
+    } else {
+        autoBtn.style.display = 'none';
+        manualBtn.style.display = 'inline-block';
+    }
+}
+
+// Auto Assign All Tickets
+async function autoAssignTickets() {
+    try {
+        console.log('🤖 Starting intelligent auto-assignment of all tickets...');
+        
+        // Get all open tickets
+        const response = await fetch(`${API_BASE}/tickets`);
+        const data = await response.json();
+        const openTickets = (data.tickets || []).filter(t => t.status === 'open');
+        
+        if (openTickets.length === 0) {
+            showNotification('No open tickets to assign', 'info');
+            return;
+        }
+        
+        // Get available teams by zone
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const availableTeams = (teamsData.teams || []).filter(t => t.is_active === true);
+        
+        // Get zones data for intelligent assignment
+        const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
+        const zonesData = await zonesResponse.json();
+        
+        let assignedCount = 0;
+        
+        for (const ticket of openTickets) {
+            const assignedTeam = await intelligentAssignTicket(ticket, availableTeams, zonesData.zones || []);
+            if (assignedTeam) {
+                assignedCount++;
+                console.log(`✅ Assigned ticket ${ticket.ticket_number || ticket.id} to team ${assignedTeam.name}`);
+            }
+        }
+        
+        showNotification(`Successfully assigned ${assignedCount} out of ${openTickets.length} tickets`, 'success');
+        
+        // Refresh the ticket list
+        loadTickets();
+        
+    } catch (error) {
+        console.error('❌ Error in auto-assignment:', error);
+        showNotification('Error during auto-assignment. Please try again.', 'error');
+    }
+}
+
+// Intelligent Ticket Assignment Algorithm
+async function intelligentAssignTicket(ticket, availableTeams, zones) {
+    try {
+        // Extract ticket location/zone
+        const ticketLocation = ticket.location || ticket.location?.address || '';
+        const ticketZone = extractZoneFromLocation(ticketLocation);
+        
+        // Find teams in the same zone
+        const zoneTeams = availableTeams.filter(team => {
+            const teamZone = team.zone || '';
+            return teamZone.toLowerCase().includes(ticketZone.toLowerCase()) || 
+                   ticketZone.toLowerCase().includes(teamZone.toLowerCase());
+        });
+        
+        if (zoneTeams.length === 0) {
+            // Fallback to any available team
+            const fallbackTeam = availableTeams.find(t => t.is_active === true);
+            if (fallbackTeam) {
+                return await assignTicketToTeam(ticket, fallbackTeam);
+            }
+            return null;
+        }
+        
+        // Sort teams by productivity and availability
+        const sortedTeams = zoneTeams.sort((a, b) => {
+            // First by availability (active teams first)
+            const aActive = a.is_active === true ? 1 : 0;
+            const bActive = b.is_active === true ? 1 : 0;
+            if (aActive !== bActive) return bActive - aActive;
+            
+            // Then by productivity score
+            const aProductivity = a.productivity || 0;
+            const bProductivity = b.productivity || 0;
+            return bProductivity - aProductivity;
+        });
+        
+        // Assign to the best available team
+        const bestTeam = sortedTeams[0];
+        return await assignTicketToTeam(ticket, bestTeam);
+        
+    } catch (error) {
+        console.error('❌ Error in intelligent assignment:', error);
+        return null;
+    }
+}
+
+// Extract zone from location string
+function extractZoneFromLocation(location) {
+    if (!location) return '';
+    
+    // Common Malaysian states/zones
+    const zones = ['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah', 'Sarawak', 'Kedah', 'Kelantan', 'Terengganu', 'Pahang', 'Perak', 'Negeri Sembilan', 'Melaka', 'Perlis', 'Labuan'];
+    
+    for (const zone of zones) {
+        if (location.toLowerCase().includes(zone.toLowerCase())) {
+            return zone;
+        }
+    }
+    
+    return location.split(',')[0].trim(); // Fallback to first part of location
+}
+
+// Assign ticket to specific team
+async function assignTicketToTeam(ticket, team) {
+    try {
+        const response = await fetch(`${API_BASE}/tickets/${ticket.id}/assign`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                teamId: team.id,
+                assignmentType: 'auto'
+            })
+        });
+        
+        if (response.ok) {
+            return team;
+        } else {
+            console.error('❌ Failed to assign ticket:', response.statusText);
+            return null;
+        }
+    } catch (error) {
+        console.error('❌ Error assigning ticket:', error);
+        return null;
+    }
+}
+
+// Auto Assign Single Ticket
+async function autoAssignTicket(ticketId) {
+    try {
+        console.log(`🤖 Auto-assigning ticket ${ticketId}...`);
+        
+        // Get ticket details
+        const ticketResponse = await fetch(`${API_BASE}/tickets/${ticketId}`);
+        const ticketData = await ticketResponse.json();
+        
+        // Get available teams
+        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsData = await teamsResponse.json();
+        const availableTeams = (teamsData.teams || []).filter(t => t.is_active === true);
+        
+        // Get zones data
+        const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
+        const zonesData = await zonesResponse.json();
+        
+        const assignedTeam = await intelligentAssignTicket(ticketData, availableTeams, zonesData.zones || []);
+        
+        if (assignedTeam) {
+            showNotification(`Ticket assigned to ${assignedTeam.name}`, 'success');
+            loadTickets(); // Refresh the list
+        } else {
+            showNotification('No suitable team found for assignment', 'warning');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in auto-assignment:', error);
+        showNotification('Error during auto-assignment', 'error');
+    }
+}
+
+// Show Manual Assignment Modal
+function showManualAssignmentModal(ticketId) {
+    // This would open a modal for manual team selection
+    console.log(`Manual assignment for ticket ${ticketId}`);
+    showNotification('Manual assignment modal would open here', 'info');
 }
 
 function filterTickets() {

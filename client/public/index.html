@@ -2695,6 +2695,117 @@
             color: var(--primary-color);
         }
 
+        /* Assignment Controls */
+        .assignment-controls {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .assignment-mode {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .assignment-mode .form-label {
+            margin: 0;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .assignment-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .assignment-actions .btn {
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+        /* Ticket Status Indicators */
+        .ticket-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+
+        .ticket-status.open {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .ticket-status.assigned {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .ticket-status.in-progress {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .ticket-status.completed {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .ticket-status.pending {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+        }
+
+        .ticket-status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        /* Ticket Assignment Actions */
+        .ticket-assignment {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ticket-assign-btn {
+            padding: 4px 8px;
+            font-size: 11px;
+            border-radius: 4px;
+        }
+
+        .ticket-assign-btn.auto {
+            background: #28a745;
+            color: white;
+            border: none;
+        }
+
+        .ticket-assign-btn.manual {
+            background: #007bff;
+            color: white;
+            border: none;
+        }
+
+        .ticket-assign-btn:hover {
+            opacity: 0.8;
+        }
+
         /* Tab content styling */
         .tab-content {
             position: relative;
@@ -4234,8 +4345,14 @@
                                 <!-- Tickets Domain Header -->
                                 <div class="domain-header">
                                     <div class="domain-title">
-                                        <h1 class="page-title">Tickets Management</h1>
-                                        <p class="page-subtitle">Network Service Tickets & Incident Management</p>
+                                        <h1 class="page-title">
+                                            Tickets Management
+                                            <span class="live-indicator ms-2" title="Live Data - Auto-refreshing">
+                                                <i class="fas fa-circle" style="color: #28a745; font-size: 8px; animation: pulse 2s infinite;"></i>
+                                                <span class="ms-1" style="font-size: 12px; color: #28a745;">LIVE</span>
+                                            </span>
+                                        </h1>
+                                        <p class="page-subtitle">Network Service Tickets & Incident Management - Real-time ticket status and intelligent assignment</p>
                                     </div>
                                     <div class="domain-actions">
                                         <button type="button" class="btn btn-primary" onclick="showCreateTicketModal()">
@@ -4433,6 +4550,35 @@
 
                                 <!-- List View -->
                                 <div id="tickets-list-view">
+                                    <!-- Assignment Controls -->
+                                    <div class="row mb-3">
+                                        <div class="col-md-12">
+                                            <div class="assignment-controls">
+                                                <div class="assignment-mode">
+                                                    <label class="form-label">Assignment Mode:</label>
+                                                    <div class="btn-group" role="group">
+                                                        <input type="radio" class="btn-check" name="assignment-mode" id="auto-assignment" value="auto" checked onchange="toggleAssignmentMode()">
+                                                        <label class="btn btn-outline-success" for="auto-assignment">
+                                                            <i class="fas fa-robot me-1"></i>Auto Assignment
+                                                        </label>
+                                                        <input type="radio" class="btn-check" name="assignment-mode" id="manual-assignment" value="manual" onchange="toggleAssignmentMode()">
+                                                        <label class="btn btn-outline-primary" for="manual-assignment">
+                                                            <i class="fas fa-user me-1"></i>Manual Assignment
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="assignment-actions">
+                                                    <button type="button" class="btn btn-success" id="auto-assign-btn" onclick="autoAssignTickets()">
+                                                        <i class="fas fa-magic me-1"></i>Auto Assign All
+                                                    </button>
+                                                    <button type="button" class="btn btn-info" id="manual-assign-btn" onclick="showManualAssignmentModal()" style="display: none;">
+                                                        <i class="fas fa-hand-paper me-1"></i>Manual Assign
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <!-- Filters -->
                                     <div class="row mb-3">
                                         <div class="col-md-3">
