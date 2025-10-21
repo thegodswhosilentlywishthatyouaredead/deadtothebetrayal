@@ -6530,7 +6530,7 @@ function createStatusDistributionChart(tickets) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Priority Breakdown',
+                    text: 'Status Distribution',
                     font: {
                         size: 14,
                         weight: '600'
@@ -7020,7 +7020,7 @@ function createCategoryDistributionChart(tickets) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Priority Breakdown',
+                    text: 'Category Distribution',
                     font: {
                         size: 14,
                         weight: '600'
@@ -7197,6 +7197,16 @@ function createCostAnalysisChart(tickets, teams) {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
+                title: {
+                    display: true,
+                    text: 'Cost Analysis & Financial Trends',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151',
+                    padding: 20
+                },
                 legend: { 
                     display: true,
                     position: 'top',
