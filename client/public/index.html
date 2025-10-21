@@ -3416,10 +3416,30 @@
         }
 
         .analysis-card-body {
-            padding: 1.5rem;
-            min-height: 300px;
+            padding: 1rem;
+            min-height: 250px;
             display: flex;
             flex-direction: column;
+        }
+        
+        /* Compact styling for top 5 zone performance cards */
+        .analysis-card.compact {
+            height: 280px;
+            margin-bottom: 10px;
+        }
+        
+        .analysis-card.compact .analysis-card-body {
+            padding: 0.75rem;
+            min-height: 200px;
+        }
+        
+        .analysis-card.compact .analysis-card-header {
+            padding: 0.75rem 1rem;
+        }
+        
+        .analysis-card.compact .analysis-card-header h6 {
+            font-size: 0.9rem;
+            margin: 0;
         }
 
         .analysis-card-body canvas {
@@ -5497,9 +5517,9 @@
                                     <!-- Detailed Analysis Charts -->
                                     <div class="row mb-4">
                                         <div class="col-md-6">
-                                            <div class="analysis-card">
+                                            <div class="analysis-card compact">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance Analysis</h5>
+                                                    <h6><i class="fas fa-map-marked-alt me-2"></i>Top 5 Zone Performance</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="teamsZonePerformanceChart"></canvas>
@@ -5507,9 +5527,9 @@
                                             </div>
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="analysis-card">
+                                            <div class="analysis-card compact">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-bar me-2"></i>Zone Performance Analysis</h5>
+                                                    <h6><i class="fas fa-chart-bar me-2"></i>Top 5 Zone Performance</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="statePerformanceChart"></canvas>
