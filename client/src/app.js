@@ -2525,20 +2525,31 @@ function createZonePerformanceAnalysisChart(zones) {
     
     console.log('📊 Original zones data for performance analysis:', zones.slice(0, 3));
     
-    // Extract zone names and performance metrics
-    const zoneNames = zones.map(zone => {
-        // Extract state name from "State, Malaysia" format
-        const name = zone.zoneName || zone.zone || 'Unknown Zone';
-        return name.split(',')[0].trim();
-    });
-    
-    const productivityScores = zones.map(zone => zone.productivity || 0);
-    const efficiencyScores = zones.map(zone => {
-        // Calculate efficiency based on closed tickets vs total tickets
+    // Create array with zone data and productivity scores for sorting
+    const zonesWithScores = zones.map(zone => {
+        const zoneName = (zone.zoneName || zone.zone || 'Unknown Zone').split(',')[0].trim();
+        const productivity = zone.productivity || 0;
         const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
         const closedTickets = zone.closedTickets || 0;
-        return totalTickets > 0 ? (closedTickets / totalTickets * 100) : 0;
+        const efficiency = totalTickets > 0 ? (closedTickets / totalTickets * 100) : 0;
+        
+        return {
+            zoneName,
+            productivity,
+            efficiency,
+            originalZone: zone
+        };
     });
+    
+    // Sort by productivity scores (highest to lowest)
+    zonesWithScores.sort((a, b) => b.productivity - a.productivity);
+    
+    console.log('📊 Zones sorted by productivity (highest to lowest):', zonesWithScores.slice(0, 3));
+    
+    // Extract sorted data
+    const zoneNames = zonesWithScores.map(zone => zone.zoneName);
+    const productivityScores = zonesWithScores.map(zone => zone.productivity);
+    const efficiencyScores = zonesWithScores.map(zone => zone.efficiency);
     
     console.log('📊 Zone Performance Analysis Data:', {
         zoneNames,
@@ -2972,10 +2983,26 @@ function populateZoneRankingTable(zones) {
     const container = document.getElementById('zone-ranking-table');
     if (!container) return;
     
-    const zonesArray = Object.entries(zones).map(([name, data]) => ({
-        name,
-        ...data
-    })).sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
+    let zonesArray;
+    if (Array.isArray(zones)) {
+        // Handle array format zones
+        zonesArray = zones.map(zone => ({
+            name: zone.zoneName || zone.zone || 'Unknown Zone',
+            productivityScore: zone.productivity || 0,
+            totalTeams: zone.totalTeams || 0,
+            activeTeams: zone.activeTeams || 0,
+            totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0)
+        }));
+    } else {
+        // Handle object format zones
+        zonesArray = Object.entries(zones).map(([name, data]) => ({
+            name,
+            ...data
+        }));
+    }
+    
+    // Sort by productivity score (highest to lowest)
+    zonesArray.sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
     
     let tableHTML = `
         <table class="performance-table">
@@ -3029,9 +3056,10 @@ function populateTopTeamsTable(teams) {
             zone: team.zone || 'Unknown',
             ticketsCompleted: team.productivity?.ticketsCompleted || team.ticketsCompleted || 0,
             rating: team.rating || team.productivity?.customerRating || 4.5,
-            status: team.status || 'unknown'
+            status: team.status || 'unknown',
+            productivityScore: team.rating || team.productivity?.customerRating || 4.5
         }))
-        .sort((a, b) => b.ticketsCompleted - a.ticketsCompleted)
+        .sort((a, b) => b.productivityScore - a.productivityScore)
         .slice(0, 10);
     
     let tableHTML = `
@@ -7204,14 +7232,23 @@ function createTeamsZonePerformanceChart(zones) {
     
     console.log('📊 Original zones data:', zones.slice(0, 3));
     
-    // Handle both array and object formats for zones
+    // Handle both array and object formats for zones and sort by productivity
     let zoneLabels, zoneData;
     
     if (Array.isArray(zones)) {
-        // Analytics service returns array format
-        zoneLabels = zones.map(z => z.zone || z.zoneName || 'Unknown Zone');
-        zoneData = zones.map(z => z.totalTickets || z.total_tickets || z.activeTeams || 0);
-        console.log('📊 Using array format zones:', { zoneLabels, zoneData });
+        // Analytics service returns array format - sort by productivity
+        const zonesWithProductivity = zones.map(z => ({
+            name: z.zone || z.zoneName || 'Unknown Zone',
+            productivity: z.productivity || 0,
+            tickets: z.totalTickets || z.total_tickets || z.activeTeams || 0
+        }));
+        
+        // Sort by productivity (highest to lowest)
+        zonesWithProductivity.sort((a, b) => b.productivity - a.productivity);
+        
+        zoneLabels = zonesWithProductivity.map(z => z.name);
+        zoneData = zonesWithProductivity.map(z => z.tickets);
+        console.log('📊 Using array format zones sorted by productivity:', { zoneLabels, zoneData });
     } else if (typeof zones === 'object' && zones !== null) {
         // Auth service returns object format
         zoneLabels = Object.keys(zones);
@@ -7509,9 +7546,9 @@ function createTeamProductivityChart(teams) {
         return team;
     });
     
-    // Sort teams by productivity and take top 10
+    // Sort teams by productivity scores (highest to lowest) and take top 10
     const topTeams = enrichedTeams
-        .sort((a, b) => (b.productivity?.ticketsCompleted || 0) - (a.productivity?.ticketsCompleted || 0))
+        .sort((a, b) => (b.productivity?.customerRating || 0) - (a.productivity?.customerRating || 0))
         .slice(0, 10);
     
     console.log('📊 Top teams for chart:', topTeams.length);
