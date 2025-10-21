@@ -2523,6 +2523,12 @@ function createZoneDistributionChart(zones) {
         productivityScores
     });
     
+    console.log('📊 Zone Distribution Summary:', {
+        totalZones: zoneNames.length,
+        totalActiveTeams: activeTeams.reduce((a, b) => a + b, 0),
+        avgProductivity: (productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length).toFixed(2)
+    });
+    
     // Ensure we have data
     if (zoneNames.length === 0) {
         console.warn('⚠️ No zone data available, using sample data');
