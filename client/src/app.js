@@ -5304,7 +5304,7 @@ async function loadPerformanceAnalysis() {
         // Zone performance expects zones aggregation, not raw tickets
         if (document.getElementById('zonePerformanceChart')) {
             const zonesAgg = allTickets.reduce((acc, t) => {
-                const zone = t.location?.zone || 'Unknown';
+                const zone = t.zone || t.location?.zone || 'Unknown';
                 const z = acc[zone] || { productivityScore: 0, openTickets: 0, closedTickets: 0, count: 0 };
                 z.count += 1;
                 if (t.status === 'open' || t.status === 'in_progress' || t.status === 'pending') z.openTickets += 1;
@@ -5377,24 +5377,37 @@ function updatePerformanceKPIs(tickets, teams) {
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
     
     // Ticket growth
-    const thisMonth = tickets.filter(t => new Date(t.createdAt) >= monthStart).length;
+    const thisMonth = tickets.filter(t => {
+        const createdDate = t.created_at || t.createdAt;
+        return createdDate && new Date(createdDate) >= monthStart;
+    }).length;
     const lastMonth = tickets.filter(t => {
-        const date = new Date(t.createdAt);
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return false;
+        const date = new Date(createdDate);
         return date >= lastMonthStart && date <= lastMonthEnd;
     }).length;
     const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
     
     // Efficiency rate
-    const resolved = tickets.filter(t => t.resolvedAt);
+    const resolved = tickets.filter(t => t.completed_at || t.resolvedAt);
     const efficientTickets = resolved.filter(t => {
-        const hours = (new Date(t.resolvedAt) - new Date(t.createdAt)) / (1000 * 60 * 60);
+        const completedDate = t.completed_at || t.resolvedAt;
+        const createdDate = t.created_at || t.createdAt;
+        if (!completedDate || !createdDate) return false;
+        const hours = (new Date(completedDate) - new Date(createdDate)) / (1000 * 60 * 60);
         return hours <= 2;
     }).length;
     const efficiency = resolved.length > 0 ? (efficientTickets / resolved.length * 100).toFixed(1) : 0;
     
     // Average resolution time
     const avgTime = resolved.length > 0 
-        ? (resolved.reduce((sum, t) => sum + (new Date(t.resolvedAt) - new Date(t.createdAt)), 0) / resolved.length / (1000 * 60 * 60)).toFixed(2)
+        ? (resolved.reduce((sum, t) => {
+            const completedDate = t.completed_at || t.resolvedAt;
+            const createdDate = t.created_at || t.createdAt;
+            if (!completedDate || !createdDate) return sum;
+            return sum + (new Date(completedDate) - new Date(createdDate));
+        }, 0) / resolved.length / (1000 * 60 * 60)).toFixed(2)
         : 0;
     
     // Monthly cost
@@ -5431,7 +5444,9 @@ function createTicketTrendsChart(tickets) {
         nextDay.setDate(nextDay.getDate() + 1);
         
         const count = tickets.filter(t => {
-            const ticketDate = new Date(t.createdAt);
+            const createdDate = t.created_at || t.createdAt;
+            if (!createdDate) return false;
+            const ticketDate = new Date(createdDate);
             return ticketDate >= date && ticketDate < nextDay;
         }).length;
         
@@ -5554,7 +5569,7 @@ function createStatusDistributionChart(tickets) {
     const statusCounts = {
         open: tickets.filter(t => t.status === 'open').length,
         in_progress: tickets.filter(t => t.status === 'in_progress').length,
-        resolved: tickets.filter(t => t.status === 'resolved').length,
+        resolved: tickets.filter(t => t.status === 'resolved' || t.status === 'completed').length,
         closed: tickets.filter(t => t.status === 'closed').length
     };
     
