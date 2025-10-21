@@ -3287,13 +3287,36 @@
             font-size: 0.95rem;
         }
 
-        /* Standardize row spacing in Performance Analysis */
+        /* Compact Performance Analysis Layout */
         #tickets-performance-analysis .row {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         #tickets-performance-analysis .row:last-child {
             margin-bottom: 0;
+        }
+
+        #tickets-performance-analysis .col-lg-6,
+        #tickets-performance-analysis .col-md-6 {
+            margin-bottom: 0.75rem;
+        }
+
+        #tickets-performance-analysis .chart-container {
+            height: 300px;
+            margin-bottom: 0.5rem;
+        }
+
+        #tickets-performance-analysis .kpi-card {
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #tickets-performance-analysis .card {
+            margin-bottom: 0.75rem;
+        }
+
+        #tickets-performance-analysis .card-body {
+            padding: 1rem;
         }
 
         .kpi-card {
@@ -4816,16 +4839,15 @@
                                         </div>
                                     </div>
 
-                                    <!-- Detailed Analysis Charts -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
+                                    <!-- Compact Analysis Charts - 2x2 Grid -->
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h5>
+                                                    <h6><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h6>
                                                     <div class="btn-group btn-group-sm">
                                                         <button class="btn btn-outline-primary active" onclick="updateTrendPeriod('week')">Week</button>
                                                         <button class="btn btn-outline-primary" onclick="updateTrendPeriod('month')">Month</button>
-                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('quarter')">Quarter</button>
                                                     </div>
                                                 </div>
                                                 <div class="analysis-card-body">
@@ -4833,10 +4855,49 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-pie me-2"></i>Status Distribution</h5>
+                                                    <h6><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
+                                                    <div class="aging-stats mt-2">
+                                                        <div class="row text-center">
+                                                            <div class="col-6">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="current-productivity">0%</div>
+                                                                    <div class="aging-label">Productivity</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="current-efficiency">0%</div>
+                                                                    <div class="aging-label">Efficiency</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="zonePerformanceChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-chart-pie me-2"></i>Status Distribution</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="statusDistChart"></canvas>
@@ -4845,60 +4906,21 @@
                                         </div>
                                     </div>
 
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency Trends</h5>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
-                                                    <div class="aging-stats mt-3">
-                                                        <div class="row text-center">
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-productivity">0%</div>
-                                                                    <div class="aging-label">Current Productivity</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-efficiency">0%</div>
-                                                                    <div class="aging-label">Current Efficiency</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h5>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="zonePerformanceChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h5>
+                                                    <h6><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="priorityBreakdownChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-tags me-2"></i>Category Distribution</h5>
+                                                    <h6><i class="fas fa-tags me-2"></i>Category Distribution</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="categoryDistChart"></canvas>

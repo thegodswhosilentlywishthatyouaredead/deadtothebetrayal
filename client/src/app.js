@@ -2279,21 +2279,36 @@ function createZonePerformanceChart(zones) {
                     data: productivityScores,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(59, 130, 246, 0.9)',
+                    hoverBorderColor: 'rgba(59, 130, 246, 1)',
+                    hoverBorderWidth: 3
                 },
                 {
                     label: 'Open Tickets',
                     data: openTickets,
                     backgroundColor: 'rgba(239, 68, 68, 0.8)',
                     borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(239, 68, 68, 0.9)',
+                    hoverBorderColor: 'rgba(239, 68, 68, 1)',
+                    hoverBorderWidth: 3
                 },
                 {
                     label: 'Closed Tickets',
                     data: closedTickets,
                     backgroundColor: 'rgba(34, 197, 94, 0.8)',
                     borderColor: 'rgba(34, 197, 94, 1)',
-                    borderWidth: 1
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(34, 197, 94, 0.9)',
+                    hoverBorderColor: 'rgba(34, 197, 94, 1)',
+                    hoverBorderWidth: 3
                 }
             ]
         },
@@ -2303,15 +2318,97 @@ function createZonePerformanceChart(zones) {
             plugins: {
                 title: {
                     display: true,
-                    text: 'Zone Performance Overview'
+                    text: 'Zone Performance Overview',
+                    font: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    color: '#374151'
                 },
                 legend: {
-                    position: 'top'
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 16,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y}`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1200,
+                easing: 'easeInOutQuart',
+                delay: (context) => {
+                    let delay = 0;
+                    if (context.type === 'data' && context.mode === 'default') {
+                        delay = context.dataIndex * 100;
+                    }
+                    return delay;
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Count / Percentage',
+                        font: {
+                            size: 12,
+                            weight: '600'
+                        },
+                        color: '#374151'
+                    },
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        color: '#6b7280'
+                    },
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    border: {
+                        display: false
+                    }
+                },
+                x: {
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        color: '#6b7280',
+                        maxRotation: 45,
+                        minRotation: 0
+                    },
+                    grid: {
+                        display: false
+                    },
+                    border: {
+                        display: false
+                    }
                 }
             }
         }
@@ -6239,21 +6336,41 @@ function createTicketTrendsChart(tickets) {
                     backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     fill: true,
                     tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#2563eb',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2,
+                    shadowBlur: 4,
+                    shadowColor: 'rgba(59, 130, 246, 0.3)'
                 },
                 {
                     label: 'Projected',
                     data: projections,
                     borderColor: '#f59e0b',
                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    borderDash: [5, 5],
+                    borderDash: [8, 4],
                     fill: true,
                     tension: 0.4,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointHoverRadius: 5
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#f59e0b',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#d97706',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2,
+                    shadowBlur: 4,
+                    shadowColor: 'rgba(245, 158, 11, 0.3)'
                 }
             ]
         },
@@ -6269,15 +6386,43 @@ function createTicketTrendsChart(tickets) {
                     display: true, 
                     position: 'top',
                     labels: {
-                        font: { size: 12 },
+                        font: { size: 12, weight: '500' },
                         usePointStyle: true,
-                        padding: 12
+                        padding: 16,
+                        boxWidth: 12,
+                        boxHeight: 12
                     }
                 },
                 tooltip: { 
                     mode: 'index', 
                     intersect: false,
-                    padding: 12
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    displayColors: true,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y} tickets`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                delay: (context) => {
+                    let delay = 0;
+                    if (context.type === 'data' && context.mode === 'default') {
+                        delay = context.dataIndex * 50;
+                    }
+                    return delay;
                 }
             },
             scales: {
@@ -6286,18 +6431,39 @@ function createTicketTrendsChart(tickets) {
                     title: { 
                         display: true, 
                         text: 'Number of Tickets',
-                        font: { size: 12, weight: '600' }
+                        font: { size: 12, weight: '600' },
+                        color: '#374151'
                     },
-                    ticks: { font: { size: 11 } },
-                    grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                    ticks: { 
+                        font: { size: 11, weight: '500' },
+                        color: '#6b7280'
+                    },
+                    grid: { 
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    border: {
+                        display: false
+                    }
                 },
                 x: {
                     ticks: { 
-                        font: { size: 10 },
+                        font: { size: 10, weight: '500' },
+                        color: '#6b7280',
                         maxRotation: 45,
                         minRotation: 45
                     },
-                    grid: { display: false }
+                    grid: { 
+                        display: false
+                    },
+                    border: {
+                        display: false
+                    }
+                }
+            },
+            elements: {
+                point: {
+                    hoverBorderWidth: 3
                 }
             }
         }
@@ -6478,25 +6644,45 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                     label: 'Productivity (Completion Rate)',
                     data: productivityData,
                     borderColor: '#3b82f6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
                     fill: true,
-                    tension: 0.25,
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
-                    spanGaps: true
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#3b82f6',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#2563eb',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3,
+                    spanGaps: true,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2,
+                    shadowBlur: 4,
+                    shadowColor: 'rgba(59, 130, 246, 0.3)'
                 },
                 {
                     label: 'Efficiency (< 2h Target)',
                     data: efficiencyData,
                     borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
                     fill: true,
-                    tension: 0.25,
-                    borderWidth: 2,
-                    pointRadius: 2,
-                    pointHoverRadius: 5,
-                    spanGaps: true
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#10b981',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointHoverBackgroundColor: '#059669',
+                    pointHoverBorderColor: '#ffffff',
+                    pointHoverBorderWidth: 3,
+                    spanGaps: true,
+                    shadowOffsetX: 0,
+                    shadowOffsetY: 2,
+                    shadowBlur: 4,
+                    shadowColor: 'rgba(16, 185, 129, 0.3)'
                 }
             ]
         },
@@ -6514,17 +6700,40 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                     labels: {
                         font: { size: 12, weight: '500' },
                         usePointStyle: true,
-                        padding: 10
+                        padding: 16,
+                        boxWidth: 12,
+                        boxHeight: 12
                     }
                 },
                 tooltip: {
-                    padding: 10,
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    padding: 12,
+                    displayColors: true,
                     callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
                         label: function(context) {
                             const y = typeof context.parsed.y === 'number' ? context.parsed.y : 0;
                             return `${context.dataset.label}: ${y.toFixed(1)}%`;
                         }
                     }
+                }
+            },
+            animation: {
+                duration: 1500,
+                easing: 'easeInOutQuart',
+                delay: (context) => {
+                    let delay = 0;
+                    if (context.type === 'data' && context.mode === 'default') {
+                        delay = context.dataIndex * 30;
+                    }
+                    return delay;
                 }
             },
             scales: {
@@ -6534,7 +6743,8 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                     ticks: {
                         stepSize: 10,
                         callback: (value) => `${value}%`,
-                        font: { size: 11 }
+                        font: { size: 11, weight: '500' },
+                        color: '#6b7280'
                     },
                     title: {
                         display: true,
@@ -6542,9 +6752,16 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
                         font: {
                             size: 12,
                             weight: '600'
-                        }
+                        },
+                        color: '#374151'
                     },
-                    grid: { color: 'rgba(0, 0, 0, 0.06)' }
+                    grid: { 
+                        color: 'rgba(0, 0, 0, 0.05)',
+                        drawBorder: false
+                    },
+                    border: {
+                        display: false
+                    }
                 },
                 x: {
                     ticks: {
@@ -6607,7 +6824,7 @@ function createTeamsZonePerformanceChart(tickets) {
     });
 }
 
-// Create Priority Breakdown Chart
+// Create Priority Breakdown Chart (Enhanced Donut)
 function createPriorityBreakdownChart(tickets) {
     const ctx = document.getElementById('priorityBreakdownChart');
     if (!ctx) {
@@ -6626,25 +6843,82 @@ function createPriorityBreakdownChart(tickets) {
     destroyChartIfExists('priorityBreakdownChart');
     
     chartInstances.priorityBreakdownChart = new Chart(ctx, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
             labels: ['Emergency', 'High', 'Medium', 'Low'],
             datasets: [{
                 data: [priorities.emergency, priorities.high, priorities.medium, priorities.low],
-                backgroundColor: ['#dc2626', '#f59e0b', '#3b82f6', '#10b981']
+                backgroundColor: [
+                    'rgba(220, 38, 38, 0.8)',
+                    'rgba(245, 158, 11, 0.8)', 
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(220, 38, 38, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(59, 130, 246, 1)', 
+                    'rgba(16, 185, 129, 1)'
+                ],
+                borderWidth: 2,
+                hoverBackgroundColor: [
+                    'rgba(220, 38, 38, 0.9)',
+                    'rgba(245, 158, 11, 0.9)',
+                    'rgba(59, 130, 246, 0.9)',
+                    'rgba(16, 185, 129, 0.9)'
+                ],
+                hoverBorderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '60%',
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            },
+            elements: {
+                arc: {
+                    borderWidth: 2
+                }
             }
         }
     });
 }
 
-// Create Category Distribution Chart
+// Create Category Distribution Chart (Enhanced Donut)
 function createCategoryDistributionChart(tickets) {
     const ctx = document.getElementById('categoryDistChart');
     if (!ctx) {
@@ -6657,23 +6931,89 @@ function createCategoryDistributionChart(tickets) {
         categories[t.category] = (categories[t.category] || 0) + 1;
     });
     
+    const categoryLabels = Object.keys(categories);
+    const categoryData = Object.values(categories);
+    
     // Destroy existing chart instance if it exists
     destroyChartIfExists('categoryDistChart');
     
     chartInstances.categoryDistChart = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: Object.keys(categories),
+            labels: categoryLabels,
             datasets: [{
-                data: Object.values(categories),
-                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+                data: categoryData,
+                backgroundColor: [
+                    'rgba(59, 130, 246, 0.8)',
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(245, 158, 11, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(139, 92, 246, 0.8)',
+                    'rgba(6, 182, 212, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(59, 130, 246, 1)',
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(245, 158, 11, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(139, 92, 246, 1)',
+                    'rgba(6, 182, 212, 1)'
+                ],
+                borderWidth: 2,
+                hoverBackgroundColor: [
+                    'rgba(59, 130, 246, 0.9)',
+                    'rgba(16, 185, 129, 0.9)',
+                    'rgba(245, 158, 11, 0.9)',
+                    'rgba(239, 68, 68, 0.9)',
+                    'rgba(139, 92, 246, 0.9)',
+                    'rgba(6, 182, 212, 0.9)'
+                ],
+                hoverBorderWidth: 3
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '60%',
             plugins: {
-                legend: { position: 'bottom' }
+                legend: { 
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: 'white',
+                    bodyColor: 'white',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            },
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            },
+            elements: {
+                arc: {
+                    borderWidth: 2
+                }
             }
         }
     });
