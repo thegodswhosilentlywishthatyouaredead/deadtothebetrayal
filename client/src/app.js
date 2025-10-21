@@ -2165,11 +2165,11 @@ function populateTopPerformers(teams) {
 
     // Use the same compact markup/styles as main dashboard for consistency
     const html = sorted.map((team, i) => {
-        const name = team.name || 'Unknown';
+        const name = team.teamName || team.name || 'Unknown';
         const zone = team.zone || 'N/A';
         const state = team.state || 'N/A';
         const tickets = getCompleted(team);
-        const rating = (team.rating || team.productivity?.customerRating || 4.5).toFixed(1);
+        const rating = (team.productivity?.customerRating || team.rating || 4.5).toFixed(1);
         return `
             <div class="performer-item">
                 <div class="performer-rank">${i + 1}</div>
@@ -5946,7 +5946,7 @@ function createTeamProductivityChart(teams) {
     const topTeams = teams.slice(0, 10);
     console.log('📊 Top teams for chart:', topTeams.length);
     console.log('📊 Top teams data:', topTeams.map(t => ({
-        name: t.name,
+        name: t.teamName || t.name,
         tickets: t.productivity?.ticketsCompleted || 0
     })));
     
@@ -5957,7 +5957,7 @@ function createTeamProductivityChart(teams) {
     chartInstances.teamsProductivityChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: topTeams.map(t => t.name),
+            labels: topTeams.map(t => t.teamName || t.name),
             datasets: [{
                 label: 'Tickets Completed',
                 data: topTeams.map(t => t.productivity?.ticketsCompleted || 0),
@@ -5996,7 +5996,14 @@ function createCostAnalysisChart(tickets, teams) {
         nextDay.setDate(nextDay.getDate() + 1);
         
         const dayTickets = tickets.filter(t => {
-            const resolvedDate = t.resolvedAt;
+            // Use status for completed tickets since completed_at is null
+            if (t.status === 'completed' && (!t.completed_at || t.completed_at === null)) {
+                const createdDate = t.created_at || t.createdAt;
+                if (!createdDate) return false;
+                const ticketDate = new Date(createdDate);
+                return ticketDate >= date && ticketDate < nextDay;
+            }
+            const resolvedDate = t.resolvedAt || t.completed_at;
             if (!resolvedDate) return false;
             const ticketDate = new Date(resolvedDate);
             return ticketDate >= date && ticketDate < nextDay;
@@ -6146,7 +6153,7 @@ function createCustomerRatingsChart(teams) {
     
     const ratings = [0, 0, 0, 0, 0];
     teams.forEach(t => {
-        const rating = Math.floor(t.rating || 4.5);
+        const rating = Math.floor(t.productivity?.customerRating || t.rating || 4.5);
         if (rating >= 1 && rating <= 5) {
             ratings[rating - 1]++;
         }
@@ -6192,7 +6199,11 @@ function createProductivityMetricsChart(tickets, teams) {
     monthStart.setDate(1);
     monthStart.setHours(0, 0, 0, 0);
     
-    const monthlyTickets = tickets.filter(t => new Date(t.createdAt) >= monthStart).length;
+    const monthlyTickets = tickets.filter(t => {
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return false;
+        return new Date(createdDate) >= monthStart;
+    }).length;
     const daysInMonth = new Date().getDate();
     const ticketsPerDay = (monthlyTickets / daysInMonth).toFixed(2);
     const ticketsPerTeam = (monthlyTickets / teams.length).toFixed(2);
@@ -6208,7 +6219,9 @@ function createProductivityMetricsChart(tickets, teams) {
         weekEnd.setDate(weekEnd.getDate() + 7);
         
         const count = tickets.filter(t => {
-            const date = new Date(t.createdAt);
+            const createdDate = t.created_at || t.createdAt;
+            if (!createdDate) return false;
+            const date = new Date(createdDate);
             return date >= weekStart && date < weekEnd;
         }).length;
         
@@ -6264,13 +6277,22 @@ function createEfficiencyTrendsChart(tickets) {
         weekStart.setDate(weekStart.getDate() - 7);
         
         const weekTickets = tickets.filter(t => {
-            const date = new Date(t.createdAt);
+            const createdDate = t.created_at || t.createdAt;
+            if (!createdDate) return false;
+            const date = new Date(createdDate);
             return date >= weekStart && date < weekEnd;
         });
         
-        const resolved = weekTickets.filter(t => t.resolvedAt);
+        const resolved = weekTickets.filter(t => t.status === 'completed' || t.status === 'resolved' || t.status === 'closed');
         const efficient = resolved.filter(t => {
-            const hours = (new Date(t.resolvedAt) - new Date(t.created_at || t.createdAt)) / (1000 * 60 * 60);
+            // For completed tickets without timestamps, assume they were efficient
+            if (t.status === 'completed' && (!t.completed_at || t.completed_at === null)) {
+                return true; // Assume all completed tickets were efficient
+            }
+            const completedDate = t.completed_at || t.resolvedAt;
+            const createdDate = t.created_at || t.createdAt;
+            if (!completedDate || !createdDate) return false;
+            const hours = (new Date(completedDate) - new Date(createdDate)) / (1000 * 60 * 60);
             return hours <= 2;
         }).length;
         
@@ -6361,12 +6383,12 @@ function populateTopPerformersMain(teams) {
         <div class="performer-item">
             <div class="performer-rank">${index + 1}</div>
             <div class="performer-info">
-                <div class="performer-name">${team.name}</div>
+                <div class="performer-name">${team.teamName || team.name}</div>
                 <div class="performer-zone">${team.zone || 'N/A'} - ${team.state || 'N/A'}</div>
             </div>
             <div class="performer-metrics">
                 <div class="performer-tickets">${team.productivity?.ticketsCompleted || 0}</div>
-                <div class="performer-rating">⭐ ${(team.rating || 4.5).toFixed(1)}</div>
+                <div class="performer-rating">⭐ ${(team.productivity?.customerRating || team.rating || 4.5).toFixed(1)}</div>
             </div>
         </div>
     `).join('');
