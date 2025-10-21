@@ -411,7 +411,7 @@
             white-space: nowrap;
         }
 
-        /* AI Assistant Widget */
+        /* Enhanced AI Assistant Widget */
         .field-ai-widget {
             position: fixed;
             right: 20px;
@@ -425,6 +425,7 @@
             flex-direction: column;
             z-index: 1000;
             transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
         .field-ai-widget.minimized {
@@ -437,11 +438,11 @@
             bottom: 20px;
             width: 60px;
             height: 60px;
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 50%;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -453,7 +454,7 @@
 
         .field-ai-toggle-btn:hover {
             transform: scale(1.1);
-            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
         }
 
         .field-ai-toggle-btn.hidden {
@@ -480,7 +481,7 @@
         }
 
         .field-ai-header {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 16px 20px;
             border-radius: 16px 16px 0 0;
@@ -523,9 +524,22 @@
         }
 
         .field-ai-message {
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             display: flex;
             gap: 12px;
+            align-items: flex-start;
+            animation: messageSlideIn 0.4s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .field-ai-message.user {
@@ -533,47 +547,218 @@
         }
 
         .field-ai-avatar {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            font-size: 14px;
+            font-size: 16px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease;
+        }
+
+        .field-ai-avatar:hover {
+            transform: scale(1.05);
         }
 
         .field-ai-message.assistant .field-ai-avatar {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
 
         .field-ai-message.user .field-ai-avatar {
-            background: #10b981;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
         }
 
         .field-ai-bubble {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 12px;
+            max-width: 85%;
+            padding: 16px 20px;
+            border-radius: 20px;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.6;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
         }
 
         .field-ai-message.assistant .field-ai-bubble {
             background: white;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 6px;
         }
 
         .field-ai-message.user .field-ai-bubble {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .field-ai-bubble p {
+            margin: 0 0 12px 0;
+            font-weight: 400;
+        }
+
+        .field-ai-bubble p:last-child {
+            margin-bottom: 0;
+        }
+
+        .field-ai-bubble strong {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .field-ai-message.user .field-ai-bubble strong {
             color: white;
         }
 
-        .field-ai-input-area {
+        .field-ai-bubble ul, .field-ai-bubble ol {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .field-ai-bubble li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        .field-ai-bubble h1, .field-ai-bubble h2, .field-ai-bubble h3, .field-ai-bubble h4, .field-ai-bubble h5, .field-ai-bubble h6 {
+            margin: 16px 0 8px 0;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .field-ai-message.user .field-ai-bubble h1,
+        .field-ai-message.user .field-ai-bubble h2,
+        .field-ai-message.user .field-ai-bubble h3,
+        .field-ai-message.user .field-ai-bubble h4,
+        .field-ai-message.user .field-ai-bubble h5,
+        .field-ai-message.user .field-ai-bubble h6 {
+            color: white;
+        }
+
+        .field-ai-bubble h1 { font-size: 18px; }
+        .field-ai-bubble h2 { font-size: 16px; }
+        .field-ai-bubble h3 { font-size: 15px; }
+        .field-ai-bubble h4 { font-size: 14px; }
+
+        .field-ai-bubble code {
+            background: #f1f5f9;
+            padding: 3px 8px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            color: #e11d48;
+            border: 1px solid #e2e8f0;
+        }
+
+        .field-ai-message.user .field-ai-bubble code {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .field-ai-bubble pre {
+            background: #f8fafc;
             padding: 16px;
+            border-radius: 12px;
+            overflow-x: auto;
+            margin: 12px 0;
+            border: 1px solid #e2e8f0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+        }
+
+        .field-ai-message.user .field-ai-bubble pre {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .field-ai-bubble blockquote {
+            border-left: 4px solid #667eea;
+            padding-left: 16px;
+            margin: 12px 0;
+            font-style: italic;
+            color: #64748b;
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 8px;
+        }
+
+        .field-ai-message.user .field-ai-bubble blockquote {
+            border-left-color: rgba(255, 255, 255, 0.5);
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .field-ai-bubble .metric-highlight {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin: 12px 0;
+            border-left: 4px solid #f59e0b;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+        }
+
+        .field-ai-message.user .field-ai-bubble .metric-highlight {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .field-ai-bubble .status-excellent {
+            color: #059669;
+            font-weight: 600;
+        }
+
+        .field-ai-bubble .status-good {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .field-ai-bubble .status-needs-improvement {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .field-ai-message.user .field-ai-bubble .status-excellent,
+        .field-ai-message.user .field-ai-bubble .status-good,
+        .field-ai-message.user .field-ai-bubble .status-needs-improvement {
+            color: white;
+        }
+
+        .field-ai-bubble .performance-card {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+        }
+
+        .field-ai-message.user .field-ai-bubble .performance-card {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .field-ai-bubble .recommendation-box {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border: 1px solid #22c55e;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(34, 197, 94, 0.1);
+        }
+
+        .field-ai-message.user .field-ai-bubble .recommendation-box {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .field-ai-input-area {
+            padding: 20px;
             border-top: 1px solid #e2e8f0;
             background: white;
             border-radius: 0 0 16px 16px;
@@ -581,33 +766,105 @@
 
         .field-ai-input-group {
             display: flex;
-            gap: 8px;
+            gap: 12px;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .field-ai-input-group:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
         }
 
         .field-ai-input {
             flex: 1;
-            padding: 10px 14px;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
             font-size: 14px;
             outline: none;
-            transition: all 0.2s;
+            color: #1f2937;
+            font-weight: 400;
         }
 
-        .field-ai-input:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        .field-ai-input::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
         }
 
         .field-ai-send-btn {
-            padding: 10px 16px;
-            background: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 8px;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .field-ai-send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .field-ai-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .field-ai-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .field-ai-typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #64748b;
+            margin: 8px 0;
+        }
+
+        .field-ai-typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .field-ai-typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typingDot 1.4s infinite ease-in-out;
+        }
+
+        .field-ai-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .field-ai-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingDot {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .field-ai-send-btn:hover {

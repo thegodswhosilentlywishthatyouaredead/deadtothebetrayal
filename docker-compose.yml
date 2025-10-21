@@ -71,6 +71,9 @@ services:
     build: ./services/ai
     environment:
       SERVICE_PORT: 8003
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TICKETS_URL: http://tickets:8001
+      ANALYTICS_URL: http://analytics:8002
     depends_on:
       - tickets
 

@@ -4,6 +4,7 @@ import os
 from typing import Dict, Any, List, Optional
 import logging
 import json
+from openai import OpenAI
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -14,6 +15,14 @@ app = FastAPI(title="AI Service", version="1.0.0")
 # Service URLs - Use internal Docker network
 TICKETS_URL = os.getenv("TICKETS_URL", "http://tickets:8001")
 ANALYTICS_URL = os.getenv("ANALYTICS_URL", "http://analytics:8002")
+
+# Initialize OpenAI client
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if OPENAI_API_KEY:
+    openai_client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    logger.warning("OPENAI_API_KEY not found. AI responses will be limited.")
+    openai_client = None
 
 @app.get("/health")
 async def health_check():
@@ -283,9 +292,65 @@ How can I assist you today?"""
         logger.error(f"Error generating contextual response: {e}")
         return "I apologize, but I'm having trouble accessing the current system data. Please try again in a moment."
 
+async def generate_openai_response(message: str, tickets_data: List[Dict], analytics_data: Dict, context: str, history: List[Dict]) -> str:
+    """Generate AI response using OpenAI GPT"""
+    try:
+        # Prepare system context with real data
+        system_context = f"""You are NRO-Bots, an AI assistant for field operations management. You help with performance analysis, ticket management, and optimization recommendations.
+
+Current System Data:
+- Total Tickets: {len(tickets_data)}
+- Open Tickets: {len([t for t in tickets_data if t.get('status') in ['open', 'pending', 'in_progress']])}
+- Completed Tickets: {len([t for t in tickets_data if t.get('status') in ['completed', 'resolved', 'closed']])}
+- Context: {context}
+
+You should:
+1. Provide data-driven insights based on the current system state
+2. Use markdown formatting for better readability
+3. Highlight important metrics and performance indicators
+4. Give actionable recommendations
+5. Be concise but informative
+6. Use emojis appropriately for better UX
+
+Format your responses with:
+- **Bold text** for emphasis
+- Bullet points for lists
+- Code blocks for technical details
+- Status indicators (Excellent/Good/Needs Improvement)
+- Metric highlighting for percentages and counts"""
+
+        # Prepare conversation history
+        messages = [{"role": "system", "content": system_context}]
+        
+        # Add conversation history
+        for entry in history[-10:]:  # Limit to last 10 exchanges
+            if entry.get("role") == "user":
+                messages.append({"role": "user", "content": entry.get("content", "")})
+            elif entry.get("role") == "assistant":
+                messages.append({"role": "assistant", "content": entry.get("content", "")})
+        
+        # Add current message
+        messages.append({"role": "user", "content": message})
+        
+        # Call OpenAI API
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=1000,
+            temperature=0.7,
+            top_p=0.9
+        )
+        
+        return response.choices[0].message.content
+        
+    except Exception as e:
+        logger.error(f"Error generating OpenAI response: {e}")
+        # Fallback to contextual response
+        return await generate_contextual_response(message, tickets_data, analytics_data, context)
+
 @app.post("/ai/chat")
 async def ai_chat(request: Dict[str, Any]):
-    """AI chat endpoint for NRO-Bots"""
+    """AI chat endpoint for NRO-Bots with OpenAI integration"""
     try:
         message = request.get("message", "")
         context = request.get("context", "dashboard")
@@ -295,8 +360,11 @@ async def ai_chat(request: Dict[str, Any]):
         tickets_data = await get_tickets_data()
         analytics_data = await get_analytics_data()
         
-        # Generate context-aware response based on real data
-        response = await generate_contextual_response(message, tickets_data, analytics_data, context)
+        # Generate response using OpenAI if available, otherwise fallback
+        if openai_client:
+            response = await generate_openai_response(message, tickets_data, analytics_data, context, history)
+        else:
+            response = await generate_contextual_response(message, tickets_data, analytics_data, context)
         
         return {
             "response": response,
