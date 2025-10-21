@@ -3309,11 +3309,15 @@ function createZoneDetailsList(zones, teams, tickets) {
     
     container.innerHTML = '';
     
-    Object.entries(zones).forEach(([zoneName, zoneData]) => {
+    // Handle zones as array instead of object
+    const zonesArray = Array.isArray(zones) ? zones : Object.entries(zones).map(([key, data]) => ({ zoneName: key, ...data }));
+    
+    zonesArray.forEach(zoneData => {
+        const zoneName = zoneData.zoneName;
         console.log(`🔍 Processing zone: ${zoneName}`, zoneData);
         
-        // Get teams in this zone
-        let zoneTeams = zoneData.teams || [];
+        // Get teams in this zone from teams API
+        let zoneTeams = teams.filter(team => team.zone === zoneName);
         // Sort teams by performance (tickets completed, then rating) while maintaining displayed fields
         const getCompleted = (t) => {
             if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
@@ -3329,9 +3333,9 @@ function createZoneDetailsList(zones, teams, tickets) {
             return br - ar;
         });
         
-        // Get tickets for this zone using location.zone
+        // Get tickets for this zone using zone field
         const zoneTickets = tickets.filter(ticket => 
-            ticket.location?.zone === zoneName
+            ticket.zone === zoneName
         );
         
         console.log(`📊 Zone ${zoneName}: Found ${zoneTickets.length} tickets`);
@@ -3341,8 +3345,8 @@ function createZoneDetailsList(zones, teams, tickets) {
         const openTickets = zoneData.openTickets || zoneTickets.filter(t => t.status === 'open' || t.status === 'pending' || t.status === 'in_progress').length;
         const closedTickets = zoneData.closedTickets || zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length;
         const totalTickets = zoneTickets.length;
-        const productivity = zoneData.productivityScore || 0;
-        const efficiency = totalTickets > 0 ? ((closedTickets - openTickets) / totalTickets * 100).toFixed(2) : 0;
+        const productivity = zoneData.productivity || 0;
+        const efficiency = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(2) : 0;
         
         console.log(`📊 Zone ${zoneName} metrics:`, { openTickets, closedTickets, totalTickets, productivity, efficiency });
         
@@ -3431,8 +3435,8 @@ function generateZoneAIInsights(zoneName, zoneData, zoneTickets, zoneTeams) {
     const totalTickets = zoneTickets.length;
     const openTickets = zoneTickets.filter(t => t.status === 'open' || t.status === 'pending' || t.status === 'in_progress').length;
     const closedTickets = zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length;
-    const activeTeams = zoneTeams.filter(t => t.status === 'available' || t.status === 'busy').length;
-    const avgRating = zoneTeams.length > 0 ? (zoneTeams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / zoneTeams.length).toFixed(1) : 4.5;
+    const activeTeams = zoneTeams.filter(t => t.is_active === true || t.status === 'available' || t.status === 'busy').length;
+    const avgRating = zoneTeams.length > 0 ? (zoneTeams.reduce((sum, t) => sum + (t.productivity?.customerRating || t.rating || 4.5), 0) / zoneTeams.length).toFixed(1) : 4.5;
     
     // Insight 1: Team Utilization
     if (activeTeams < zoneTeams.length * 0.7) {
