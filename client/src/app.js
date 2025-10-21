@@ -8187,7 +8187,8 @@ function populateTopPerformersForAnalysis(teams) {
         const rating = team.productivity?.customerRating || team.rating || 0;
         const ticketsCompleted = team.productivity?.ticketsCompleted || 0;
         const efficiency = team.productivity?.efficiency || 0;
-        const zone = team.zone || 'Unknown Zone';
+        // Ensure we have proper zone information - use fallback if needed
+        const zone = team.zone || team.zoneName || 'Malaysia';
         
         return `
             <div class="performer-item">
