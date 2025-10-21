@@ -2503,15 +2503,55 @@ function createStatePerformanceChart(teams) {
         return;
     }
     
-    // Enrich teams with state data if missing
+    // Create zone to state mapping for Malaysian locations
+    const zoneToStateMapping = {
+        'Kuala Lumpur': 'Kuala Lumpur',
+        'Selangor': 'Selangor', 
+        'Penang': 'Penang',
+        'Johor': 'Johor',
+        'Sabah': 'Sabah',
+        'Sarawak': 'Sarawak',
+        'Perak': 'Perak',
+        'Kedah': 'Kedah',
+        'Kelantan': 'Kelantan',
+        'Terengganu': 'Terengganu',
+        'Pahang': 'Pahang',
+        'Negeri Sembilan': 'Negeri Sembilan',
+        'Melaka': 'Melaka',
+        'Perlis': 'Perlis',
+        'Labuan': 'Labuan'
+    };
+    
+    // Enrich teams with state data based on zone
     const enrichedTeams = teams.map(team => {
         if (!team.state || team.state === 'Unknown') {
-            // Assign teams to Malaysian states
-            const states = ['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah', 'Sarawak', 'Perak', 'Kedah', 'Kelantan', 'Terengganu', 'Pahang', 'Negeri Sembilan', 'Melaka', 'Perlis'];
-            team.state = states[Math.floor(Math.random() * states.length)];
+            // Extract state from zone name
+            const zone = team.zone || '';
+            let state = 'Unknown';
+            
+            // Try to match zone to state
+            for (const [stateName, stateCode] of Object.entries(zoneToStateMapping)) {
+                if (zone.includes(stateName)) {
+                    state = stateName;
+                    break;
+                }
+            }
+            
+            // If no match found, try to extract from zone string
+            if (state === 'Unknown' && zone) {
+                const zoneParts = zone.split(',');
+                if (zoneParts.length > 0) {
+                    state = zoneParts[0].trim();
+                }
+            }
+            
+            team.state = state;
         }
         return team;
     });
+    
+    // Debug: Log the enriched teams with states
+    console.log('📊 Enriched teams with states:', enrichedTeams.slice(0, 5).map(t => ({ name: t.name, zone: t.zone, state: t.state })));
     
     // Group teams by state
     const stateStats = {};
@@ -2555,6 +2595,8 @@ function createStatePerformanceChart(teams) {
         totalTickets: totalTickets,
         avgRatings: avgRatings
     });
+    
+    console.log('📊 State Stats Object:', stateStats);
     
     // Ensure we have data
     if (states.length === 0) {
