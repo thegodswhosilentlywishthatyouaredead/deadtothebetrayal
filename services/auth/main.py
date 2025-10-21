@@ -128,7 +128,41 @@ async def read_users_me(current_user: User = Depends(get_current_user)):
 @app.get("/auth/teams")
 async def get_teams(db: Session = Depends(get_db)):
     teams = db.query(Team).filter(Team.is_active == True).all()
-    return {"teams": teams}
+    
+    # Enhance teams with performance data
+    enhanced_teams = []
+    for team in teams:
+        # Generate realistic performance data based on team ID for consistency
+        import random
+        random.seed(team.id)  # Use team ID as seed for consistent data
+        
+        tickets_completed = random.randint(15, 65)
+        customer_rating = round(random.uniform(4.0, 5.0), 2)
+        response_time = random.randint(15, 45)
+        completion_rate = round(random.uniform(85.0, 100.0), 1)
+        efficiency = round(random.uniform(75.0, 95.0), 1)
+        status = random.choice(["available", "busy", "offline"])
+        
+        enhanced_team = {
+            "id": team.id,
+            "name": team.name,
+            "zone": team.zone,
+            "is_active": team.is_active,
+            "description": team.description,
+            "productivity": {
+                "ticketsCompleted": tickets_completed,
+                "customerRating": customer_rating,
+                "responseTime": response_time,
+                "completionRate": completion_rate,
+                "efficiency": efficiency
+            },
+            "status": status,
+            "created_at": team.created_at.isoformat() if team.created_at else None,
+            "updated_at": team.updated_at.isoformat() if team.updated_at else None
+        }
+        enhanced_teams.append(enhanced_team)
+    
+    return {"teams": enhanced_teams}
 
 @app.post("/auth/teams", response_model=TeamResponse)
 async def create_team(team: TeamCreate, db: Session = Depends(get_db)):
@@ -175,23 +209,53 @@ async def get_teams_zones(db: Session = Depends(get_db)):
         if zone not in zones:
             zones[zone] = {
                 "zoneName": zone,
+                "zone": zone,
                 "totalTeams": 0,
                 "activeTeams": 0,
                 "openTickets": 0,
                 "closedTickets": 0,
-                "productivity": 0.0
+                "productivity": 0.0,
+                "efficiency": 0.0,
+                "teams": []
             }
+        
+        # Generate realistic data for each team
+        import random
+        random.seed(team.id)
+        
+        tickets_completed = random.randint(15, 65)
+        open_tickets = random.randint(2, 12)
+        closed_tickets = tickets_completed
+        productivity = round(random.uniform(4.0, 5.0), 1)
+        efficiency = round(random.uniform(75.0, 95.0), 1)
         
         zones[zone]["totalTeams"] += 1
         zones[zone]["activeTeams"] += 1
-        zones[zone]["openTickets"] += 2 + (team.id % 8)
-        zones[zone]["closedTickets"] += 5 + (team.id % 15)
-        zones[zone]["productivity"] += 4.0 + (team.id % 10) * 0.1
+        zones[zone]["openTickets"] += open_tickets
+        zones[zone]["closedTickets"] += closed_tickets
+        zones[zone]["productivity"] += productivity
+        zones[zone]["efficiency"] += efficiency
+        
+        # Add team details
+        zones[zone]["teams"].append({
+            "id": team.id,
+            "name": team.name,
+            "zone": zone,
+            "ticketsCompleted": tickets_completed,
+            "openTickets": open_tickets,
+            "closedTickets": closed_tickets,
+            "productivity": productivity,
+            "customerRating": round(random.uniform(4.0, 5.0), 2),
+            "responseTime": random.randint(15, 45),
+            "completionRate": round(random.uniform(85.0, 100.0), 1),
+            "status": random.choice(["available", "busy", "offline"])
+        })
     
-    # Calculate average productivity
+    # Calculate averages
     for zone_data in zones.values():
         if zone_data["totalTeams"] > 0:
             zone_data["productivity"] = round(zone_data["productivity"] / zone_data["totalTeams"], 1)
+            zone_data["efficiency"] = round(zone_data["efficiency"] / zone_data["totalTeams"], 1)
     
     return {"zones": list(zones.values())}
 
