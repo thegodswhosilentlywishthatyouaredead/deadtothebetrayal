@@ -2483,7 +2483,8 @@ function createZonePerformanceChart(zones) {
 function createStatePerformanceChart(teams) {
     const ctx = document.getElementById('statePerformanceChart');
     if (!ctx) {
-        console.error('❌ State performance chart canvas not found');
+        console.error('❌ Canvas "statePerformanceChart" not found in DOM');
+        console.log('Available canvas elements:', document.querySelectorAll('canvas'));
         return;
     }
     
@@ -2564,47 +2565,75 @@ function createStatePerformanceChart(teams) {
         avgRatings.push(4.5, 4.3, 4.2, 4.1, 4.0);
     }
     
-    chartRegistry.statePerformanceChart = new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: states,
-            datasets: [{
-                label: 'Active Teams',
-                data: activeTeams,
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(245, 158, 11, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(139, 92, 246, 0.8)',
-                    'rgba(6, 182, 212, 0.8)',
-                    'rgba(168, 85, 247, 0.8)',
-                    'rgba(236, 72, 153, 0.8)',
-                    'rgba(34, 197, 94, 0.8)',
-                    'rgba(251, 146, 60, 0.8)',
-                    'rgba(99, 102, 241, 0.8)',
-                    'rgba(14, 165, 233, 0.8)',
-                    'rgba(20, 184, 166, 0.8)',
-                    'rgba(245, 101, 101, 0.8)'
-                ],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Teams Distribution by State'
-                },
-                legend: {
-                    position: 'bottom'
+    try {
+        chartRegistry.statePerformanceChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: states,
+                datasets: [{
+                    label: 'Active Teams',
+                    data: activeTeams,
+                    backgroundColor: [
+                        'rgba(59, 130, 246, 0.8)',
+                        'rgba(16, 185, 129, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)',
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(6, 182, 212, 0.8)',
+                        'rgba(168, 85, 247, 0.8)',
+                        'rgba(236, 72, 153, 0.8)',
+                        'rgba(34, 197, 94, 0.8)',
+                        'rgba(251, 146, 60, 0.8)',
+                        'rgba(99, 102, 241, 0.8)',
+                        'rgba(14, 165, 233, 0.8)',
+                        'rgba(20, 184, 166, 0.8)',
+                        'rgba(245, 101, 101, 0.8)'
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Teams Distribution by State',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12
+                            }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = ((value / total) * 100).toFixed(1);
+                                return `${label}: ${value} teams (${percentage}%)`;
+                            }
+                        }
+                    }
                 }
             }
-        }
-    });
+        });
+        console.log('✅ State Performance Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating state performance chart:', error);
+    }
 }
 
 
@@ -3917,7 +3946,16 @@ function showZoneView() {
 function showTeamsPerformanceAnalytics() {
     document.getElementById('zone-view').style.display = 'none';
     document.getElementById('teams-performance-analytics').style.display = 'block';
+    
+    // Force load performance analytics
+    console.log('📊 Loading teams performance analytics...');
     loadTeamsPerformanceAnalytics();
+    
+    // Also ensure charts are created after a short delay
+    setTimeout(() => {
+        console.log('📊 Ensuring charts are created...');
+        loadTeamsPerformanceAnalytics();
+    }, 500);
 }
 
 // Load Zone Details
@@ -6900,7 +6938,8 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
 function createTeamsZonePerformanceChart(tickets) {
     const ctx = document.getElementById('teamsZonePerformanceChart');
     if (!ctx) {
-        console.warn(`⚠️ Canvas not found for chart`);
+        console.error(`❌ Canvas 'teamsZonePerformanceChart' not found in DOM`);
+        console.log('Available canvas elements:', document.querySelectorAll('canvas'));
         return;
     }
     
@@ -6950,25 +6989,51 @@ function createTeamsZonePerformanceChart(tickets) {
     // Destroy existing chart instance if it exists
     destroyChartIfExists('teamsZonePerformanceChart');
     
-    chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: Object.keys(zones),
-            datasets: [{
-                label: 'Tickets by Zone',
-                data: Object.values(zones),
-                backgroundColor: '#3b82f6'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
-            plugins: {
-                legend: { display: false }
+    try {
+        chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(zones),
+                datasets: [{
+                    label: 'Tickets by Zone',
+                    data: Object.values(zones),
+                    backgroundColor: '#3b82f6',
+                    borderColor: '#2563eb',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: {
+                    legend: { display: false },
+                    title: {
+                        display: true,
+                        text: 'Zone Performance Analysis'
+                    }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Tickets'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Zones'
+                        }
+                    }
+                }
             }
-        }
-    });
+        });
+        console.log('✅ Zone Performance Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating zone performance chart:', error);
+    }
 }
 
 // Create Priority Breakdown Chart (Enhanced Donut)
