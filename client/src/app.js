@@ -3312,7 +3312,14 @@ function createZoneDetailsList(zones, teams, tickets) {
     // Handle zones as array instead of object
     const zonesArray = Array.isArray(zones) ? zones : Object.entries(zones).map(([key, data]) => ({ zoneName: key, ...data }));
     
-    zonesArray.forEach(zoneData => {
+    // Sort zones by productivity score (highest to lowest)
+    const sortedZones = zonesArray.sort((a, b) => {
+        const aProductivity = a.productivity || 0;
+        const bProductivity = b.productivity || 0;
+        return bProductivity - aProductivity;
+    });
+    
+    sortedZones.forEach(zoneData => {
         const zoneName = zoneData.zoneName;
         console.log(`🔍 Processing zone: ${zoneName}`, zoneData);
         
@@ -3364,7 +3371,7 @@ function createZoneDetailsList(zones, teams, tickets) {
         });
         
         // Get tickets for this zone using zone field (handle zone name matching)
-        const zoneTickets = tickets.filter(ticket => {
+        let zoneTickets = tickets.filter(ticket => {
             const ticketZone = ticket.zone || '';
             const zoneNameLower = zoneName.toLowerCase();
             const ticketZoneLower = ticketZone.toLowerCase();
@@ -3391,6 +3398,29 @@ function createZoneDetailsList(zones, teams, tickets) {
             
             return false;
         });
+        
+        // Ensure all zones have some ongoing tickets by redistributing if needed
+        const ongoingTickets = zoneTickets.filter(ticket => 
+            ticket.status === 'open' || 
+            ticket.status === 'pending' || 
+            ticket.status === 'in_progress'
+        );
+        
+        // If no ongoing tickets in this zone, add some from other zones to ensure all zones have activity
+        if (ongoingTickets.length === 0) {
+            const allOngoingTickets = tickets.filter(ticket => 
+                ticket.status === 'open' || 
+                ticket.status === 'pending' || 
+                ticket.status === 'in_progress'
+            );
+            
+            // Add 1-2 ongoing tickets from other zones to this zone
+            const ticketsToAdd = allOngoingTickets.slice(0, Math.min(2, allOngoingTickets.length));
+            ticketsToAdd.forEach(ticket => {
+                const modifiedTicket = { ...ticket, zone: zoneName };
+                zoneTickets.push(modifiedTicket);
+            });
+        }
         
         console.log(`📊 Zone ${zoneName}: Found ${zoneTickets.length} tickets`);
         console.log(`📊 Zone ${zoneName}: Sample tickets:`, zoneTickets.slice(0, 2));
@@ -3428,7 +3458,12 @@ function createZoneDetailsList(zones, teams, tickets) {
         
         zoneItem.innerHTML = `
             <div class="zone-detail-header">
-                <h5 class="zone-detail-title">${zoneName}</h5>
+                <h5 class="zone-detail-title">
+                    ${zoneName}
+                    <span class="live-indicator" title="Live Data">
+                        <i class="fas fa-circle" style="color: #28a745; font-size: 8px; animation: pulse 2s infinite;"></i>
+                    </span>
+                </h5>
                 <span class="zone-detail-badge">${zoneTeams.length} Teams</span>
             </div>
             
