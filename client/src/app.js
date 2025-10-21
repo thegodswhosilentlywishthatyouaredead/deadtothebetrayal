@@ -2108,7 +2108,7 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Teams data for charts:', teams.length, 'teams');
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
-            createTeamsZonePerformanceChart(tickets); // Pass tickets array for zone analysis
+            createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
             createStatePerformanceChart(teams); // Pass teams array for state analysis
             createTeamProductivityChart(teams); // Pass teams array for productivity analysis
             createRatingDistributionChart(teams); // Pass teams array for rating analysis
@@ -6935,7 +6935,7 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
 }
 
 // Create Zone Performance Chart
-function createTeamsZonePerformanceChart(tickets) {
+function createTeamsZonePerformanceChart(zones) {
     const ctx = document.getElementById('teamsZonePerformanceChart');
     if (!ctx) {
         console.error(`❌ Canvas 'teamsZonePerformanceChart' not found in DOM`);
@@ -6943,32 +6943,13 @@ function createTeamsZonePerformanceChart(tickets) {
         return;
     }
     
-    // Ensure tickets is an array
-    if (!Array.isArray(tickets)) {
-        console.error('tickets is not an array:', tickets);
+    // Ensure zones is an array
+    if (!Array.isArray(zones)) {
+        console.error('zones is not an array:', zones);
         return;
     }
     
-    console.log('📊 Original tickets data:', tickets.slice(0, 3));
-    
-    // Enrich tickets with zone data if missing
-    const enrichedTickets = tickets.map(ticket => {
-        if (!ticket.location?.zone || ticket.location?.zone === 'Unknown') {
-            // Assign tickets to Malaysian zones
-            const zones = ['Kuala Lumpur Central', 'Kuala Lumpur North', 'Kuala Lumpur South', 'Selangor Central', 'Selangor North', 'Selangor South', 'Penang Island', 'Penang Mainland', 'Johor Central', 'Johor North', 'Sabah East', 'Sabah West', 'Sarawak Central', 'Sarawak North'];
-            if (!ticket.location) ticket.location = {};
-            ticket.location.zone = zones[Math.floor(Math.random() * zones.length)];
-        }
-        return ticket;
-    });
-    
-    console.log('📊 Enriched tickets data:', enrichedTickets.slice(0, 3));
-    
-    const zones = {};
-    enrichedTickets.forEach(t => {
-        const zone = t.location?.zone || 'Unknown';
-        zones[zone] = (zones[zone] || 0) + 1;
-    });
+    console.log('📊 Original zones data:', zones.slice(0, 3));
     
     // Handle both array and object formats for zones
     let zoneLabels, zoneData;
@@ -6976,7 +6957,7 @@ function createTeamsZonePerformanceChart(tickets) {
     if (Array.isArray(zones)) {
         // Analytics service returns array format
         zoneLabels = zones.map(z => z.zone || z.zoneName || 'Unknown Zone');
-        zoneData = zones.map(z => z.totalTickets || z.total_tickets || 0);
+        zoneData = zones.map(z => z.totalTickets || z.total_tickets || z.activeTeams || 0);
         console.log('📊 Using array format zones:', { zoneLabels, zoneData });
     } else if (typeof zones === 'object' && zones !== null) {
         // Auth service returns object format
