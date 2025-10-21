@@ -5398,34 +5398,60 @@ function closeTicketDetails() {
 
 window.viewTicketDetails = async function(ticketId) {
     try {
+        console.log('🔍 Loading ticket details for:', ticketId);
         ensureTicketDetailsDrawer();
         const body = document.getElementById('ticket-details-body');
         body.innerHTML = '<div class="text-muted">Loading...</div>';
         openTicketDetails();
         
-        // Fetch latest ticket, teams, and productivity data to enrich
-        const [tRes, teamRes, productivityRes] = await Promise.all([
+        // Fetch tickets list, teams, and productivity data
+        const [ticketsRes, teamRes, productivityRes] = await Promise.all([
             fetch(`${API_BASE}/tickets`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
-        const tData = await tRes.json();
-        const ticketsArr = tData.tickets || [];
+        
+        if (!ticketsRes.ok) {
+            throw new Error(`Failed to fetch tickets: ${ticketsRes.status}`);
+        }
+        
+        const ticketsData = await ticketsRes.json();
+        const ticketsArr = ticketsData.tickets || [];
+        const ticket = ticketsArr.find(t => (t._id || t.id) === ticketId);
+        
+        if (!ticket) {
+            throw new Error(`Ticket with ID ${ticketId} not found`);
+        }
         const teamsArr = (await teamRes.json()).teams || [];
         const productivityArr = (await productivityRes.json()).teams || [];
-        const ticket = ticketsArr.find(t => (t._id || t.id) === ticketId) || {};
-        const team = teamsArr.find(tm => (tm._id || tm.id) === (ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
-        const teamProductivity = productivityArr.find(p => p.teamId === (ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId));
+        
+        console.log('🎫 Ticket data:', ticket);
+        console.log('👥 Teams data:', teamsArr.length);
+        console.log('📊 Productivity data:', productivityArr.length);
+        
+        // Find assigned team
+        const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId;
+        const team = teamsArr.find(tm => (tm._id || tm.id) === assignedTeamId);
+        const teamProductivity = productivityArr.find(p => p.teamId === assignedTeamId);
+        
+        console.log('🔍 Assigned team ID:', assignedTeamId);
+        console.log('👥 Found team:', team);
+        console.log('📊 Team productivity:', teamProductivity);
         
         // Handle location data - API returns location as string and coordinates as string
-        const locationStr = ticket.location || '';
+        const locationStr = ticket.location || ticket.location?.address || 'Unknown';
         const coordStr = ticket.coordinates || '0,0';
         const coordParts = coordStr.split(',').map(c => parseFloat(c.trim()));
         const lat = coordParts[1] || 0;
         const lng = coordParts[0] || 0;
         const slaHrs = ticket.sla_hours || 4;
-        const etaMs = ticket.completed_at ? 0 : Math.max(0, new Date(ticket.created_at || ticket.createdAt).getTime() + slaHrs*3600000 - Date.now());
-        const etaStr = ticket.completed_at ? 'Resolved' : `${Math.ceil(etaMs/3600000)}h`;
+        
+        // Fix ETA calculation
+        const createdTime = new Date(ticket.created_at || ticket.createdAt || Date.now()).getTime();
+        const currentTime = Date.now();
+        const slaTime = createdTime + (slaHrs * 3600000);
+        const etaMs = ticket.completed_at ? 0 : Math.max(0, slaTime - currentTime);
+        const etaStr = ticket.completed_at ? 'Resolved' : (etaMs > 0 ? `${Math.ceil(etaMs/3600000)}h` : 'Overdue');
         
         // Simple AI recommendation based on status/priority/aging
         const openedHours = (Date.now() - new Date(ticket.created_at || ticket.createdAt).getTime())/3600000;
@@ -5438,34 +5464,78 @@ window.viewTicketDetails = async function(ticketId) {
             aiMsg = 'SLA at risk/overdue: escalate to supervisor, consider adding resources and inform customer.';
         }
         
+        // Get customer information
+        const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+        const customerEmail = ticket.customer_email || ticket.customer?.email || ticket.customerInfo?.email || 'N/A';
+        const customerPhone = ticket.customer_phone || ticket.customer?.phone || ticket.customerInfo?.phone || 'N/A';
+        
+        // Get ticket creation date
+        const createdDate = new Date(ticket.created_at || ticket.createdAt || Date.now());
+        const createdDateStr = createdDate.toLocaleDateString() + ' ' + createdDate.toLocaleTimeString();
+        
+        // Get status color
+        const getStatusColor = (status) => {
+            switch (status?.toLowerCase()) {
+                case 'open': return 'bg-warning';
+                case 'assigned': return 'bg-info';
+                case 'in_progress': return 'bg-primary';
+                case 'completed': return 'bg-success';
+                case 'closed': return 'bg-secondary';
+                default: return 'bg-secondary';
+            }
+        };
+        
+        // Get priority color
+        const getPriorityColor = (priority) => {
+            switch (priority?.toLowerCase()) {
+                case 'emergency': return 'bg-danger';
+                case 'high': return 'bg-warning';
+                case 'medium': return 'bg-info';
+                case 'low': return 'bg-success';
+                default: return 'bg-info';
+            }
+        };
+        
         body.innerHTML = `
             <div class="mb-3">
                 <div class="small text-muted">Ticket</div>
-                <div class="fw-semibold">${ticket.ticket_number || ticket.ticketNumber || ticket.id || 'N/A'} - ${ticket.title || ticket.category || 'Ticket'}</div>
+                <div class="fw-semibold">${ticket.ticket_number || ticket.ticketNumber || ticket.id || 'N/A'} - ${ticket.title || 'Ticket'}</div>
                 <div class="text-muted">${ticket.description || 'No description provided.'}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Status & Priority</div>
-                <div><span class="badge bg-secondary me-2">${(ticket.status || 'unknown').toUpperCase()}</span>
-                <span class="badge bg-info">${(priority || 'medium').toUpperCase()}</span></div>
+                <div>
+                    <span class="badge ${getStatusColor(ticket.status)} me-2">${(ticket.status || 'unknown').toUpperCase()}</span>
+                    <span class="badge ${getPriorityColor(priority)}">${(priority || 'medium').toUpperCase()}</span>
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Customer Information</div>
+                <div><strong>${customerName}</strong></div>
+                <div class="text-muted">📧 ${customerEmail}</div>
+                <div class="text-muted">📞 ${customerPhone}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Location</div>
-                <div>${locationStr || 'Unknown'}</div>
-                <div class="text-muted">Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
+                <div><strong>${locationStr}</strong></div>
+                <div class="text-muted">📍 Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Assigned Team</div>
-                <div>${team?.name || 'Unassigned'}</div>
-                <div class="text-muted">Rating: ${(teamProductivity?.productivity?.customerRating || 4.5).toFixed(1)} • Status: ${team?.is_active ? 'active' : 'inactive'}</div>
+                <div><strong>${team?.name || 'Unassigned'}</strong></div>
+                <div class="text-muted">
+                    ⭐ Rating: ${(teamProductivity?.productivity?.customerRating || team?.rating || 4.5).toFixed(1)} • 
+                    Status: ${team?.is_active ? '🟢 Active' : '🔴 Inactive'}
+                </div>
+            </div>
+            <div class="mb-3">
+                <div class="small text-muted">Timeline</div>
+                <div>📅 Created: ${createdDateStr}</div>
+                <div class="text-muted">⏱️ SLA: ${slaHrs}h • ETA: ${etaStr}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Root Cause</div>
-                <div>${ticket.rootCause || 'Pending diagnosis'}</div>
-            </div>
-            <div class="mb-3">
-                <div class="small text-muted">SLA / ETA</div>
-                <div>SLA: ${slaHrs}h • ETA: ${etaStr}</div>
+                <div>${ticket.rootCause || ticket.cause || 'Pending diagnosis'}</div>
             </div>
             <div class="mb-3 p-3" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
                 <div class="fw-semibold mb-1"><i class="fas fa-robot me-2"></i>AI Recommendation</div>
