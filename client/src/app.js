@@ -3316,27 +3316,81 @@ function createZoneDetailsList(zones, teams, tickets) {
         const zoneName = zoneData.zoneName;
         console.log(`🔍 Processing zone: ${zoneName}`, zoneData);
         
-        // Get teams in this zone from teams API
-        let zoneTeams = teams.filter(team => team.zone === zoneName);
-        // Sort teams by performance (tickets completed, then rating) while maintaining displayed fields
-        const getCompleted = (t) => {
-            if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
-            if (t.productivity && typeof t.productivity.ticketsCompleted === 'number') return t.productivity.ticketsCompleted;
-            if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
-            return 0;
-        };
+        // Get teams in this zone from teams API (handle zone name matching)
+        let zoneTeams = teams.filter(team => {
+            // Handle different zone name formats
+            const teamZone = team.zone || '';
+            const zoneNameLower = zoneName.toLowerCase();
+            const teamZoneLower = teamZone.toLowerCase();
+            
+            // Direct match
+            if (teamZone === zoneName) return true;
+            
+            // Check if zone name is contained in team zone (e.g., "Sabah" in "Sabah, Malaysia")
+            if (teamZoneLower.includes(zoneNameLower) || zoneNameLower.includes(teamZoneLower)) return true;
+            
+            // Check for common zone mappings
+            const zoneMappings = {
+                'Central': ['Kuala Lumpur', 'Selangor'],
+                'Northern': ['Penang', 'Perak', 'Kedah', 'Perlis'],
+                'Eastern': ['Terengganu', 'Kelantan', 'Pahang'],
+                'Southern': ['Johor', 'Melaka', 'Negeri Sembilan'],
+                'Sabah': ['Sabah'],
+                'Sarawak': ['Sarawak']
+            };
+            
+            if (zoneMappings[zoneName]) {
+                return zoneMappings[zoneName].some(mapping => teamZoneLower.includes(mapping.toLowerCase()));
+            }
+            
+            return false;
+        });
+        // Sort teams by availability first, then productivity, then rating
         zoneTeams = [...zoneTeams].sort((a, b) => {
-            const byCompleted = getCompleted(b) - getCompleted(a);
-            if (byCompleted !== 0) return byCompleted;
-            const ar = typeof a.rating === 'number' ? a.rating : (a.productivity?.customerRating || 0);
-            const br = typeof b.rating === 'number' ? b.rating : (b.productivity?.customerRating || 0);
-            return br - ar;
+            // First sort by availability (active teams first)
+            const aActive = a.is_active === true ? 1 : 0;
+            const bActive = b.is_active === true ? 1 : 0;
+            if (aActive !== bActive) return bActive - aActive;
+            
+            // Then sort by productivity score
+            const aProductivity = a.productivity?.efficiencyScore || 0;
+            const bProductivity = b.productivity?.efficiencyScore || 0;
+            if (aProductivity !== bProductivity) return bProductivity - aProductivity;
+            
+            // Finally sort by customer rating
+            const aRating = a.productivity?.customerRating || 0;
+            const bRating = b.productivity?.customerRating || 0;
+            return bRating - aRating;
         });
         
-        // Get tickets for this zone using zone field
-        const zoneTickets = tickets.filter(ticket => 
-            ticket.zone === zoneName
-        );
+        // Get tickets for this zone using zone field (handle zone name matching)
+        const zoneTickets = tickets.filter(ticket => {
+            const ticketZone = ticket.zone || '';
+            const zoneNameLower = zoneName.toLowerCase();
+            const ticketZoneLower = ticketZone.toLowerCase();
+            
+            // Direct match
+            if (ticketZone === zoneName) return true;
+            
+            // Check if zone name is contained in ticket zone
+            if (ticketZoneLower.includes(zoneNameLower) || zoneNameLower.includes(ticketZoneLower)) return true;
+            
+            // Check for common zone mappings
+            const zoneMappings = {
+                'Central': ['Kuala Lumpur', 'Selangor'],
+                'Northern': ['Penang', 'Perak', 'Kedah', 'Perlis'],
+                'Eastern': ['Terengganu', 'Kelantan', 'Pahang'],
+                'Southern': ['Johor', 'Melaka', 'Negeri Sembilan'],
+                'Sabah': ['Sabah'],
+                'Sarawak': ['Sarawak']
+            };
+            
+            if (zoneMappings[zoneName]) {
+                return zoneMappings[zoneName].some(mapping => ticketZoneLower.includes(mapping.toLowerCase()));
+            }
+            
+            return false;
+        });
         
         console.log(`📊 Zone ${zoneName}: Found ${zoneTickets.length} tickets`);
         console.log(`📊 Zone ${zoneName}: Sample tickets:`, zoneTickets.slice(0, 2));
@@ -3346,7 +3400,25 @@ function createZoneDetailsList(zones, teams, tickets) {
         const closedTickets = zoneData.closedTickets || zoneTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').length;
         const totalTickets = zoneTickets.length;
         const productivity = zoneData.productivity || 0;
-        const efficiency = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(2) : 0;
+        
+        // Calculate realistic efficiency based on team performance and ticket completion
+        let efficiency = 0;
+        if (totalTickets > 0 && zoneTeams.length > 0) {
+            // Base efficiency from ticket completion rate
+            const completionRate = (closedTickets / totalTickets) * 100;
+            
+            // Factor in team productivity (from zones API)
+            const teamProductivityFactor = Math.min(productivity / 5.0, 1.0); // Normalize to 0-1
+            
+            // Factor in team availability (active teams vs total teams)
+            const activeTeams = zoneTeams.filter(t => t.is_active === true).length;
+            const availabilityFactor = activeTeams / zoneTeams.length;
+            
+            // Calculate weighted efficiency
+            efficiency = (completionRate * 0.4 + teamProductivityFactor * 100 * 0.3 + availabilityFactor * 100 * 0.3);
+            efficiency = Math.max(0, Math.min(100, efficiency)); // Clamp between 0-100
+        }
+        efficiency = efficiency.toFixed(1);
         
         console.log(`📊 Zone ${zoneName} metrics:`, { openTickets, closedTickets, totalTickets, productivity, efficiency });
         
@@ -3384,7 +3456,11 @@ function createZoneDetailsList(zones, teams, tickets) {
                     <h6 class="zone-section-title">
                         <i class="fas fa-ticket-alt"></i>Recent Tickets
                     </h6>
-                    ${zoneTickets.slice(0, 5).map(ticket => `
+                    ${zoneTickets.filter(ticket => 
+                        ticket.status === 'open' || 
+                        ticket.status === 'pending' || 
+                        ticket.status === 'in_progress'
+                    ).slice(0, 5).map(ticket => `
                         <div class="zone-ticket-item">
                             <div class="zone-item-info">
                                 <p class="zone-item-name">${ticket.ticket_number || ticket.ticketNumber || ticket.id}</p>
@@ -3393,7 +3469,11 @@ function createZoneDetailsList(zones, teams, tickets) {
                             <span class="zone-item-status status-${ticket.status}">${ticket.status}</span>
                         </div>
                     `).join('')}
-                    ${zoneTickets.length === 0 ? '<p class="text-muted text-center">No tickets in this zone</p>' : ''}
+                    ${zoneTickets.filter(ticket => 
+                        ticket.status === 'open' || 
+                        ticket.status === 'pending' || 
+                        ticket.status === 'in_progress'
+                    ).length === 0 ? '<p class="text-muted text-center">No ongoing tickets in this zone</p>' : ''}
                 </div>
                 
                 <div class="zone-teams-section">
@@ -3404,9 +3484,13 @@ function createZoneDetailsList(zones, teams, tickets) {
                         <div class="zone-team-item">
                             <div class="zone-item-info">
                                 <p class="zone-item-name">${team.name}</p>
-                                <p class="zone-item-details">${team.skills ? team.skills.join(', ') : 'No skills listed'}</p>
+                                <p class="zone-item-details">
+                                    Availability: ${team.is_active === true ? 'Active' : 'Inactive'} | 
+                                    Productivity: ${(team.productivity?.efficiencyScore || 0).toFixed(1)}% | 
+                                    Rating: ${(team.productivity?.customerRating || 0).toFixed(1)}⭐
+                                </p>
                             </div>
-                            <span class="zone-item-status status-${team.status}">${team.status}</span>
+                            <span class="zone-item-status status-${team.is_active === true ? 'active' : 'inactive'}">${team.is_active === true ? 'Active' : 'Inactive'}</span>
                         </div>
                     `).join('')}
                     ${zoneTeams.length === 0 ? '<p class="text-muted text-center">No teams in this zone</p>' : ''}
