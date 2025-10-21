@@ -1519,8 +1519,8 @@ function populateTopPerformersFromZones(zonesData) {
         if (aScore !== bScore) return bScore - aScore;
         
         // Then by tickets completed if available
-        const aCompleted = a.productivity?.totalTicketsCompleted || a.ticketsCompleted || 0;
-        const bCompleted = b.productivity?.totalTicketsCompleted || b.ticketsCompleted || 0;
+        const aCompleted = a.productivity?.ticketsCompleted || a.ticketsCompleted || 0;
+        const bCompleted = b.productivity?.ticketsCompleted || b.ticketsCompleted || 0;
         return bCompleted - aCompleted;
     });
     
@@ -1535,7 +1535,7 @@ function populateTopPerformersFromZones(zonesData) {
         const teamName = team.name || 'Unknown';
         const teamState = team.state || 'Unknown';
         const teamZone = team.zone || 'Unknown';
-        const ticketsCompleted = team.productivity?.totalTicketsCompleted || team.ticketsCompleted || 0;
+        const ticketsCompleted = team.productivity?.ticketsCompleted || team.ticketsCompleted || 0;
         const ratingValue = team.productivity?.customerRating || team.rating || 4.5;
         const rating = parseFloat(ratingValue).toFixed(2);
         const status = team.status || 'available';
@@ -1718,10 +1718,10 @@ function loadSamplePerformanceAnalytics() {
     
     // Sample teams data
     const sampleTeams = [
-        { name: 'Team Alpha', state: 'Kuala Lumpur', zone: 'Central Zone', status: 'active', rating: 4.8, productivity: { totalTicketsCompleted: 45, customerRating: 4.8 } },
-        { name: 'Team Beta', state: 'Selangor', zone: 'Central Zone', status: 'active', rating: 4.6, productivity: { totalTicketsCompleted: 38, customerRating: 4.6 } },
-        { name: 'Team Gamma', state: 'Penang', zone: 'Northern Zone', status: 'active', rating: 4.7, productivity: { totalTicketsCompleted: 32, customerRating: 4.7 } },
-        { name: 'Team Delta', state: 'Johor', zone: 'Southern Zone', status: 'active', rating: 4.5, productivity: { totalTicketsCompleted: 28, customerRating: 4.5 } }
+        { name: 'Team Alpha', state: 'Kuala Lumpur', zone: 'Central Zone', status: 'active', rating: 4.8, productivity: { ticketsCompleted: 45, customerRating: 4.8 } },
+        { name: 'Team Beta', state: 'Selangor', zone: 'Central Zone', status: 'active', rating: 4.6, productivity: { ticketsCompleted: 38, customerRating: 4.6 } },
+        { name: 'Team Gamma', state: 'Penang', zone: 'Northern Zone', status: 'active', rating: 4.7, productivity: { ticketsCompleted: 32, customerRating: 4.7 } },
+        { name: 'Team Delta', state: 'Johor', zone: 'Southern Zone', status: 'active', rating: 4.5, productivity: { ticketsCompleted: 28, customerRating: 4.5 } }
     ];
     
     // Sample tickets data
@@ -1906,7 +1906,7 @@ function createStatePerformanceChart(teams) {
         if (team.status === 'active' || team.status === 'available') {
             stateStats[state].activeTeams++;
         }
-        const tickets = team.productivity?.totalTicketsCompleted || team.ticketsCompleted || 0;
+        const tickets = team.productivity?.ticketsCompleted || team.ticketsCompleted || 0;
         stateStats[state].totalTickets += tickets;
         const rating = team.rating || team.productivity?.customerRating || 4.5;
         stateStats[state].ratingSum += rating;
@@ -2087,7 +2087,7 @@ function populateTopTeamsTable(teams) {
             name: team.name || 'Unknown',
             state: team.state || 'Unknown',
             zone: team.zone || 'Unknown',
-            ticketsCompleted: team.productivity?.totalTicketsCompleted || team.ticketsCompleted || 0,
+            ticketsCompleted: team.productivity?.ticketsCompleted || team.ticketsCompleted || 0,
             rating: team.rating || team.productivity?.customerRating || 4.5,
             status: team.status || 'unknown'
         }))
@@ -2146,7 +2146,7 @@ function populateTopPerformers(teams) {
     // Normalize and sort by completed tickets
     const getCompleted = (t) => {
         if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
-        if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+        if (t.productivity && typeof t.productivity.ticketsCompleted === 'number') return t.productivity.ticketsCompleted;
         if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
         return 0;
     };
@@ -2210,7 +2210,7 @@ function enrichTeamsWithTicketStats(teams, tickets) {
         if (!stats) return;
         if (!team.productivity) team.productivity = {};
         if (typeof team.ticketsCompleted !== 'number') {
-            team.productivity.totalTicketsCompleted = stats.completed;
+            team.productivity.ticketsCompleted = stats.completed;
         }
         if (typeof team.rating !== 'number' && typeof team.productivity.customerRating !== 'number') {
             team.productivity.customerRating = stats.ratingCount > 0
@@ -2224,7 +2224,7 @@ function enrichTeamsWithTicketStats(teams, tickets) {
 function sortTeamsByPerformance(teams) {
     const getCompleted = (t) => {
         if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
-        if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+        if (t.productivity && typeof t.productivity.ticketsCompleted === 'number') return t.productivity.ticketsCompleted;
         if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
         return 0;
     };
@@ -2282,7 +2282,7 @@ async function loadFieldTeams() {
                     state: 'Kuala Lumpur',
                     zone: 'Central',
                     productivity: {
-                        totalTicketsCompleted: 156,
+                        ticketsCompleted: 156,
                         customerRating: 4.8,
                         ticketsThisMonth: 23,
                         averageResponseTime: 15,
@@ -2305,7 +2305,7 @@ async function loadFieldTeams() {
                     state: 'Perak',
                     zone: 'Northern',
                     productivity: {
-                        totalTicketsCompleted: 134,
+                        ticketsCompleted: 134,
                         customerRating: 4.6,
                         ticketsThisMonth: 18,
                         averageResponseTime: 22,
@@ -2328,7 +2328,7 @@ async function loadFieldTeams() {
                     state: 'Selangor',
                     zone: 'Central',
                     productivity: {
-                        totalTicketsCompleted: 189,
+                        ticketsCompleted: 189,
                         customerRating: 4.9,
                         ticketsThisMonth: 28,
                         averageResponseTime: 12,
@@ -2351,7 +2351,7 @@ async function loadFieldTeams() {
                     state: 'Johor',
                     zone: 'Southern',
                     productivity: {
-                        totalTicketsCompleted: 142,
+                        ticketsCompleted: 142,
                         customerRating: 4.7,
                         ticketsThisMonth: 16,
                         averageResponseTime: 18,
@@ -2380,7 +2380,7 @@ async function loadFieldTeams() {
                 skills: ['electrical', 'general'],
                 hourlyRate: 180.00,
                 productivity: {
-                    totalTicketsCompleted: 156,
+                    ticketsCompleted: 156,
                     customerRating: 4.8
                 },
                 currentLocation: {
@@ -2398,7 +2398,7 @@ async function loadFieldTeams() {
                 skills: ['hvac', 'maintenance'],
                 hourlyRate: 168.00,
                 productivity: {
-                    totalTicketsCompleted: 134,
+                    ticketsCompleted: 134,
                     customerRating: 4.6
                 },
                 currentLocation: {
@@ -2501,7 +2501,7 @@ function createTeamCard(team) {
                 <div class="row text-center">
                     <div class="col-4">
                         <div class="text-muted small">Tickets</div>
-                        <div class="fw-bold">${team.productivity?.totalTicketsCompleted || 0}</div>
+                        <div class="fw-bold">${team.productivity?.ticketsCompleted || 0}</div>
                     </div>
                     <div class="col-4">
                         <div class="text-muted small">Rating</div>
@@ -3072,7 +3072,7 @@ function showTeamProfile(teamId) {
     }
     
     // Update performance metrics
-    document.getElementById('profileTicketsCompleted').textContent = team.productivity.totalTicketsCompleted;
+    document.getElementById('profileTicketsCompleted').textContent = team.productivity.ticketsCompleted;
     document.getElementById('profileRating').textContent = team.productivity.customerRating;
     
     // Update skills
@@ -3280,7 +3280,7 @@ function createZoneDetailsList(zones, teams, tickets) {
         // Sort teams by performance (tickets completed, then rating) while maintaining displayed fields
         const getCompleted = (t) => {
             if (typeof t.ticketsCompleted === 'number') return t.ticketsCompleted;
-            if (t.productivity && typeof t.productivity.totalTicketsCompleted === 'number') return t.productivity.totalTicketsCompleted;
+            if (t.productivity && typeof t.productivity.ticketsCompleted === 'number') return t.productivity.ticketsCompleted;
             if (t.stats && typeof t.stats.completed === 'number') return t.stats.completed;
             return 0;
         };
@@ -3679,7 +3679,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 180.00,
                             "skills": ["network", "customer"],
                             "productivity": {
-                                "totalTicketsCompleted": 156,
+                                "ticketsCompleted": 156,
                                 "customerRating": 4.8,
                                 "ticketsThisMonth": 23,
                                 "efficiencyScore": 92
@@ -3704,7 +3704,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 192.00,
                             "skills": ["customer", "network"],
                             "productivity": {
-                                "totalTicketsCompleted": 189,
+                                "ticketsCompleted": 189,
                                 "customerRating": 4.9,
                                 "ticketsThisMonth": 28,
                                 "efficiencyScore": 95
@@ -3742,7 +3742,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 168.00,
                             "skills": ["network", "customer"],
                             "productivity": {
-                                "totalTicketsCompleted": 134,
+                                "ticketsCompleted": 134,
                                 "customerRating": 4.6,
                                 "ticketsThisMonth": 18,
                                 "efficiencyScore": 87
@@ -3767,7 +3767,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 172.00,
                             "skills": ["network", "customer"],
                             "productivity": {
-                                "totalTicketsCompleted": 167,
+                                "ticketsCompleted": 167,
                                 "customerRating": 4.8,
                                 "ticketsThisMonth": 21,
                                 "efficiencyScore": 91
@@ -3805,7 +3805,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 176.00,
                             "skills": ["network", "customer"],
                             "productivity": {
-                                "totalTicketsCompleted": 142,
+                                "ticketsCompleted": 142,
                                 "customerRating": 4.7,
                                 "ticketsThisMonth": 16,
                                 "efficiencyScore": 89
@@ -3830,7 +3830,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 180.00,
                             "skills": ["customer", "network"],
                             "productivity": {
-                                "totalTicketsCompleted": 178,
+                                "ticketsCompleted": 178,
                                 "customerRating": 4.9,
                                 "ticketsThisMonth": 25,
                                 "efficiencyScore": 93
@@ -3868,7 +3868,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 184.00,
                             "skills": ["customer", "network"],
                             "productivity": {
-                                "totalTicketsCompleted": 123,
+                                "ticketsCompleted": 123,
                                 "customerRating": 4.5,
                                 "ticketsThisMonth": 14,
                                 "efficiencyScore": 85
@@ -3893,7 +3893,7 @@ function displaySampleZoneData() {
                             "hourlyRate": 188.00,
                             "skills": ["network", "customer"],
                             "productivity": {
-                                "totalTicketsCompleted": 145,
+                                "ticketsCompleted": 145,
                                 "customerRating": 4.7,
                                 "ticketsThisMonth": 19,
                                 "efficiencyScore": 88
@@ -5285,7 +5285,7 @@ async function loadPerformanceAnalysis() {
         const data = await response.json();
         const allTickets = data.tickets || [];
         
-        const teamsResponse = await fetch(`${API_BASE}/teams`);
+        const teamsResponse = await fetch(`${API_BASE}/teams/analytics/productivity`);
         const teamsData = await teamsResponse.json();
         const allTeams = teamsData.teams || [];
         
@@ -5334,7 +5334,7 @@ async function loadPerformanceAnalysis() {
         populatePerformanceSummaryTable(allTickets, allTeams);
         // Ensure top performers has productivity totals; enrich if missing
         const teamsWithStats = allTeams.map(t => ({ ...t }));
-        const hasProductivity = teamsWithStats.some(t => t.productivity && typeof t.productivity.totalTicketsCompleted === 'number');
+        const hasProductivity = teamsWithStats.some(t => t.productivity && typeof t.productivity.ticketsCompleted === 'number');
         if (!hasProductivity) {
             // derive completed counts from tickets
             const completedStatuses = new Set(['resolved', 'closed', 'completed']);
@@ -5349,7 +5349,7 @@ async function loadPerformanceAnalysis() {
                 const tid = t._id || t.id || t.teamId;
                 const completed = teamCompleted.get(tid) || 0;
                 t.productivity = t.productivity || {};
-                t.productivity.totalTicketsCompleted = completed;
+                t.productivity.ticketsCompleted = completed;
             });
         }
         populateTopPerformers(teamsWithStats);
@@ -5918,7 +5918,7 @@ function createTeamProductivityChart(teams) {
     console.log('📊 Top teams for chart:', topTeams.length);
     console.log('📊 Top teams data:', topTeams.map(t => ({
         name: t.name,
-        tickets: t.productivity?.totalTicketsCompleted || 0
+        tickets: t.productivity?.ticketsCompleted || 0
     })));
     
     // Destroy existing chart instance if it exists
@@ -5931,7 +5931,7 @@ function createTeamProductivityChart(teams) {
             labels: topTeams.map(t => t.name),
             datasets: [{
                 label: 'Tickets Completed',
-                data: topTeams.map(t => t.productivity?.totalTicketsCompleted || 0),
+                data: topTeams.map(t => t.productivity?.ticketsCompleted || 0),
                 backgroundColor: '#10b981'
             }]
         },
@@ -6321,7 +6321,7 @@ function populateTopPerformersMain(teams) {
     if (!container) return;
     
     const sortedTeams = teams
-        .sort((a, b) => (b.productivity?.totalTicketsCompleted || 0) - (a.productivity?.totalTicketsCompleted || 0))
+        .sort((a, b) => (b.productivity?.ticketsCompleted || 0) - (a.productivity?.ticketsCompleted || 0))
         .slice(0, 5);
     
     container.innerHTML = sortedTeams.map((team, index) => `
@@ -6332,7 +6332,7 @@ function populateTopPerformersMain(teams) {
                 <div class="performer-zone">${team.zone || 'N/A'} - ${team.state || 'N/A'}</div>
             </div>
             <div class="performer-metrics">
-                <div class="performer-tickets">${team.productivity?.totalTicketsCompleted || 0}</div>
+                <div class="performer-tickets">${team.productivity?.ticketsCompleted || 0}</div>
                 <div class="performer-rating">⭐ ${(team.rating || 4.5).toFixed(1)}</div>
             </div>
         </div>
@@ -6760,7 +6760,7 @@ function generateTeamAnalysis(data) {
     
     // Top performers
     const topPerformers = teams
-        .sort((a, b) => (b.productivity?.totalTicketsCompleted || 0) - (a.productivity?.totalTicketsCompleted || 0))
+        .sort((a, b) => (b.productivity?.ticketsCompleted || 0) - (a.productivity?.ticketsCompleted || 0))
         .slice(0, 3);
     
     return `
@@ -6773,7 +6773,7 @@ function generateTeamAnalysis(data) {
         </ul>
         <p><strong>🏆 Top Performers:</strong></p>
         <ul>
-            ${topPerformers.map(team => `<li><strong>${team.name}:</strong> ${team.productivity?.totalTicketsCompleted || 0} tickets completed</li>`).join('')}
+            ${topPerformers.map(team => `<li><strong>${team.name}:</strong> ${team.productivity?.ticketsCompleted || 0} tickets completed</li>`).join('')}
         </ul>
         <p><strong>💡 Recommendation:</strong> ${activeTeams < totalTeams * 0.8 ? 'Consider reassigning inactive teams to high-priority zones to improve overall utilization.' : 'Excellent team utilization! Consider cross-training to enhance flexibility.'}</p>
     `;
