@@ -193,4 +193,4 @@ For technical support or questions, please contact the development team.
 
 **Last Updated**: October 2024  
 **Version**: 2.0.0 (Microservices)  
-**Status**: ✅ Production Ready
+**Developed by**: ✅ HN NASE
