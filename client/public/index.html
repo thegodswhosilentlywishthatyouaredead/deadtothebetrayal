@@ -3399,7 +3399,8 @@
             min-height: 60px;
         }
 
-        .analysis-card-header h5 {
+        .analysis-card-header h5,
+        .analysis-card-header h6 {
             margin: 0;
             font-size: 1rem;
             font-weight: 600;
@@ -3407,7 +3408,8 @@
             line-height: 1.4;
         }
 
-        .analysis-card-header h5 i {
+        .analysis-card-header h5 i,
+        .analysis-card-header h6 i {
             font-size: 0.9rem;
             margin-right: 0.5rem;
             color: var(--primary-color);
@@ -3697,6 +3699,91 @@
             border-radius: 8px;
             margin-bottom: 0.5rem;
             transition: all 0.2s ease;
+        }
+
+        .performer-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .performer-rank {
+            margin-right: 1rem;
+        }
+
+        .rank-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+        }
+
+        .rank-badge.rank-1 {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #1f2937;
+        }
+
+        .rank-badge.rank-2 {
+            background: linear-gradient(135deg, #c0c0c0, #e5e7eb);
+            color: #1f2937;
+        }
+
+        .rank-badge.rank-3 {
+            background: linear-gradient(135deg, #cd7f32, #d97706);
+            color: white;
+        }
+
+        .rank-badge.rank-4,
+        .rank-badge.rank-5 {
+            background: linear-gradient(135deg, #6b7280, #9ca3af);
+            color: white;
+        }
+
+        .performer-info {
+            flex: 1;
+            margin-right: 1rem;
+        }
+
+        .performer-name {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .performer-details {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .performer-stats {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 60px;
+        }
+
+        .stat-value {
+            display: block;
+            font-weight: 600;
+            font-size: 1.125rem;
+            color: #1f2937;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.75rem;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
         .performer-item:hover {
@@ -4933,7 +5020,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-money-bill-trend-up me-2"></i>Cost Analysis & Financial Trends</h5>
+                                                    <h6><i class="fas fa-money-bill-trend-up me-2"></i>Cost Analysis & Financial Trends</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="costAnalysisChart"></canvas>
@@ -4971,7 +5058,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-trophy me-2"></i>Top Performers</h5>
+                                                    <h6><i class="fas fa-trophy me-2"></i>Top Performers</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <div id="top-performers-list">
@@ -4986,7 +5073,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-gauge-high me-2"></i>Productivity Metrics</h5>
+                                                    <h6><i class="fas fa-gauge-high me-2"></i>Productivity Metrics</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="productivityMetricsChart"></canvas>
@@ -5012,7 +5099,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-line me-2"></i>Efficiency Trends</h5>
+                                                    <h6><i class="fas fa-chart-line me-2"></i>Efficiency Trends</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="efficiencyTrendsChart"></canvas>
@@ -5041,7 +5128,7 @@
                                         <div class="col-md-12">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-crystal-ball me-2"></i>AI-Powered Forecast Summary</h5>
+                                                    <h6><i class="fas fa-crystal-ball me-2"></i>AI-Powered Forecast Summary</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <div class="forecast-insights">
@@ -5085,7 +5172,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-business-time me-2"></i>Peak Hours Analysis</h5>
+                                                    <h6><i class="fas fa-business-time me-2"></i>Peak Hours Analysis</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="peakHoursChart"></canvas>
@@ -5095,7 +5182,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-star me-2"></i>Customer Ratings</h5>
+                                                    <h6><i class="fas fa-star me-2"></i>Customer Ratings</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <canvas id="customerRatingsChart"></canvas>
@@ -5109,7 +5196,7 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-list-check me-2"></i>Performance Summary</h5>
+                                                    <h6><i class="fas fa-list-check me-2"></i>Performance Summary</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
                                                     <table class="table table-hover">
