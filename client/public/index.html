@@ -4709,6 +4709,10 @@
                                 <i class="fas fa-robot"></i>
                                 <span>NRO-Bots</span>
                             </button>
+                            <button class="tab-button" onclick="logout()" title="Logout" style="background: #dc2626; color: white;">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>Logout</span>
+                            </button>
                         </div>
 
                         <!-- Tab Content -->
@@ -6962,6 +6966,24 @@
     <script>
         // Force API to single backend port 8080 as a defensive override
         window.API_BASE = 'http://localhost:8085/api';
+        
+        // Check authentication on page load
+        window.addEventListener('load', function() {
+            // Check if user is authenticated (simple check for demo)
+            const isAuthenticated = localStorage.getItem('aiff_authenticated');
+            if (!isAuthenticated) {
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('aiff_authenticated');
+                localStorage.removeItem('aiff_user_type');
+                window.location.href = 'login.html';
+            }
+        }
     </script>
     <script src="/src/app.js?v=6"></script>
 

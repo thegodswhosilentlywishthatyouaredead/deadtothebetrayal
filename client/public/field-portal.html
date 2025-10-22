@@ -1694,6 +1694,9 @@
                     <div class="field-ai-status-dot"></div>
                     <span>Online</span>
                 </div>
+                <button class="logout-btn" onclick="logout()" title="Logout" style="background: #dc2626; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; margin-left: 15px;">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
             </div>
             <button class="field-ai-close-btn" onclick="toggleFieldAIWidget()" title="Minimize AI Assistant">
                 <i class="fas fa-minus"></i>
@@ -1816,6 +1819,26 @@
     <script>
         // Force API to single backend port 8085 as a defensive override
         window.API_BASE = 'http://localhost:8085/api';
+    </script>
+    <script>
+        // Check authentication on page load
+        window.addEventListener('load', function() {
+            // Check if user is authenticated and is field team
+            const isAuthenticated = localStorage.getItem('aiff_authenticated');
+            const userType = localStorage.getItem('aiff_user_type');
+            if (!isAuthenticated || userType !== 'field') {
+                window.location.href = 'login.html';
+            }
+        });
+        
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('aiff_authenticated');
+                localStorage.removeItem('aiff_user_type');
+                window.location.href = 'login.html';
+            }
+        }
     </script>
     <script src="/src/field-portal.js?v=1"></script>
     
