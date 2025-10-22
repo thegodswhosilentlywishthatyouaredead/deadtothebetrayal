@@ -4532,9 +4532,15 @@
                             <i class="fas fa-bars"></i>
                             </button>
                         </div>
-                    <button class="theme-toggle">
-                        <i class="fas fa-sun"></i>
-                    </button>
+                    <div class="header-actions">
+                        <button class="theme-toggle">
+                            <i class="fas fa-sun"></i>
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="logout()" title="Logout">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                            Logout
+                        </button>
+                    </div>
                     </div>
 
                 <!-- Content Area -->
@@ -4700,10 +4706,6 @@
 
                         <!-- Tabs Navigation -->
                         <div class="tabs-nav">
-                            <button class="tab-button" onclick="logout()" title="Logout" style="background: #dc2626; color: white; margin-right: 10px;">
-                                <i class="fas fa-sign-out-alt"></i>
-                                <span>Logout</span>
-                            </button>
                             <button class="tab-button active" onclick="showTab('overview')">Overview</button>
                             <button class="tab-button" onclick="showTab('tickets')">Tickets</button>
                             <button class="tab-button" onclick="showTab('teams')">Field Teams</button>
