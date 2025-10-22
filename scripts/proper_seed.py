@@ -38,16 +38,14 @@ def seed_database():
                 "is_active": True
             })
         
-        # Insert sample teams
-        print("🏢 Creating sample teams...")
-        teams_data = [
-            ("Team Alpha", "North Zone"),
-            ("Team Beta", "South Zone"),
-            ("Team Gamma", "East Zone"),
-            ("Team Delta", "West Zone"),
-            ("Team Echo", "Central Zone"),
-        ]
-        
+        # Insert 150 sample teams across zones
+        print("🏢 Creating 150 sample teams...")
+        zones = ["North Zone", "South Zone", "East Zone", "West Zone", "Central Zone"]
+        teams_data = []
+        for i in range(1, 151):
+            zone = zones[(i - 1) % len(zones)]
+            teams_data.append((f"Team {i:03d}", zone))
+
         for name, zone in teams_data:
             conn.execute(text("""
                 INSERT INTO teams (name, zone)
@@ -55,36 +53,53 @@ def seed_database():
                 ON CONFLICT DO NOTHING
             """), {"name": name, "zone": zone})
         
-        # Insert sample tickets
-        print("🎫 Creating sample tickets...")
-        ticket_categories = ["FIBER_INSTALLATION", "MAINTENANCE", "REPAIR", "INSPECTION", "EMERGENCY"]
-        ticket_priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"]
-        ticket_statuses = ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
-        
-        for i in range(1, 51):  # Create 50 tickets
+        # Insert 1000 sample tickets (lowercase fields to match analytics queries)
+        print("🎫 Creating 1000 sample tickets...")
+        ticket_categories = ["fiber_installation", "maintenance", "repair", "inspection"]
+        ticket_priorities = ["low", "medium", "high", "urgent"]
+        ticket_statuses = ["open", "in_progress", "completed", "cancelled"]
+
+        now = datetime.utcnow()
+        for i in range(1, 1001):
             ticket_number = f"TKT-{i:04d}"
             title = f"Sample Ticket {i}"
             description = f"This is a sample ticket description for ticket {i}"
             category = random.choice(ticket_categories)
             priority = random.choice(ticket_priorities)
-            status = random.choice(ticket_statuses)
-            
-            # Random location data
+            status = random.choices(ticket_statuses, weights=[40, 30, 25, 5], k=1)[0]
+
+            # Random creation time within last 90 days
+            created_at = now - timedelta(days=random.randint(0, 90), hours=random.randint(0, 23), minutes=random.randint(0, 59))
+            completed_at = None
+            estimated_duration = random.choice([60, 90, 120, 180])
+
+            # If completed, set a realistic completed_at after created_at
+            if status == "completed":
+                hours_to_complete = random.randint(1, 12)
+                completed_at = created_at + timedelta(hours=hours_to_complete)
+
+            # Random location data (NYC-ish bbox as placeholder)
             location = f"Sample Address {i}"
-            zone = random.choice(["North Zone", "South Zone", "East Zone", "West Zone", "Central Zone"])
-            coordinates = f"{round(random.uniform(40.0, 41.0), 6)},{round(random.uniform(-74.0, -73.0), 6)}"
-            
-            # Random assignment
-            assigned_team_id = random.randint(1, 5) if random.random() > 0.3 else None
-            assigned_user_id = random.randint(1, 5) if random.random() > 0.3 else None
-            
+            zone = random.choice(zones)
+            lat = round(random.uniform(40.50, 40.90), 6)
+            lng = round(random.uniform(-74.25, -73.70), 6)
+            coordinates = f"{lat},{lng}"
+
+            # Random assignment to one of the 150 teams
+            assigned_team_id = random.randint(1, 150) if status in ("open", "in_progress", "completed") else None
+            assigned_user_id = random.randint(1, 5) if random.random() > 0.5 else None
+
             conn.execute(text("""
-                INSERT INTO tickets (ticket_number, title, description, status, priority, category, 
-                                   location, zone, coordinates, assigned_team_id, assigned_user_id,
-                                   customer_name, customer_contact)
-                VALUES (:ticket_number, :title, :description, :status, :priority, :category,
-                        :location, :zone, :coordinates, :assigned_team_id, :assigned_user_id,
-                        :customer_name, :customer_contact)
+                INSERT INTO tickets (
+                    ticket_number, title, description, status, priority, category,
+                    location, zone, coordinates, assigned_team_id, assigned_user_id,
+                    customer_name, customer_contact, created_at, completed_at, estimated_duration
+                )
+                VALUES (
+                    :ticket_number, :title, :description, :status, :priority, :category,
+                    :location, :zone, :coordinates, :assigned_team_id, :assigned_user_id,
+                    :customer_name, :customer_contact, :created_at, :completed_at, :estimated_duration
+                )
                 ON CONFLICT (ticket_number) DO NOTHING
             """), {
                 "ticket_number": ticket_number,
@@ -99,7 +114,10 @@ def seed_database():
                 "assigned_team_id": assigned_team_id,
                 "assigned_user_id": assigned_user_id,
                 "customer_name": f"Customer {i}",
-                "customer_contact": f"customer{i}@example.com"
+                "customer_contact": f"customer{i}@example.com",
+                "created_at": created_at,
+                "completed_at": completed_at,
+                "estimated_duration": estimated_duration
             })
         
         # Insert sample assignments
@@ -141,8 +159,8 @@ def seed_database():
         print("✅ Database seeded successfully!")
         print("📊 Created:")
         print("   - 5 users")
-        print("   - 5 teams")
-        print("   - 50 tickets")
+        print("   - 150 teams")
+        print("   - 1000 tickets (open, in_progress, completed, cancelled)")
         print("   - 30 assignments")
         print("   - 20 comments")
 
