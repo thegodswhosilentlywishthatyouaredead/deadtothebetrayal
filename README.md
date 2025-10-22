@@ -360,5 +360,11 @@ For support and questions:
 
 ---
 
+<<<<<<< HEAD
 **AIFF - Intelligent Field Assignment System**  
 *Empowering field teams with AI-driven insights and optimization*
+=======
+**Last Updated**: October 2024  
+**Version**: 2.0.0 (Microservices)  
+**Developed by**: ✅ HN NASE
+>>>>>>> 6513e3e7c7c2da35d22e51e98f5dbff1c5ffac60
