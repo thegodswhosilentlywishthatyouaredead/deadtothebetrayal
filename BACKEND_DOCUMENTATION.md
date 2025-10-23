@@ -1,8 +1,16 @@
-# AIFF Backend Documentation
+# AIFF Backend Documentation 🇲🇾
 
 ## 🏗️ Backend Architecture Overview
 
-The AIFF backend is built on a modern microservices architecture using Python, FastAPI, and PostgreSQL. The system consists of four main microservices working together to provide intelligent field assignment capabilities.
+The AIFF backend is built on a modern microservices architecture using Python, FastAPI, and PostgreSQL. The system consists of four main microservices working together to provide intelligent field assignment capabilities across Malaysia, supporting 150 teams and 1000+ tickets.
+
+## 🇲🇾 Malaysian Data Support
+
+### Geographic Coverage
+- **15 Malaysian States**: Full support for all Malaysian states as zones
+- **150 Teams**: Malaysian personalities with realistic team assignments
+- **1000+ Tickets**: Malaysian locations with proper coordinates
+- **Multi-Zone Analytics**: Performance tracking across Malaysian states
 
 ## 📁 Backend Structure
 

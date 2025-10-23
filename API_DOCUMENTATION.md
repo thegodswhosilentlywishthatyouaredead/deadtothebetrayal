@@ -1,8 +1,16 @@
-# AIFF API Documentation
+# AIFF API Documentation 🇲🇾
 
 ## 🌐 API Overview
 
-The AIFF (AI Field Force) system provides a comprehensive REST API for managing field teams, tickets, analytics, and AI-powered insights. All APIs are accessible through the API Gateway at `http://localhost:8085/api`.
+The AIFF (AI Field Force) system provides a comprehensive REST API for managing field teams, tickets, analytics, and AI-powered insights across Malaysia. The system supports 150 teams across 15 Malaysian states with 1000+ active tickets. All APIs are accessible through the API Gateway at `http://localhost:8085/api`.
+
+## 🇲🇾 Malaysian Context
+
+### Geographic Coverage
+- **15 Malaysian States**: Johor, Kedah, Kelantan, Melaka, Negeri Sembilan, Pahang, Penang, Perak, Perlis, Sabah, Sarawak, Selangor, Terengganu, Kuala Lumpur, Putrajaya
+- **150 Field Teams**: Named after prominent Malaysian personalities
+- **1000+ Active Tickets**: Distributed across Malaysian locations with realistic coordinates
+- **Multi-Zone Analytics**: Performance tracking across all Malaysian states
 
 ## 🔐 Authentication
 

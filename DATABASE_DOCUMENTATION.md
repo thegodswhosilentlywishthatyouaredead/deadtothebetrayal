@@ -1,8 +1,16 @@
-# AIFF Database Documentation
+# AIFF Database Documentation 🇲🇾
 
 ## 🗄️ Database Architecture Overview
 
-The AIFF system uses PostgreSQL as the primary database with Redis for caching and session management. The database is designed to support high-performance operations, real-time analytics, and scalable field team management.
+The AIFF system uses PostgreSQL as the primary database with Redis for caching and session management. The database is designed to support high-performance operations, real-time analytics, and scalable field team management across Malaysia, supporting 150 teams and 1000+ tickets.
+
+## 🇲🇾 Malaysian Data Structure
+
+### Geographic Coverage
+- **15 Malaysian States**: All states supported as zones
+- **150 Teams**: Malaysian personalities with realistic assignments
+- **1000+ Tickets**: Malaysian locations with proper coordinates
+- **Multi-Zone Analytics**: Performance tracking across Malaysian states
 
 ## 📊 Database Schema Design
 

@@ -1,8 +1,16 @@
-# AIFF - Intelligent Field Assignment System
+# AIFF - Intelligent Field Assignment System 🇲🇾
 
 ## 🚀 Overview
 
-AIFF (AI Field Force) is a comprehensive intelligent field assignment system that leverages AI and machine learning to optimize field team operations, ticket management, and resource allocation. The system provides real-time analytics, predictive insights, and automated assignment capabilities for field service teams.
+AIFF (AI Field Force) is a comprehensive intelligent field assignment system that leverages AI and machine learning to optimize field team operations, ticket management, and resource allocation across Malaysia. The system provides real-time analytics, predictive insights, and automated assignment capabilities for field service teams operating in all 15 Malaysian states.
+
+## 🇲🇾 Malaysian Context
+
+### Coverage Areas
+- **15 Malaysian States**: Johor, Kedah, Kelantan, Melaka, Negeri Sembilan, Pahang, Penang, Perak, Perlis, Sabah, Sarawak, Selangor, Terengganu, Kuala Lumpur, Putrajaya
+- **150 Field Teams**: Named after prominent Malaysian personalities (Anwar Ibrahim, Najib Razak, Rosmah Mansor, etc.)
+- **1000+ Active Tickets**: Distributed across Malaysian locations with realistic coordinates
+- **Multi-Zone Operations**: Optimized for Malaysian geography and infrastructure
 
 ## 🏗️ System Architecture
 
@@ -126,6 +134,21 @@ intelligent-field-assignment/
 └── README.md                       # This file
 ```
 
+## 📊 Malaysian Data Structure
+
+### Database Schema
+- **Teams**: 150 teams across 15 Malaysian states with local personalities
+- **Tickets**: 1000+ tickets with Malaysian locations and realistic status distribution
+- **Zones**: All 15 Malaysian states with performance analytics
+- **Assignments**: Team-ticket relationships with completion tracking
+- **Analytics**: Zone performance, team productivity, and trend analysis
+
+### Sample Data Coverage
+- **Status Distribution**: OPEN (40%), IN_PROGRESS (30%), COMPLETED (25%), CANCELLED (5%)
+- **Priority Levels**: LOW, MEDIUM, HIGH, URGENT across all categories
+- **Geographic Coverage**: Coordinates spanning Malaysia (1.5-6.5°N, 99.5-119.5°E)
+- **Time Series**: 90-day historical data with realistic completion times
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -144,13 +167,20 @@ intelligent-field-assignment/
 
 2. **Start the system**
    ```bash
-   ./start_system.sh
+   docker compose up -d
    ```
 
-3. **Access the application**
+3. **Seed the Malaysian database**
+   ```bash
+   python3 scripts/seed_malaysia.py
+   ```
+
+4. **Access the application**
    - Main Dashboard: http://localhost:8080
    - Field Portal: http://localhost:8080/field-portal.html
+   - Login Portal: http://localhost:8080/login.html
    - API Gateway: http://localhost:8085
+   - PgAdmin: http://localhost:8083
 
 ### Development Setup
 

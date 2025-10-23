@@ -1,8 +1,16 @@
-# AIFF Frontend Documentation
+# AIFF Frontend Documentation 🇲🇾
 
 ## 🎨 Frontend Architecture Overview
 
-The AIFF frontend consists of two main applications built with modern web technologies, providing responsive and interactive user interfaces for field team management and analytics.
+The AIFF frontend consists of two main applications built with modern web technologies, providing responsive and interactive user interfaces for field team management and analytics across Malaysia. The system supports 150 teams and 1000+ tickets with Malaysian context.
+
+## 🇲🇾 Malaysian Features
+
+### Geographic Interface
+- **15 Malaysian States**: Zone-based analytics and team management
+- **Malaysian Team Names**: 150 teams with local personalities (Anwar Ibrahim, Najib Razak, etc.)
+- **Local Coordinates**: Malaysian location mapping (1.5-6.5°N, 99.5-119.5°E)
+- **State Performance**: Analytics across all Malaysian states
 
 ## 📁 Frontend Structure
 
