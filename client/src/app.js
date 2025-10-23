@@ -1921,11 +1921,15 @@ function populateTeamsZoneList(zonesData) {
     
     container.innerHTML = '';
     
+    console.log('🔍 populateTeamsZoneList called with:', zonesData);
+    
     if (zonesData.zones && zonesData.zones.length > 0) {
         // Sort zones by productivity (highest to lowest) and take top 5
         const sortedZones = zonesData.zones
             .sort((a, b) => (b.productivity || 0) - (a.productivity || 0))
             .slice(0, 5);
+        
+        console.log('🔍 Sorted zones:', sortedZones.map(z => ({ zone: z.zoneName, efficiency: z.efficiency, productivity: z.productivity })));
         
         // Generate last week comparison data
         const lastWeekData = sortedZones.map((zone, index) => ({
@@ -1946,11 +1950,13 @@ function populateTeamsZoneList(zonesData) {
             const productivity = parseFloat(zone.productivity || 0).toFixed(1);
             
             // Use efficiency from backend data
-            const efficiency = zone.efficiency || 0;
+            const efficiency = parseFloat(zone.efficiency || 0).toFixed(1);
+            
+            console.log(`🔍 Zone ${zone.zoneName}: efficiency=${efficiency}, productivity=${productivity}`);
             
             // Calculate ticket performance metrics
             const avgResponseTime = Math.floor(Math.random() * 4) + 1; // 1-4 hours
-            const completionRate = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : '85.0';
+            const completionRate = '85.0'; // Fixed value since we don't have ticket data here
             const priorityTickets = Math.floor(Math.random() * 5) + 1; // 1-5 priority tickets
             
             const zoneItem = document.createElement('div');
