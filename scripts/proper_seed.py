@@ -47,17 +47,26 @@ def seed_database():
             teams_data.append((f"Team {i:03d}", zone))
 
         for name, zone in teams_data:
-            conn.execute(text("""
-                INSERT INTO teams (name, zone)
-                VALUES (:name, :zone)
-                ON CONFLICT DO NOTHING
-            """), {"name": name, "zone": zone})
+            try:
+                result = conn.execute(text("""
+                    INSERT INTO teams (name, zone, is_active)
+                    VALUES (:name, :zone, :is_active)
+                    ON CONFLICT (name) DO NOTHING
+                """), {"name": name, "zone": zone, "is_active": True})
+                print(f"Inserted team: {name} in {zone}")
+            except Exception as e:
+                print(f"Error inserting team {name}: {e}")
+                raise
+        
+        # Commit teams before inserting tickets
+        conn.commit()
+        print("✅ Teams committed to database")
         
         # Insert 1000 sample tickets (lowercase fields to match analytics queries)
         print("🎫 Creating 1000 sample tickets...")
-        ticket_categories = ["fiber_installation", "maintenance", "repair", "inspection"]
-        ticket_priorities = ["low", "medium", "high", "urgent"]
-        ticket_statuses = ["open", "in_progress", "completed", "cancelled"]
+        ticket_categories = ["FIBER_INSTALLATION", "MAINTENANCE", "REPAIR", "INSPECTION"]
+        ticket_priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"]
+        ticket_statuses = ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
 
         now = datetime.utcnow()
         for i in range(1, 1001):
@@ -74,7 +83,7 @@ def seed_database():
             estimated_duration = random.choice([60, 90, 120, 180])
 
             # If completed, set a realistic completed_at after created_at
-            if status == "completed":
+            if status == "COMPLETED":
                 hours_to_complete = random.randint(1, 12)
                 completed_at = created_at + timedelta(hours=hours_to_complete)
 
@@ -86,7 +95,7 @@ def seed_database():
             coordinates = f"{lat},{lng}"
 
             # Random assignment to one of the 150 teams
-            assigned_team_id = random.randint(1, 150) if status in ("open", "in_progress", "completed") else None
+            assigned_team_id = random.randint(1, 150) if status in ("OPEN", "IN_PROGRESS", "COMPLETED") else None
             assigned_user_id = random.randint(1, 5) if random.random() > 0.5 else None
 
             conn.execute(text("""
@@ -147,12 +156,12 @@ def seed_database():
             comment_text = f"This is a sample comment {i} for ticket {ticket_id}"
             
             conn.execute(text("""
-                INSERT INTO comments (ticket_id, user_id, comment_text)
-                VALUES (:ticket_id, :user_id, :comment_text)
+                INSERT INTO comments (ticket_id, user_id, content)
+                VALUES (:ticket_id, :user_id, :content)
             """), {
                 "ticket_id": ticket_id,
                 "user_id": user_id,
-                "comment_text": comment_text
+                "content": comment_text
             })
         
         conn.commit()
