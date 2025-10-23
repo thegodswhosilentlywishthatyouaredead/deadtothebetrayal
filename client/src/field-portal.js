@@ -59,7 +59,7 @@ async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
     
     try {
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         const data = await response.json();
         
         console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
@@ -474,7 +474,7 @@ async function loadQuickStats() {
     
     try {
         // Get tickets data
-        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
         const ticketsData = await ticketsResponse.json();
         const allTickets = ticketsData.tickets || [];
         
@@ -662,7 +662,7 @@ async function loadRouteData() {
     
     try {
         // Fetch all tickets for route planning
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         const data = await response.json();
         const allTickets = data.tickets || [];
         
@@ -1668,7 +1668,7 @@ async function sendFieldAIMessage(customQuery = null) {
 async function getFieldTeamContext() {
     // Get current context for AI
     try {
-        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
         const ticketsData = await ticketsResponse.json();
         
         const teamsResponse = await fetch(`${API_BASE}/teams`);

@@ -532,7 +532,7 @@ async function loadDashboardData() {
     
     try {
         const [ticketsResponse, teamsResponse, agingResponse, productivityResponse] = await Promise.all([
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/analytics/tickets/aging`),
             fetch(`${API_BASE}/teams/analytics/productivity`)
@@ -770,7 +770,7 @@ function updateDashboardMetricsWithSampleData() {
 
 async function loadRecentTickets() {
     try {
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         const data = await response.json();
         
         console.log('📋 Loaded tickets:', data.tickets ? data.tickets.length : 0);
@@ -1078,7 +1078,7 @@ function displaySampleZonePerformance() {
 async function loadTickets() {
     try {
         console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE);
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         console.log('🔧 loadTickets: Response status:', response.status);
         const data = await response.json();
         tickets = data.tickets || [];
@@ -1401,7 +1401,7 @@ async function autoAssignTickets() {
         console.log('🤖 Starting intelligent auto-assignment of all tickets...');
         
         // Get all open tickets
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         const data = await response.json();
         const openTickets = (data.tickets || []).filter(t => t.status === 'open');
         
@@ -1568,7 +1568,7 @@ async function showManualAssignmentModal(ticketId) {
         
         // Fetch ticket, teams, and zones data
         const [ticketsRes, teamsRes, zonesRes] = await Promise.all([
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/zones`)
         ]);
@@ -2090,7 +2090,7 @@ async function loadTeamsPerformanceAnalytics() {
         const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
             fetch(`${API_BASE}/teams/analytics/zones`),
             fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/tickets`)
+            fetch(`${API_BASE}/tickets?limit=1000`)
         ]);
         
         // Check if responses are ok
@@ -3273,7 +3273,7 @@ async function loadFieldTeams() {
         const [teamsResponse, productivityResponse, ticketsResponse, zonesResponse] = await Promise.all([
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/productivity`),
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams/analytics/zones`)
         ]);
         
@@ -4305,7 +4305,7 @@ async function loadZoneDetails() {
         const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
             fetch(`${API_BASE}/teams/analytics/zones`),
             fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/tickets`)
+            fetch(`${API_BASE}/tickets?limit=1000`)
         ]);
         
         if (!zonesResponse.ok || !teamsResponse.ok || !ticketsResponse.ok) {
@@ -5287,7 +5287,7 @@ async function loadTicketAnalytics() {
         const zoneData = await zoneResponse.json();
         
         // Get tickets data
-        const ticketsResponse = await fetch(`${API_BASE}/tickets`);
+        const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
         const ticketsData = await ticketsResponse.json();
         
         // Display ticket information
@@ -6223,7 +6223,7 @@ window.viewTicketDetails = async function(ticketId) {
         // Fetch tickets list, teams, and productivity data
         console.log('🔍 Fetching data from APIs...');
         const [ticketsRes, teamRes, productivityRes] = await Promise.all([
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/productivity`)
         ]);
@@ -6560,7 +6560,7 @@ function hideAITyping() {
 async function getSystemDataForAI() {
     try {
         const [ticketsResponse, teamsResponse] = await Promise.all([
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`)
         ]);
         
@@ -6626,7 +6626,7 @@ async function loadPerformanceAnalysis() {
     if (perfLoadInFlight) return; // prevent overlap
     perfLoadInFlight = true;
     try {
-        const response = await fetch(`${API_BASE}/tickets`);
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         const data = await response.json();
         const allTickets = data.tickets || [];
         
@@ -8653,7 +8653,7 @@ async function processAIQuery(query) {
 async function getCurrentSystemData() {
     try {
         const [ticketsResponse, teamsResponse, zonesResponse, forecastResponse] = await Promise.all([
-            fetch(`${API_BASE}/tickets`),
+            fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/zones`),
             fetch(`${API_BASE}/planning/forecast`)
