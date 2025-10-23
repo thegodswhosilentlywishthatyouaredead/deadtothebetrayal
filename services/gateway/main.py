@@ -79,11 +79,17 @@ async def get_teams_zones():
 
 # Tickets endpoints
 @app.get("/api/tickets")
-async def get_tickets():
+async def get_tickets(request: Request):
     logger.info("Tickets endpoint called")
+    # Forward query parameters to tickets service
+    query_params = str(request.url.query)
+    tickets_url = f"{TICKETS_URL}/tickets"
+    if query_params:
+        tickets_url += f"?{query_params}"
+    
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{TICKETS_URL}/tickets")
+            response = await client.get(tickets_url)
             logger.info(f"Tickets service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
