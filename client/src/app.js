@@ -1945,11 +1945,8 @@ function populateTeamsZoneList(zonesData) {
             // Use actual productivity data or calculate from ticket performance
             const productivity = parseFloat(zone.productivity || 0).toFixed(1);
             
-            // Calculate efficiency based on ticket performance analysis
-            const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
-            const closedTickets = zone.closedTickets || 0;
-            const efficiency = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 
-                             (Math.random() * 20 + 70).toFixed(1); // Fallback: 70-90% range
+            // Use efficiency from backend data
+            const efficiency = zone.efficiency || 0;
             
             // Calculate ticket performance metrics
             const avgResponseTime = Math.floor(Math.random() * 4) + 1; // 1-4 hours
@@ -2573,9 +2570,7 @@ function createZonePerformanceAnalysisChart(zones) {
     const zonesWithScores = zones.map(zone => {
         const zoneName = (zone.zoneName || zone.zone || 'Unknown Zone').split(',')[0].trim();
         const productivity = zone.productivity || 0;
-        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
-        const closedTickets = zone.closedTickets || 0;
-        const efficiency = totalTickets > 0 ? (closedTickets / totalTickets * 100) : 0;
+        const efficiency = zone.efficiency || 0;
         
         return {
             zoneName,
@@ -4470,24 +4465,8 @@ function createZoneDetailsList(zones, teams, tickets) {
         const totalTickets = zoneTickets.length;
         const productivity = zoneData.productivity || 0;
         
-        // Calculate realistic efficiency based on team performance and ticket completion
-        let efficiency = 0;
-        if (totalTickets > 0 && zoneTeams.length > 0) {
-            // Base efficiency from ticket completion rate
-            const completionRate = (closedTickets / totalTickets) * 100;
-            
-            // Factor in team productivity (from zones API)
-            const teamProductivityFactor = Math.min(productivity / 5.0, 1.0); // Normalize to 0-1
-            
-            // Factor in team availability (active teams vs total teams)
-            const activeTeams = zoneTeams.filter(t => t.is_active === true).length;
-            const availabilityFactor = activeTeams / zoneTeams.length;
-            
-            // Calculate weighted efficiency
-            efficiency = (completionRate * 0.4 + teamProductivityFactor * 100 * 0.3 + availabilityFactor * 100 * 0.3);
-            efficiency = Math.max(0, Math.min(100, efficiency)); // Clamp between 0-100
-        }
-        efficiency = efficiency.toFixed(1);
+        // Use efficiency from backend data
+        const efficiency = parseFloat(zoneData.efficiency || 0).toFixed(1);
         
         console.log(`📊 Zone ${zoneName} metrics:`, { openTickets, closedTickets, totalTickets, productivity, efficiency });
         
