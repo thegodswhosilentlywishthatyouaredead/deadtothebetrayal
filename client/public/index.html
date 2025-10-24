@@ -313,6 +313,61 @@
             font-weight: 500;
         }
 
+        /* Fix field team and predictive planning card styling */
+        .metric-card h3, .metric-card .metric-title {
+            font-size: 0.875rem !important;
+            font-weight: 600 !important;
+            color: var(--text-secondary) !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .metric-card .metric-value {
+            font-size: 2rem !important;
+            font-weight: 700 !important;
+            color: var(--text-primary) !important;
+            margin-bottom: 0.5rem !important;
+        }
+
+        .metric-card .metric-label {
+            font-size: 0.875rem !important;
+            color: var(--text-secondary) !important;
+            font-weight: 500 !important;
+        }
+
+        /* Live icon styling */
+        .live-icon {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .live-icon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+        }
+
+        .live-icon i {
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
         .metric-trend {
             display: flex;
             align-items: center;
@@ -4988,6 +5043,10 @@
                                         <i class="fas fa-robot"></i>
                                         <span class="ms-1">NRO-Bots</span>
                                     </button>
+                                    <button class="live-icon" onclick="showTab('map')" title="Live Tracking">
+                                        <i class="fas fa-satellite-dish"></i>
+                                        <span>Live</span>
+                                    </button>
                                 </div>
                         </div>
                     </div>
@@ -5849,86 +5908,86 @@
                                 <!-- Field Teams Dashboard Metrics -->
                                 <div class="domain-metrics">
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-users"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-total">0</h3>
-                                            <p class="metric-label">Total Teams</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-total-trend">+0</span>
-                                                <span class="trend-text">vs last month</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Total Teams</h3>
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-users"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-total">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-total-trend">+0 vs last month</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-user-check"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-active">0</h3>
-                                            <p class="metric-label">Active Teams</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-active-trend">+0</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Active Teams</h3>
+                                            <div class="metric-icon green">
+                                                <i class="fas fa-user-check"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-active">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-active-trend">+0 vs last week</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-chart-line"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-productivity">0%</h3>
-                                            <p class="metric-label">Avg Productivity</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-productivity-trend">+0%</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Avg Productivity</h3>
+                                            <div class="metric-icon orange">
+                                                <i class="fas fa-chart-line"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-productivity">0%</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-productivity-trend">+0% vs last week</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-map-marked-alt"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-zones">0</h3>
-                                            <p class="metric-label">Coverage Zones</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-zones-trend">0%</span>
-                                                <span class="trend-text">coverage</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Coverage Zones</h3>
+                                            <div class="metric-icon purple">
+                                                <i class="fas fa-map-marked-alt"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-zones">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-zones-trend">0% coverage</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-star"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-rating">0.00</h3>
-                                            <p class="metric-label">Avg Rating</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-rating-trend">+0.00</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Avg Rating</h3>
+                                            <div class="metric-icon red">
+                                                <i class="fas fa-star"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-rating">0.00</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-rating-trend">+0.00 vs last week</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="teams-response">0.00h</h3>
-                                            <p class="metric-label">Avg Response</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="teams-response-trend">-0%</span>
-                                                <span class="trend-text">faster</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Avg Response</h3>
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-clock"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="teams-response">0.00h</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="teams-response-trend">-0% faster</span>
                                         </div>
                                     </div>
 
@@ -6180,64 +6239,68 @@
                                         <button type="button" class="btn btn-primary" onclick="showAddMaterialModal()">
                                             <i class="fas fa-plus me-2"></i>Add Material
                                         </button>
+                                        <button class="live-icon" onclick="showTab('map')" title="Live Tracking">
+                                            <i class="fas fa-satellite-dish"></i>
+                                            <span>Live</span>
+                                        </button>
                                     </div>
                                 </div>
 
                                 <!-- Predictive Planning Dashboard Metrics -->
                                 <div class="domain-metrics">
                                     <div class="metric-card">
-                                        <div class="metric-icon purple">
-                                            <i class="fas fa-boxes"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="planning-inventory">1,247</h3>
-                                            <p class="metric-label">Total Inventory</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+8%</span>
-                                                <span class="trend-text">vs last month</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Total Inventory</h3>
+                                            <div class="metric-icon purple">
+                                                <i class="fas fa-boxes"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="planning-inventory">1,247</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span>+8% vs last month</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon orange">
-                                            <i class="fas fa-crystal-ball"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="planning-accuracy">92%</h3>
-                                            <p class="metric-label">AI Forecast Accuracy</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+5%</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">AI Forecast Accuracy</h3>
+                                            <div class="metric-icon orange">
+                                                <i class="fas fa-crystal-ball"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="planning-accuracy">92%</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span>+5% vs last week</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="planning-alerts">3</h3>
-                                            <p class="metric-label">Reorder Alerts</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative">-2</span>
-                                                <span class="trend-text">vs last week</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Reorder Alerts</h3>
+                                            <div class="metric-icon red">
+                                                <i class="fas fa-exclamation-triangle"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="planning-alerts">3</div>
+                                        <div class="metric-trend trend-down">
+                                            <i class="fas fa-arrow-down"></i>
+                                            <span>-2 vs last week</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-map-marked-alt"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="planning-zones">4</h3>
-                                            <p class="metric-label">Active Zones</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">100%</span>
-                                                <span class="trend-text">coverage</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Active Zones</h3>
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-map-marked-alt"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="planning-zones">4</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span>100% coverage</span>
                                         </div>
                                     </div>
 
@@ -7404,7 +7467,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=23"></script>
+    <script src="/src/app.js?v=24"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
