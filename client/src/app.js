@@ -1087,6 +1087,9 @@ async function loadTickets() {
         // Update Tickets tab metrics
         updateTicketsTabMetrics(tickets);
         
+        // Update ticket status distribution
+        updateTicketStatusDistribution(tickets);
+        
         if (tickets.length === 0) {
             // Show sample data if no real data available
             tickets = [
@@ -1231,6 +1234,57 @@ function updateTicketsTabMetrics(allTickets) {
         resolutionRate,
         avgTime: avgResolutionTime
     });
+}
+
+// Update ticket status distribution in the tickets tab
+function updateTicketStatusDistribution(tickets) {
+    console.log('📊 Updating ticket status distribution...', tickets.length);
+    
+    // Calculate status counts based on actual backend data
+    const statusCounts = {
+        'open': tickets.filter(t => t.status === 'open').length,
+        'in_progress': tickets.filter(t => t.status === 'in_progress').length,
+        'completed': tickets.filter(t => t.status === 'completed').length,
+        'cancelled': tickets.filter(t => t.status === 'cancelled').length
+    };
+    
+    const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
+    
+    if (total === 0) {
+        console.log('⚠️ No tickets found for status distribution');
+        return;
+    }
+    
+    // Update the status distribution HTML
+    const statusDistribution = document.querySelector('.status-distribution');
+    if (statusDistribution) {
+        statusDistribution.innerHTML = `
+            <div class="status-item">
+                <span class="status-dot completed"></span>
+                <span class="status-label">Completed</span>
+                <span class="status-value">${statusCounts.completed} (${Math.round((statusCounts.completed / total) * 100)}%)</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot in-progress"></span>
+                <span class="status-label">In Progress</span>
+                <span class="status-value">${statusCounts.in_progress} (${Math.round((statusCounts.in_progress / total) * 100)}%)</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot open"></span>
+                <span class="status-label">Open</span>
+                <span class="status-value">${statusCounts.open} (${Math.round((statusCounts.open / total) * 100)}%)</span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot cancelled"></span>
+                <span class="status-label">Cancelled</span>
+                <span class="status-value">${statusCounts.cancelled} (${Math.round((statusCounts.cancelled / total) * 100)}%)</span>
+            </div>
+        `;
+        
+        console.log('✅ Ticket status distribution updated:', statusCounts);
+    } else {
+        console.log('⚠️ Status distribution container not found');
+    }
 }
 
 function displayTickets(ticketsToShow) {
