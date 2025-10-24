@@ -3906,27 +3906,39 @@ let liveTrackingCache = {
     lastUpdate: null
 };
 
-// Simplified Map functions like field-portal
+// Enhanced Map functions with proper loading
 function initializeMap() {
-    console.log('🗺️ Initializing simplified map...');
+    console.log('🗺️ Initializing enhanced map...');
     
-    // Set view to Malaysia (Kuala Lumpur coordinates) - like field-portal
+    // Ensure map container exists
+    const mapContainer = document.getElementById('map');
+    if (!mapContainer) {
+        console.error('❌ Map container not found');
+        return;
+    }
+    
+    // Set view to Malaysia (Kuala Lumpur coordinates)
     map = L.map('map').setView([3.1390, 101.6869], 11);
     
-    // Add tile layer - simple like field-portal
+    // Add tile layer with proper loading
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+        minZoom: 6
     }).addTo(map);
     
-    // Load ticket data
-    loadTicketData();
+    // Wait for map to be ready
+    map.whenReady(() => {
+        console.log('✅ Map tiles loaded');
+        loadTicketData();
+    });
     
-    console.log('✅ Simplified map initialized');
+    console.log('✅ Enhanced map initialized');
 }
 
-// Load ticket data for map
+// Load ticket data for map - only open tickets
 function loadTicketData() {
-    console.log('🎫 Loading ticket data for map...');
+    console.log('🎫 Loading open ticket data for map...');
     
     // Clear existing markers
     if (map) {
@@ -3937,35 +3949,92 @@ function loadTicketData() {
         });
     }
     
-    // Add sample ticket markers
-    const sampleTickets = [
-        { id: 'T001', title: 'Network Outage - KL Central', lat: 3.1390, lng: 101.6869, priority: 'high', status: 'open' },
-        { id: 'T002', title: 'Fiber Installation - Penang', lat: 5.4164, lng: 100.3327, priority: 'medium', status: 'in_progress' },
-        { id: 'T003', title: 'Maintenance - Johor', lat: 1.4927, lng: 103.7414, priority: 'low', status: 'assigned' },
-        { id: 'T004', title: 'Equipment Check - Perak', lat: 4.5921, lng: 101.0901, priority: 'critical', status: 'open' }
+    // Add sample open tickets only
+    const openTickets = [
+        { 
+            id: 'T001', 
+            title: 'Network Outage - KL Central', 
+            lat: 3.1390, 
+            lng: 101.6869, 
+            priority: 'high', 
+            status: 'open',
+            assignedTeam: 'Team KL',
+            created: '2024-01-15',
+            location: 'Kuala Lumpur, Malaysia'
+        },
+        { 
+            id: 'T004', 
+            title: 'Equipment Check - Perak', 
+            lat: 4.5921, 
+            lng: 101.0901, 
+            priority: 'critical', 
+            status: 'open',
+            assignedTeam: 'Team Perak',
+            created: '2024-01-15',
+            location: 'Perak, Malaysia'
+        },
+        { 
+            id: 'T005', 
+            title: 'Fiber Repair - Selangor', 
+            lat: 3.0733, 
+            lng: 101.5185, 
+            priority: 'medium', 
+            status: 'open',
+            assignedTeam: 'Team Selangor',
+            created: '2024-01-14',
+            location: 'Selangor, Malaysia'
+        }
     ];
     
-    sampleTickets.forEach(ticket => {
+    openTickets.forEach(ticket => {
         const color = ticket.priority === 'critical' ? '#dc3545' : 
                      ticket.priority === 'high' ? '#fd7e14' : 
                      ticket.priority === 'medium' ? '#ffc107' : '#28a745';
         
+        // Create better ticket icon
         const marker = L.marker([ticket.lat, ticket.lng], {
             icon: L.divIcon({
-                className: 'custom-marker',
-                html: `<div style="background: ${color}; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">T</div>`,
-                iconSize: [20, 20]
+                className: 'ticket-marker',
+                html: `
+                    <div class="ticket-icon" style="
+                        background: ${color}; 
+                        color: white; 
+                        border-radius: 8px; 
+                        width: 32px; 
+                        height: 32px; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: center; 
+                        font-size: 14px; 
+                        font-weight: bold;
+                        border: 2px solid white;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                        transition: all 0.3s ease;
+                    ">
+                        🎫
+                    </div>
+                `,
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
             })
         }).addTo(map);
         
+        // Enhanced popup
         marker.bindPopup(`
-            <div>
-                <h6>${ticket.title}</h6>
-                <p><strong>Priority:</strong> ${ticket.priority}</p>
+            <div class="ticket-popup">
+                <h6 style="color: ${color}; margin-bottom: 8px;">${ticket.title}</h6>
+                <p><strong>Priority:</strong> <span style="color: ${color};">${ticket.priority.toUpperCase()}</span></p>
                 <p><strong>Status:</strong> ${ticket.status}</p>
-                <p><strong>Location:</strong> ${ticket.lat.toFixed(4)}, ${ticket.lng.toFixed(4)}</p>
+                <p><strong>Assigned Team:</strong> ${ticket.assignedTeam}</p>
+                <p><strong>Location:</strong> ${ticket.location}</p>
+                <p><strong>Created:</strong> ${ticket.created}</p>
             </div>
         `);
+        
+        // Add click effect to show ticket details
+        marker.on('click', function() {
+            showTicketDetails(ticket);
+        });
         
         // Add hover effect
         marker.on('mouseover', function() {
@@ -3973,7 +4042,57 @@ function loadTicketData() {
         });
     });
     
-    console.log('✅ Ticket data loaded');
+    console.log('✅ Open ticket data loaded');
+}
+
+// Show ticket details in table
+function showTicketDetails(ticket) {
+    console.log('📋 Showing ticket details:', ticket.id);
+    
+    const detailsSection = document.getElementById('ticket-details-section');
+    const detailsTable = document.getElementById('ticket-details-table');
+    
+    if (detailsSection && detailsTable) {
+        // Show the details section
+        detailsSection.style.display = 'block';
+        
+        // Populate table with ticket details
+        detailsTable.innerHTML = `
+            <tr>
+                <td><strong>${ticket.id}</strong></td>
+                <td>${ticket.title}</td>
+                <td><span class="badge bg-${ticket.priority === 'critical' ? 'danger' : ticket.priority === 'high' ? 'warning' : 'info'}">${ticket.priority.toUpperCase()}</span></td>
+                <td><span class="badge bg-success">${ticket.status.toUpperCase()}</span></td>
+                <td>${ticket.assignedTeam}</td>
+                <td>${ticket.location}</td>
+                <td>${ticket.created}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary" onclick="viewTicket('${ticket.id}')">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                    <button class="btn btn-sm btn-success" onclick="assignTicket('${ticket.id}')">
+                        <i class="fas fa-user-plus"></i> Assign
+                    </button>
+                </td>
+            </tr>
+        `;
+        
+        // Scroll to details section
+        detailsSection.scrollIntoView({ behavior: 'smooth' });
+    }
+}
+
+// Helper functions for ticket actions
+function viewTicket(ticketId) {
+    console.log('👁️ Viewing ticket:', ticketId);
+    // Add your ticket viewing logic here
+    alert(`Viewing ticket ${ticketId}`);
+}
+
+function assignTicket(ticketId) {
+    console.log('👥 Assigning ticket:', ticketId);
+    // Add your ticket assignment logic here
+    alert(`Assigning ticket ${ticketId}`);
 }
 
 // Add sample markers for Malaysia

@@ -294,6 +294,25 @@
             font-weight: 500;
         }
 
+        /* Standardize all card fonts across all pages */
+        .card h5, .card h6, .card .card-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .card .card-body h3, .card .card-body .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .card .card-body p, .card .card-body .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
         .metric-trend {
             display: flex;
             align-items: center;
@@ -6678,7 +6697,7 @@
 
                                 </div>
 
-                                <!-- Simplified Live Tracking Map -->
+                                <!-- Enhanced Live Tracking Map -->
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="card">
@@ -6695,6 +6714,41 @@
                                             </div>
                                             <div class="card-body p-0">
                                                 <div id="map" class="map-container" style="height: 500px;"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Ticket Details Table -->
+                                <div class="row mt-3" id="ticket-details-section" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h5 class="card-title mb-0">
+                                                    <i class="fas fa-ticket-alt me-2"></i>
+                                                    Ticket Details
+                                                </h5>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="table-responsive">
+                                                    <table class="table table-hover">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Ticket ID</th>
+                                                                <th>Title</th>
+                                                                <th>Priority</th>
+                                                                <th>Status</th>
+                                                                <th>Assigned Team</th>
+                                                                <th>Location</th>
+                                                                <th>Created</th>
+                                                                <th>Actions</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="ticket-details-table">
+                                                            <!-- Ticket details will be loaded here -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -7350,7 +7404,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=22"></script>
+    <script src="/src/app.js?v=23"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
