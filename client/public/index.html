@@ -2782,6 +2782,275 @@
             border: 1px solid #f5c6cb;
         }
 
+        /* Live Tracking Styles */
+        .live-tracking-control {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            padding: 15px;
+            min-width: 200px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .live-control-panel h6 {
+            color: #1f2937;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .live-stats {
+            margin-bottom: 12px;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .live-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .live-actions .btn {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+
+        /* Live Tracking Popup Styles */
+        .live-tracking-popup {
+            min-width: 280px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .live-tracking-popup .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .live-tracking-popup .popup-header h6 {
+            margin: 0;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #dc2626;
+            border-radius: 50%;
+            animation: livePulse 2s infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .live-tracking-popup .popup-content {
+            margin-bottom: 12px;
+        }
+
+        .status-row, .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+            font-size: 12px;
+        }
+
+        .status-label, .info-label {
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .status-value, .info-value {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-badge.busy {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-badge.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-badge.critical {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .priority-badge.high {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .priority-badge.medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .priority-badge.low {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .live-tracking-popup .popup-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .live-tracking-popup .popup-actions .btn {
+            font-size: 11px;
+            padding: 4px 8px;
+        }
+
+        /* Live Marker Styles */
+        .live-team-marker, .live-ticket-marker {
+            position: relative;
+        }
+
+        .live-marker {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            position: relative;
+            z-index: 2;
+        }
+
+        .live-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            opacity: 0.6;
+            animation: liveMarkerPulse 2s infinite;
+            z-index: 1;
+        }
+
+        .live-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120%;
+            height: 120%;
+            border: 2px solid;
+            border-color: inherit;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: liveMarkerRing 3s infinite;
+            z-index: 0;
+        }
+
+        @keyframes liveMarkerPulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.3; }
+            100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+        }
+
+        @keyframes liveMarkerRing {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.1; }
+            100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+        }
+
+        /* Route Popup Styles */
+        .route-popup {
+            min-width: 200px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .route-popup h6 {
+            color: #1f2937;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .route-info p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #374151;
+        }
+
+        .route-info strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
         .ticket-status-dot {
             width: 6px;
             height: 6px;
@@ -7009,7 +7278,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=14"></script>
+    <script src="/src/app.js?v=15"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

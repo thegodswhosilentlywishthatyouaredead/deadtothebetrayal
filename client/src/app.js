@@ -3876,7 +3876,18 @@ function displayCategoryBreakdown(data) {
     }
 }
 
-// Map functions with Malaysian settings
+// Live tracking variables
+let liveTrackingInterval;
+let teamMarkers = [];
+let ticketMarkers = [];
+let routeLines = [];
+let liveTrackingData = {
+    teams: [],
+    tickets: [],
+    routes: []
+};
+
+// Map functions with Malaysian settings and Live Tracking
 function initializeMap() {
     // Set view to Malaysia (Kuala Lumpur coordinates)
     map = L.map('map').setView([3.1390, 101.6869], 7); // Malaysia view
@@ -3893,6 +3904,9 @@ function initializeMap() {
     
     // Initialize map controls
     addMapControls();
+    
+    // Initialize live tracking
+    initializeLiveTracking();
 }
 
 function refreshMap() {
@@ -3900,107 +3914,494 @@ function refreshMap() {
         initializeMap();
     }
     
-    // Clear existing markers
-    map.eachLayer(layer => {
-        if (layer instanceof L.Marker || layer instanceof L.CircleMarker) {
-            map.removeLayer(layer);
-        }
-    });
+    // Clear existing markers and routes
+    clearMapMarkers();
     
-    // Add Malaysian field team markers with enhanced UX
-    fieldTeams.forEach(team => {
-        if (team.currentLocation) {
-            const marker = L.marker([team.currentLocation.latitude, team.currentLocation.longitude])
-                .addTo(map)
-                .bindPopup(`
-                    <div class="map-popup">
-                        <div class="popup-header">
-                            <h6><i class="fas fa-user"></i> ${team.name}</h6>
-                            <span class="badge badge-${team.status === 'active' ? 'success' : team.status === 'busy' ? 'warning' : 'danger'}">${team.status}</span>
-                        </div>
-                        <div class="popup-content">
-                            <p><strong>Zone:</strong> ${team.zone || 'N/A'}</p>
-                            <p><strong>State:</strong> ${team.state || 'N/A'}</p>
-                            <p><strong>Skills:</strong> ${team.skills.join(', ')}</p>
-                            <p><strong>Rating:</strong> ${team.productivity.customerRating.toFixed(1)}/5.0</p>
-                            <p><strong>Last Update:</strong> ${new Date().toLocaleTimeString('en-MY')}</p>
-                        </div>
-                        <div class="popup-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showTeamProfile('${team._id || team.id}')">
-                                <i class="fas fa-user"></i> View Profile
-                            </button>
-                        </div>
-                    </div>
-                `);
-            
-            // Enhanced marker styling with Malaysian theme
-            const iconColor = team.status === 'active' ? '#28a745' : 
-                             team.status === 'busy' ? '#ffc107' : '#dc3545';
-            
-            marker.setIcon(L.divIcon({
-                className: 'custom-team-marker',
-                html: `
-                    <div class="team-marker" style="background-color: ${iconColor};">
-                        <i class="fas fa-user"></i>
-                        <div class="marker-pulse"></div>
-                    </div>
-                `,
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
-            }));
-        }
-    });
+    // Load live tracking data
+    loadLiveTrackingData();
     
-    // Add Malaysian ticket markers with enhanced UX
-    tickets.forEach(ticket => {
-        if (ticket.status === 'open' || ticket.status === 'assigned') {
-            const marker = L.marker([ticket.location.latitude, ticket.location.longitude])
-                .addTo(map)
-                .bindPopup(`
-                    <div class="map-popup">
-                        <div class="popup-header">
-                            <h6><i class="fas fa-ticket-alt"></i> ${ticket.ticketNumber}</h6>
-                            <span class="badge badge-${ticket.priority === 'critical' ? 'danger' : ticket.priority === 'high' ? 'warning' : 'info'}">${ticket.priority}</span>
-                        </div>
-                        <div class="popup-content">
-                            <p><strong>Title:</strong> ${ticket.title}</p>
-                            <p><strong>Category:</strong> ${ticket.category}</p>
-                            <p><strong>Status:</strong> ${ticket.status}</p>
-                            <p><strong>Location:</strong> ${ticket.location.address}</p>
-                            <p><strong>Created:</strong> ${new Date(ticket.created_at || ticket.createdAt).toLocaleDateString('en-MY')}</p>
-                        </div>
-                        <div class="popup-actions">
-                            <button class="btn btn-sm btn-primary" onclick="showTicketDetails('${ticket.id}')">
-                                <i class="fas fa-eye"></i> View Details
-                            </button>
-                        </div>
-                    </div>
-                `);
-            
-            // Enhanced ticket marker styling
-            const iconColor = ticket.priority === 'critical' ? '#dc3545' : 
-                             ticket.priority === 'high' ? '#fd7e14' : 
-                             ticket.priority === 'medium' ? '#ffc107' : '#28a745';
-            
-            marker.setIcon(L.divIcon({
-                className: 'custom-ticket-marker',
-                html: `
-                    <div class="ticket-marker" style="background-color: ${iconColor};">
-                        <i class="fas fa-ticket-alt"></i>
-                        <div class="marker-pulse"></div>
-                    </div>
-                `,
-                iconSize: [25, 25],
-                iconAnchor: [12, 12]
-            }));
-        }
-    });
+    // Add live team markers with real-time positions
+    addLiveTeamMarkers();
+    
+    // Add active ticket markers
+    addLiveTicketMarkers();
+    
+    // Add route lines for active assignments
+    addLiveRouteLines();
     
     // Add network infrastructure markers
     addNetworkInfrastructureMarkers();
     
     // Update map metrics
     updateMapMetrics();
+    
+    // Start live tracking updates
+    startLiveTracking();
+}
+
+// Live Tracking Functions
+function initializeLiveTracking() {
+    console.log('🔄 Initializing live tracking system...');
+    
+    // Initialize live tracking data structure
+    liveTrackingData = {
+        teams: [],
+        tickets: [],
+        routes: [],
+        lastUpdate: new Date()
+    };
+    
+    // Set up live tracking controls
+    setupLiveTrackingControls();
+    
+    console.log('✅ Live tracking system initialized');
+}
+
+function loadLiveTrackingData() {
+    console.log('📡 Loading live tracking data...');
+    
+    // Simulate real-time data updates
+    liveTrackingData.teams = generateLiveTeamData();
+    liveTrackingData.tickets = generateLiveTicketData();
+    liveTrackingData.routes = generateLiveRouteData();
+    liveTrackingData.lastUpdate = new Date();
+    
+    console.log('✅ Live tracking data loaded:', {
+        teams: liveTrackingData.teams.length,
+        tickets: liveTrackingData.tickets.length,
+        routes: liveTrackingData.routes.length
+    });
+}
+
+function generateLiveTeamData() {
+    // Generate realistic live team positions with movement simulation
+    return fieldTeams.map(team => {
+        const baseLocation = team.currentLocation || {
+            latitude: 3.1390 + (Math.random() - 0.5) * 0.5,
+            longitude: 101.6869 + (Math.random() - 0.5) * 0.5
+        };
+        
+        // Simulate movement (small random changes)
+        const movement = {
+            latitude: (Math.random() - 0.5) * 0.001,
+            longitude: (Math.random() - 0.5) * 0.001
+        };
+        
+        return {
+            ...team,
+            currentLocation: {
+                latitude: baseLocation.latitude + movement.latitude,
+                longitude: baseLocation.longitude + movement.longitude,
+                address: team.currentLocation?.address || 'Live Location'
+            },
+            status: team.status || (Math.random() > 0.3 ? 'active' : 'busy'),
+            batteryLevel: Math.floor(Math.random() * 40) + 60, // 60-100%
+            signalStrength: Math.floor(Math.random() * 30) + 70, // 70-100%
+            lastSeen: new Date(Date.now() - Math.random() * 300000), // Last 5 minutes
+            speed: Math.floor(Math.random() * 50) + 10, // 10-60 km/h
+            heading: Math.floor(Math.random() * 360), // 0-360 degrees
+            isMoving: Math.random() > 0.4
+        };
+    });
+}
+
+function generateLiveTicketData() {
+    // Generate live ticket data with real-time status updates
+    return tickets.filter(ticket => 
+        ticket.status === 'open' || ticket.status === 'assigned' || ticket.status === 'in_progress'
+    ).map(ticket => ({
+        ...ticket,
+        priority: ticket.priority || ['low', 'medium', 'high', 'critical'][Math.floor(Math.random() * 4)],
+        estimatedArrival: new Date(Date.now() + Math.random() * 3600000), // Next hour
+        assignedTeam: ticket.assignedTeam || (Math.random() > 0.5 ? fieldTeams[Math.floor(Math.random() * fieldTeams.length)]?.name : null),
+        progress: Math.floor(Math.random() * 100), // 0-100%
+        lastUpdate: new Date(Date.now() - Math.random() * 600000) // Last 10 minutes
+    }));
+}
+
+function generateLiveRouteData() {
+    // Generate live route data for active assignments
+    const routes = [];
+    
+    liveTrackingData.teams.forEach(team => {
+        if (team.status === 'active' && team.currentLocation) {
+            // Find nearest ticket for this team
+            const nearestTicket = liveTrackingData.tickets.find(ticket => 
+                ticket.assignedTeam === team.name || !ticket.assignedTeam
+            );
+            
+            if (nearestTicket && nearestTicket.location) {
+                routes.push({
+                    teamId: team.id || team._id,
+                    teamName: team.name,
+                    ticketId: nearestTicket.id || nearestTicket._id,
+                    ticketTitle: nearestTicket.title,
+                    from: team.currentLocation,
+                    to: nearestTicket.location,
+                    distance: calculateDistance(
+                        team.currentLocation.latitude, team.currentLocation.longitude,
+                        nearestTicket.location.latitude, nearestTicket.location.longitude
+                    ),
+                    eta: Math.floor(Math.random() * 60) + 15, // 15-75 minutes
+                    status: 'en_route'
+                });
+            }
+        }
+    });
+    
+    return routes;
+}
+
+function clearMapMarkers() {
+    // Clear all existing markers and routes
+    teamMarkers.forEach(marker => map.removeLayer(marker));
+    ticketMarkers.forEach(marker => map.removeLayer(marker));
+    routeLines.forEach(line => map.removeLayer(line));
+    
+    teamMarkers = [];
+    ticketMarkers = [];
+    routeLines = [];
+}
+
+function addLiveTeamMarkers() {
+    console.log('👥 Adding live team markers...');
+    
+    liveTrackingData.teams.forEach(team => {
+        if (team.currentLocation) {
+            const marker = L.marker([team.currentLocation.latitude, team.currentLocation.longitude])
+                .addTo(map);
+            
+            // Create live tracking popup
+            const popupContent = `
+                <div class="live-tracking-popup">
+                    <div class="popup-header">
+                        <h6><i class="fas fa-user-circle"></i> ${team.name}</h6>
+                        <div class="live-indicator">
+                            <span class="live-dot"></span>
+                            <span class="live-text">LIVE</span>
+                        </div>
+                    </div>
+                    <div class="popup-content">
+                        <div class="status-row">
+                            <span class="status-label">Status:</span>
+                            <span class="status-badge ${team.status}">${team.status.toUpperCase()}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Zone:</span>
+                            <span class="info-value">${team.zone || 'Unknown'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Battery:</span>
+                            <span class="info-value">${team.batteryLevel}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Signal:</span>
+                            <span class="info-value">${team.signalStrength}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Speed:</span>
+                            <span class="info-value">${team.speed} km/h</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Last Seen:</span>
+                            <span class="info-value">${team.lastSeen.toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                    <div class="popup-actions">
+                        <button class="btn btn-sm btn-primary" onclick="trackTeam('${team.id || team._id}')">
+                            <i class="fas fa-crosshairs"></i> Track
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="showTeamProfile('${team.id || team._id}')">
+                            <i class="fas fa-user"></i> Profile
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            
+            // Create animated live marker
+            const iconColor = team.status === 'active' ? '#28a745' : 
+                             team.status === 'busy' ? '#ffc107' : '#dc3545';
+            
+            marker.setIcon(L.divIcon({
+                className: 'live-team-marker',
+                html: `
+                    <div class="live-marker" style="background-color: ${iconColor};">
+                        <i class="fas fa-user"></i>
+                        <div class="live-pulse"></div>
+                        <div class="live-ring"></div>
+                    </div>
+                `,
+                iconSize: [35, 35],
+                iconAnchor: [17, 17]
+            }));
+            
+            teamMarkers.push(marker);
+        }
+    });
+    
+    console.log(`✅ Added ${teamMarkers.length} live team markers`);
+}
+
+function addLiveTicketMarkers() {
+    console.log('🎫 Adding live ticket markers...');
+    
+    liveTrackingData.tickets.forEach(ticket => {
+        if (ticket.location) {
+            const marker = L.marker([ticket.location.latitude, ticket.location.longitude])
+                .addTo(map);
+            
+            // Create live ticket popup
+            const popupContent = `
+                <div class="live-tracking-popup">
+                    <div class="popup-header">
+                        <h6><i class="fas fa-ticket-alt"></i> ${ticket.ticketNumber || ticket.id}</h6>
+                        <span class="priority-badge ${ticket.priority}">${ticket.priority.toUpperCase()}</span>
+                    </div>
+                    <div class="popup-content">
+                        <div class="info-row">
+                            <span class="info-label">Title:</span>
+                            <span class="info-value">${ticket.title}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Status:</span>
+                            <span class="status-badge ${ticket.status}">${ticket.status.toUpperCase()}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Progress:</span>
+                            <span class="info-value">${ticket.progress}%</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Assigned:</span>
+                            <span class="info-value">${ticket.assignedTeam || 'Unassigned'}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">ETA:</span>
+                            <span class="info-value">${ticket.estimatedArrival ? ticket.estimatedArrival.toLocaleTimeString() : 'N/A'}</span>
+                        </div>
+                    </div>
+                    <div class="popup-actions">
+                        <button class="btn btn-sm btn-primary" onclick="viewTicket('${ticket.id}')">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="assignTicket('${ticket.id}')">
+                            <i class="fas fa-user-plus"></i> Assign
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            
+            // Create animated ticket marker
+            const iconColor = ticket.priority === 'critical' ? '#dc3545' : 
+                             ticket.priority === 'high' ? '#fd7e14' : 
+                             ticket.priority === 'medium' ? '#ffc107' : '#28a745';
+            
+            marker.setIcon(L.divIcon({
+                className: 'live-ticket-marker',
+                html: `
+                    <div class="live-marker" style="background-color: ${iconColor};">
+                        <i class="fas fa-ticket-alt"></i>
+                        <div class="live-pulse"></div>
+                    </div>
+                `,
+                iconSize: [30, 30],
+                iconAnchor: [15, 15]
+            }));
+            
+            ticketMarkers.push(marker);
+        }
+    });
+    
+    console.log(`✅ Added ${ticketMarkers.length} live ticket markers`);
+}
+
+function addLiveRouteLines() {
+    console.log('🛣️ Adding live route lines...');
+    
+    liveTrackingData.routes.forEach(route => {
+        const routeLine = L.polyline([
+            [route.from.latitude, route.from.longitude],
+            [route.to.latitude, route.to.longitude]
+        ], {
+            color: '#3b82f6',
+            weight: 3,
+            opacity: 0.8,
+            dashArray: '10, 10'
+        }).addTo(map);
+        
+        // Add route popup
+        routeLine.bindPopup(`
+            <div class="route-popup">
+                <h6><i class="fas fa-route"></i> Route to ${route.ticketTitle}</h6>
+                <div class="route-info">
+                    <p><strong>Team:</strong> ${route.teamName}</p>
+                    <p><strong>Distance:</strong> ${route.distance.toFixed(1)} km</p>
+                    <p><strong>ETA:</strong> ${route.eta} minutes</p>
+                    <p><strong>Status:</strong> ${route.status}</p>
+                </div>
+            </div>
+        `);
+        
+        routeLines.push(routeLine);
+    });
+    
+    console.log(`✅ Added ${routeLines.length} live route lines`);
+}
+
+function startLiveTracking() {
+    console.log('🔄 Starting live tracking updates...');
+    
+    // Clear existing interval
+    if (liveTrackingInterval) {
+        clearInterval(liveTrackingInterval);
+    }
+    
+    // Update every 5 seconds
+    liveTrackingInterval = setInterval(() => {
+        updateLiveTracking();
+    }, 5000);
+    
+    console.log('✅ Live tracking started (5s intervals)');
+}
+
+function updateLiveTracking() {
+    console.log('🔄 Updating live tracking data...');
+    
+    // Update team positions with small movements
+    liveTrackingData.teams.forEach(team => {
+        if (team.currentLocation && team.isMoving) {
+            // Simulate small movement
+            const movement = 0.0001; // Small movement
+            team.currentLocation.latitude += (Math.random() - 0.5) * movement;
+            team.currentLocation.longitude += (Math.random() - 0.5) * movement;
+            
+            // Update battery and signal
+            team.batteryLevel = Math.max(0, team.batteryLevel - Math.random() * 0.1);
+            team.signalStrength = Math.max(0, team.signalStrength + (Math.random() - 0.5) * 2);
+            team.lastSeen = new Date();
+        }
+    });
+    
+    // Update markers on map
+    updateLiveMarkers();
+    
+    // Update live tracking dashboard
+    updateLiveTrackingDashboard();
+    
+    console.log('✅ Live tracking updated');
+}
+
+function updateLiveMarkers() {
+    // Update team marker positions
+    teamMarkers.forEach((marker, index) => {
+        const team = liveTrackingData.teams[index];
+        if (team && team.currentLocation) {
+            marker.setLatLng([team.currentLocation.latitude, team.currentLocation.longitude]);
+        }
+    });
+}
+
+function updateLiveTrackingDashboard() {
+    // Update live tracking metrics
+    const activeTeams = liveTrackingData.teams.filter(team => team.status === 'active').length;
+    const busyTeams = liveTrackingData.teams.filter(team => team.status === 'busy').length;
+    const activeTickets = liveTrackingData.tickets.length;
+    const activeRoutes = liveTrackingData.routes.length;
+    
+    // Update dashboard elements if they exist
+    const elements = {
+        'live-active-teams': activeTeams,
+        'live-busy-teams': busyTeams,
+        'live-active-tickets': activeTickets,
+        'live-active-routes': activeRoutes,
+        'live-last-update': liveTrackingData.lastUpdate.toLocaleTimeString()
+    };
+    
+    Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    });
+}
+
+function setupLiveTrackingControls() {
+    // Add live tracking control panel to map
+    const liveControl = L.control({position: 'topright'});
+    
+    liveControl.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'live-tracking-control');
+        div.innerHTML = `
+            <div class="live-control-panel">
+                <h6><i class="fas fa-satellite-dish"></i> Live Tracking</h6>
+                <div class="live-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Teams:</span>
+                        <span class="stat-value" id="live-active-teams">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tickets:</span>
+                        <span class="stat-value" id="live-active-tickets">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Routes:</span>
+                        <span class="stat-value" id="live-active-routes">0</span>
+                    </div>
+                </div>
+                <div class="live-actions">
+                    <button class="btn btn-sm btn-primary" onclick="toggleLiveTracking()">
+                        <i class="fas fa-play"></i> Toggle
+                    </button>
+                    <button class="btn btn-sm btn-info" onclick="refreshLiveData()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        `;
+        return div;
+    };
+    
+    liveControl.addTo(map);
+}
+
+// Live tracking control functions
+function toggleLiveTracking() {
+    if (liveTrackingInterval) {
+        clearInterval(liveTrackingInterval);
+        liveTrackingInterval = null;
+        console.log('⏸️ Live tracking paused');
+    } else {
+        startLiveTracking();
+        console.log('▶️ Live tracking resumed');
+    }
+}
+
+function refreshLiveData() {
+    console.log('🔄 Refreshing live data...');
+    loadLiveTrackingData();
+    refreshMap();
+}
+
+function trackTeam(teamId) {
+    console.log('🎯 Tracking team:', teamId);
+    const team = liveTrackingData.teams.find(t => t.id === teamId || t._id === teamId);
+    if (team && team.currentLocation) {
+        map.setView([team.currentLocation.latitude, team.currentLocation.longitude], 15);
+    }
+}
+
+function calculateDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371; // Earth's radius in km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
 }
 
 function updateTeamLocationOnMap(data) {
