@@ -4943,8 +4943,12 @@
                                     <button type="button" class="btn btn-primary" onclick="showCreateTicketModal()">
                                         <i class="fas fa-plus me-2"></i>
                                         New Ticket
-                            </button>
-                                        </div>
+                                    </button>
+                                    <button class="btn btn-outline-primary ms-2" onclick="toggleAIChatbot()" title="NRO-Bots AI Assistant">
+                                        <i class="fas fa-robot"></i>
+                                        <span class="ms-1">NRO-Bots</span>
+                                    </button>
+                                </div>
                         </div>
                     </div>
 
@@ -5097,10 +5101,6 @@
                             <button class="tab-button" onclick="showTab('teams')">Field Teams</button>
                             <button class="tab-button" onclick="showTab('planning')">Predictive Planning</button>
                             <button class="tab-button" onclick="showTab('map')">Live Tracking</button>
-                            <button class="tab-button nro-bots-tab" onclick="toggleAIChatbot()" title="NRO-Bots AI Assistant">
-                                <i class="fas fa-robot"></i>
-                                <span>NRO-Bots</span>
-                            </button>
                         </div>
 
                         <!-- Tab Content -->
@@ -6601,17 +6601,60 @@
 
                                     <div class="metric-card">
                                         <div class="metric-icon">
-                                            <i class="fas fa-wifi"></i>
+                                            <i class="fas fa-map-marker-alt"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="map-connectivity">98%</h3>
-                                            <p class="metric-label">Connectivity</p>
+                                            <h3 class="metric-value" id="live-locations">0</h3>
+                                            <p class="metric-label">Active Locations</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+1%</span>
+                                                <span class="trend-indicator positive" id="live-locations-trend">+0</span>
+                                                <span class="trend-text">monitored</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="metric-card">
+                                        <div class="metric-icon">
+                                            <i class="fas fa-signal"></i>
+                                        </div>
+                                        <div class="metric-content">
+                                            <h3 class="metric-value" id="live-network-health">0%</h3>
+                                            <p class="metric-label">Network Health</p>
+                                            <div class="metric-trend">
+                                                <span class="trend-indicator positive" id="live-network-trend">+0%</span>
                                                 <span class="trend-text">vs last hour</span>
                                             </div>
                                         </div>
                                     </div>
+
+                                    <div class="metric-card">
+                                        <div class="metric-icon">
+                                            <i class="fas fa-battery-three-quarters"></i>
+                                        </div>
+                                        <div class="metric-content">
+                                            <h3 class="metric-value" id="live-device-battery">0%</h3>
+                                            <p class="metric-label">Avg Device Battery</p>
+                                            <div class="metric-trend">
+                                                <span class="trend-indicator negative" id="live-battery-trend">-0%</span>
+                                                <span class="trend-text">vs last hour</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="metric-card">
+                                        <div class="metric-icon">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <div class="metric-content">
+                                            <h3 class="metric-value" id="live-alerts">0</h3>
+                                            <p class="metric-label">Active Alerts</p>
+                                            <div class="metric-trend">
+                                                <span class="trend-indicator negative" id="live-alerts-trend">+0</span>
+                                                <span class="trend-text">vs last hour</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
 
                                 <!-- Live Tracking Map Container -->
@@ -7335,7 +7378,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=20"></script>
+    <script src="/src/app.js?v=21"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
