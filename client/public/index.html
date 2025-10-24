@@ -260,11 +260,57 @@
             transform: scale(1.1);
         }
 
-        .metric-icon.blue { background-color: var(--primary-color); }
-        .metric-icon.green { background-color: var(--success-color); }
-        .metric-icon.orange { background-color: var(--warning-color); }
-        .metric-icon.red { background-color: var(--danger-color); }
-        .metric-icon.purple { background-color: #8b5cf6; }
+        .metric-icon.blue { 
+            background-color: var(--primary-color); 
+            color: white;
+        }
+        .metric-icon.green { 
+            background-color: var(--success-color); 
+            color: white;
+        }
+        .metric-icon.orange { 
+            background-color: var(--warning-color); 
+            color: white;
+        }
+        .metric-icon.red { 
+            background-color: var(--danger-color); 
+            color: white;
+        }
+        .metric-icon.purple { 
+            background-color: #8b5cf6; 
+            color: white;
+        }
+
+        /* Ensure icons are visible */
+        .metric-icon i {
+            font-size: 18px;
+            color: white !important;
+        }
+
+        .metric-icon {
+            justify-content: center;
+            align-items: center;
+            display: flex !important;
+            min-width: 40px;
+            min-height: 40px;
+        }
+
+        /* Force icon visibility */
+        .metric-icon i.fas,
+        .metric-icon i.far,
+        .metric-icon i.fab {
+            display: inline-block !important;
+            font-style: normal !important;
+            font-variant: normal !important;
+            text-rendering: auto !important;
+            -webkit-font-smoothing: antialiased !important;
+            -moz-osx-font-smoothing: grayscale !important;
+        }
+
+        /* Debug: Add border to see if icons are there */
+        .metric-icon {
+            border: 1px solid rgba(255,255,255,0.2);
+        }
 
         .metric-value {
             font-size: 2rem;
@@ -7467,7 +7513,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=24"></script>
+    <script src="/src/app.js?v=25"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

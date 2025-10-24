@@ -247,6 +247,30 @@ function destroyChartByCanvasId(canvasId) {
 // Local alias used by chart functions
 const chartRegistry = window.chartInstances;
 
+// Ensure all icons are properly loaded
+function ensureIconsLoaded() {
+    console.log('🔍 Ensuring icons are loaded...');
+    
+    // Wait for FontAwesome to load
+    const checkFontAwesome = () => {
+        if (document.querySelector('.fas')) {
+            console.log('✅ FontAwesome loaded');
+            // Force icon refresh
+            document.querySelectorAll('.metric-icon i').forEach(icon => {
+                icon.style.display = 'inline-block';
+                icon.style.visibility = 'visible';
+                icon.style.fontSize = '18px';
+                icon.style.color = 'white';
+            });
+        } else {
+            console.log('⏳ Waiting for FontAwesome...');
+            setTimeout(checkFontAwesome, 100);
+        }
+    };
+    
+    checkFontAwesome();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 FieldAssign Dashboard Initializing...');
     console.log('🚀 DOM loaded, checking tab elements...');
@@ -257,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadDashboardData();
     initializeMap();
     initializeViewControls(); // Initialize standardized view controls
+    ensureIconsLoaded(); // Ensure all icons are properly loaded
     
     // Ensure overview tab is active on page load
     console.log('🏠 Setting overview tab as default...');
