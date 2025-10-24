@@ -239,6 +239,199 @@ async def get_tickets_overview(db: Session = Depends(get_db)):
     
     return overview_data
 
+# Live Tracking Endpoints for Tickets
+@app.get("/tickets/live-tracking")
+async def get_live_ticket_tracking(db: Session = Depends(get_db)):
+    """Get live tracking data for active tickets"""
+    # Get active tickets (open, assigned, in_progress)
+    active_tickets = db.query(Ticket).filter(
+        Ticket.status.in_(["open", "assigned", "in_progress"])
+    ).all()
+    
+    live_tickets = []
+    for ticket in active_tickets:
+        # Generate realistic live tracking data for each ticket
+        import random
+        import math
+        random.seed(ticket.id + int(datetime.now().timestamp() / 300))  # Change every 5 minutes
+        
+        # Generate location if not exists
+        if not ticket.location_latitude or not ticket.location_longitude:
+            base_lat = 3.1390 + (random.random() - 0.5) * 0.5
+            base_lon = 101.6869 + (random.random() - 0.5) * 0.5
+        else:
+            base_lat = ticket.location_latitude
+            base_lon = ticket.location_longitude
+        
+        # Simulate small movement for active tickets
+        movement_lat = (random.random() - 0.5) * 0.0001
+        movement_lon = (random.random() - 0.5) * 0.0001
+        
+        live_tickets.append({
+            "id": ticket.id,
+            "ticketNumber": ticket.ticket_number,
+            "title": ticket.title,
+            "status": ticket.status,
+            "priority": ticket.priority,
+            "category": ticket.category,
+            "location": {
+                "latitude": base_lat + movement_lat,
+                "longitude": base_lon + movement_lon,
+                "address": ticket.location_address or f"Location - {ticket.category}"
+            },
+            "assignedTeam": ticket.assigned_team_id,
+            "progress": random.randint(0, 100),  # 0-100%
+            "estimatedArrival": (datetime.now() + timedelta(minutes=random.randint(15, 120))).isoformat(),
+            "lastUpdate": datetime.now().isoformat(),
+            "urgency": random.choice(["low", "medium", "high", "critical"]),
+            "estimatedDuration": random.randint(30, 180),  # minutes
+            "customerRating": round(random.uniform(3.0, 5.0), 1) if ticket.status == "completed" else None
+        })
+    
+    return {
+        "tickets": live_tickets,
+        "lastUpdate": datetime.now().isoformat(),
+        "totalActiveTickets": len(live_tickets),
+        "openTickets": len([t for t in live_tickets if t["status"] == "open"]),
+        "assignedTickets": len([t for t in live_tickets if t["status"] == "assigned"]),
+        "inProgressTickets": len([t for t in live_tickets if t["status"] == "in_progress"])
+    }
+
+@app.get("/tickets/{ticket_id}/live-tracking")
+async def get_ticket_live_tracking(ticket_id: int, db: Session = Depends(get_db)):
+    """Get live tracking data for a specific ticket"""
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    import random
+    random.seed(ticket.id + int(datetime.now().timestamp() / 60))  # Change every minute
+    
+    # Generate live data for this specific ticket
+    if not ticket.location_latitude or not ticket.location_longitude:
+        base_lat = 3.1390 + (random.random() - 0.5) * 0.5
+        base_lon = 101.6869 + (random.random() - 0.5) * 0.5
+    else:
+        base_lat = ticket.location_latitude
+        base_lon = ticket.location_longitude
+    
+    return {
+        "id": ticket.id,
+        "ticketNumber": ticket.ticket_number,
+        "title": ticket.title,
+        "status": ticket.status,
+        "priority": ticket.priority,
+        "category": ticket.category,
+        "location": {
+            "latitude": base_lat,
+            "longitude": base_lon,
+            "address": ticket.location_address or f"Location - {ticket.category}"
+        },
+        "assignedTeam": ticket.assigned_team_id,
+        "progress": random.randint(0, 100),
+        "estimatedArrival": (datetime.now() + timedelta(minutes=random.randint(15, 120))).isoformat(),
+        "lastUpdate": datetime.now().isoformat(),
+        "urgency": random.choice(["low", "medium", "high", "critical"]),
+        "estimatedDuration": random.randint(30, 180),
+        "customerRating": round(random.uniform(3.0, 5.0), 1) if ticket.status == "completed" else None
+    }
+
+@app.post("/tickets/{ticket_id}/update-progress")
+async def update_ticket_progress(
+    ticket_id: int,
+    progress_data: dict,
+    db: Session = Depends(get_db)
+):
+    """Update ticket progress and status"""
+    ticket = db.query(Ticket).filter(Ticket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    # Update ticket progress
+    if "progress" in progress_data:
+        # Update status based on progress
+        progress = progress_data["progress"]
+        if progress == 0:
+            ticket.status = "open"
+        elif progress < 100:
+            ticket.status = "in_progress"
+        else:
+            ticket.status = "completed"
+            ticket.resolved_at = datetime.now()
+    
+    if "status" in progress_data:
+        ticket.status = progress_data["status"]
+    
+    if "assigned_team_id" in progress_data:
+        ticket.assigned_team_id = progress_data["assigned_team_id"]
+    
+    ticket.updated_at = datetime.now()
+    
+    db.commit()
+    db.refresh(ticket)
+    
+    return {
+        "message": "Ticket progress updated successfully",
+        "ticket_id": ticket.id,
+        "status": ticket.status,
+        "updated_at": ticket.updated_at.isoformat()
+    }
+
+@app.get("/tickets/live-tracking/assignments")
+async def get_live_assignments(db: Session = Depends(get_db)):
+    """Get live assignment data between teams and tickets"""
+    # Get active assignments
+    assignments = db.query(Assignment).filter(
+        Assignment.status.in_(["assigned", "in_progress", "en_route"])
+    ).all()
+    
+    live_assignments = []
+    for assignment in assignments:
+        # Get ticket and team details
+        ticket = db.query(Ticket).filter(Ticket.id == assignment.ticket_id).first()
+        team = db.query(Team).filter(Team.id == assignment.team_id).first()
+        
+        if ticket and team:
+            import random
+            random.seed(assignment.id + int(datetime.now().timestamp() / 300))
+            
+            # Calculate ETA and distance
+            if (ticket.location_latitude and ticket.location_longitude and 
+                team.current_latitude and team.current_longitude):
+                
+                # Calculate distance (simplified)
+                distance = math.sqrt(
+                    (ticket.location_latitude - team.current_latitude) ** 2 + 
+                    (ticket.location_longitude - team.current_longitude) ** 2
+                ) * 111  # Rough conversion to km
+                
+                eta = max(15, int(distance * 2))  # Rough ETA calculation
+            else:
+                distance = random.uniform(5.0, 50.0)
+                eta = random.randint(15, 75)
+            
+            live_assignments.append({
+                "id": assignment.id,
+                "ticketId": ticket.id,
+                "ticketNumber": ticket.ticket_number,
+                "ticketTitle": ticket.title,
+                "teamId": team.id,
+                "teamName": team.name,
+                "status": assignment.status,
+                "distance": round(distance, 1),
+                "eta": eta,
+                "startedAt": assignment.created_at.isoformat(),
+                "estimatedArrival": (datetime.now() + timedelta(minutes=eta)).isoformat(),
+                "priority": ticket.priority,
+                "progress": random.randint(0, 100)
+            })
+    
+    return {
+        "assignments": live_assignments,
+        "totalAssignments": len(live_assignments),
+        "lastUpdate": datetime.now().isoformat()
+    }
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("SERVICE_PORT", 8001))

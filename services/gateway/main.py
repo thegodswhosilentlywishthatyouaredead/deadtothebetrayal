@@ -238,6 +238,127 @@ async def ai_recommendations(request: dict):
             logger.error(f"AI service error: {e}")
             raise HTTPException(status_code=503, detail="AI service unavailable")
 
+# Live Tracking endpoints
+@app.get("/api/live-tracking/teams")
+async def get_live_teams():
+    """Get live tracking data for all teams"""
+    logger.info("Live teams tracking endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{AUTH_URL}/auth/teams/live-tracking")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live teams tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live teams tracking service unavailable")
+
+@app.get("/api/live-tracking/teams/{team_id}")
+async def get_team_live_tracking(team_id: int):
+    """Get live tracking data for a specific team"""
+    logger.info(f"Live team tracking endpoint called for team {team_id}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{AUTH_URL}/auth/teams/{team_id}/live-tracking")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live team tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live team tracking service unavailable")
+
+@app.post("/api/live-tracking/teams/{team_id}/update-location")
+async def update_team_location(team_id: int, request: dict):
+    """Update team location and status"""
+    logger.info(f"Update team location endpoint called for team {team_id}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(f"{AUTH_URL}/auth/teams/{team_id}/update-location", json=request)
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Update team location service error: {e}")
+            raise HTTPException(status_code=503, detail="Update team location service unavailable")
+
+@app.get("/api/live-tracking/routes")
+async def get_live_routes():
+    """Get live tracking routes between teams and tickets"""
+    logger.info("Live routes tracking endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{AUTH_URL}/auth/live-tracking/routes")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live routes tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live routes tracking service unavailable")
+
+@app.get("/api/live-tracking/tickets")
+async def get_live_tickets():
+    """Get live tracking data for active tickets"""
+    logger.info("Live tickets tracking endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{TICKETS_URL}/tickets/live-tracking")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live tickets tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live tickets tracking service unavailable")
+
+@app.get("/api/live-tracking/tickets/{ticket_id}")
+async def get_ticket_live_tracking(ticket_id: int):
+    """Get live tracking data for a specific ticket"""
+    logger.info(f"Live ticket tracking endpoint called for ticket {ticket_id}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{TICKETS_URL}/tickets/{ticket_id}/live-tracking")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live ticket tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live ticket tracking service unavailable")
+
+@app.post("/api/live-tracking/tickets/{ticket_id}/update-progress")
+async def update_ticket_progress(ticket_id: int, request: dict):
+    """Update ticket progress and status"""
+    logger.info(f"Update ticket progress endpoint called for ticket {ticket_id}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(f"{TICKETS_URL}/tickets/{ticket_id}/update-progress", json=request)
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Update ticket progress service error: {e}")
+            raise HTTPException(status_code=503, detail="Update ticket progress service unavailable")
+
+@app.get("/api/live-tracking/assignments")
+async def get_live_assignments():
+    """Get live assignment data between teams and tickets"""
+    logger.info("Live assignments tracking endpoint called")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{TICKETS_URL}/tickets/live-tracking/assignments")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Live assignments tracking service error: {e}")
+            raise HTTPException(status_code=503, detail="Live assignments tracking service unavailable")
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("GATEWAY_PORT", 8085))

@@ -3909,7 +3909,7 @@ function initializeMap() {
     initializeLiveTracking();
 }
 
-function refreshMap() {
+async function refreshMap() {
     if (!map) {
         initializeMap();
     }
@@ -3917,8 +3917,8 @@ function refreshMap() {
     // Clear existing markers and routes
     clearMapMarkers();
     
-    // Load live tracking data
-    loadLiveTrackingData();
+    // Load live tracking data from backend
+    await loadLiveTrackingData();
     
     // Add live team markers with real-time positions
     addLiveTeamMarkers();
@@ -3957,20 +3957,49 @@ function initializeLiveTracking() {
     console.log('✅ Live tracking system initialized');
 }
 
-function loadLiveTrackingData() {
-    console.log('📡 Loading live tracking data...');
+async function loadLiveTrackingData() {
+    console.log('📡 Loading live tracking data from backend...');
     
-    // Simulate real-time data updates
-    liveTrackingData.teams = generateLiveTeamData();
-    liveTrackingData.tickets = generateLiveTicketData();
-    liveTrackingData.routes = generateLiveRouteData();
-    liveTrackingData.lastUpdate = new Date();
-    
-    console.log('✅ Live tracking data loaded:', {
-        teams: liveTrackingData.teams.length,
-        tickets: liveTrackingData.tickets.length,
-        routes: liveTrackingData.routes.length
-    });
+    try {
+        // Load live teams data from backend
+        const teamsResponse = await fetch(`${API_BASE}/live-tracking/teams`);
+        const teamsData = await teamsResponse.json();
+        liveTrackingData.teams = teamsData.teams || [];
+        
+        // Load live tickets data from backend
+        const ticketsResponse = await fetch(`${API_BASE}/live-tracking/tickets`);
+        const ticketsData = await ticketsResponse.json();
+        liveTrackingData.tickets = ticketsData.tickets || [];
+        
+        // Load live routes data from backend
+        const routesResponse = await fetch(`${API_BASE}/live-tracking/routes`);
+        const routesData = await routesResponse.json();
+        liveTrackingData.routes = routesData.routes || [];
+        
+        liveTrackingData.lastUpdate = new Date();
+        
+        console.log('✅ Live tracking data loaded from backend:', {
+            teams: liveTrackingData.teams.length,
+            tickets: liveTrackingData.tickets.length,
+            routes: liveTrackingData.routes.length
+        });
+        
+    } catch (error) {
+        console.error('❌ Error loading live tracking data from backend:', error);
+        console.log('🔄 Falling back to simulated data...');
+        
+        // Fallback to simulated data
+        liveTrackingData.teams = generateLiveTeamData();
+        liveTrackingData.tickets = generateLiveTicketData();
+        liveTrackingData.routes = generateLiveRouteData();
+        liveTrackingData.lastUpdate = new Date();
+        
+        console.log('✅ Live tracking data loaded (fallback):', {
+            teams: liveTrackingData.teams.length,
+            tickets: liveTrackingData.tickets.length,
+            routes: liveTrackingData.routes.length
+        });
+    }
 }
 
 function generateLiveTeamData() {
@@ -4267,31 +4296,47 @@ function startLiveTracking() {
     console.log('✅ Live tracking started (5s intervals)');
 }
 
-function updateLiveTracking() {
+async function updateLiveTracking() {
     console.log('🔄 Updating live tracking data...');
     
-    // Update team positions with small movements
-    liveTrackingData.teams.forEach(team => {
-        if (team.currentLocation && team.isMoving) {
-            // Simulate small movement
-            const movement = 0.0001; // Small movement
-            team.currentLocation.latitude += (Math.random() - 0.5) * movement;
-            team.currentLocation.longitude += (Math.random() - 0.5) * movement;
-            
-            // Update battery and signal
-            team.batteryLevel = Math.max(0, team.batteryLevel - Math.random() * 0.1);
-            team.signalStrength = Math.max(0, team.signalStrength + (Math.random() - 0.5) * 2);
-            team.lastSeen = new Date();
-        }
-    });
-    
-    // Update markers on map
-    updateLiveMarkers();
-    
-    // Update live tracking dashboard
-    updateLiveTrackingDashboard();
-    
-    console.log('✅ Live tracking updated');
+    try {
+        // Reload data from backend
+        await loadLiveTrackingData();
+        
+        // Update markers on map
+        updateLiveMarkers();
+        
+        // Update live tracking dashboard
+        updateLiveTrackingDashboard();
+        
+        console.log('✅ Live tracking updated from backend');
+        
+    } catch (error) {
+        console.error('❌ Error updating live tracking from backend:', error);
+        
+        // Fallback to local updates
+        liveTrackingData.teams.forEach(team => {
+            if (team.currentLocation && team.isMoving) {
+                // Simulate small movement
+                const movement = 0.0001; // Small movement
+                team.currentLocation.latitude += (Math.random() - 0.5) * movement;
+                team.currentLocation.longitude += (Math.random() - 0.5) * movement;
+                
+                // Update battery and signal
+                team.batteryLevel = Math.max(0, team.batteryLevel - Math.random() * 0.1);
+                team.signalStrength = Math.max(0, team.signalStrength + (Math.random() - 0.5) * 2);
+                team.lastSeen = new Date();
+            }
+        });
+        
+        // Update markers on map
+        updateLiveMarkers();
+        
+        // Update live tracking dashboard
+        updateLiveTrackingDashboard();
+        
+        console.log('✅ Live tracking updated (fallback)');
+    }
 }
 
 function updateLiveMarkers() {
