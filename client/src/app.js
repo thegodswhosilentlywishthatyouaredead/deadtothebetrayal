@@ -3906,43 +3906,74 @@ let liveTrackingCache = {
     lastUpdate: null
 };
 
-// Enhanced Map functions with caching and ticket tracking
+// Simplified Map functions like field-portal
 function initializeMap() {
-    console.log('🗺️ Initializing map with caching...');
+    console.log('🗺️ Initializing simplified map...');
     
-    // Set view to Malaysia (Kuala Lumpur coordinates)
-    map = L.map('map').setView([3.1390, 101.6869], 7);
+    // Set view to Malaysia (Kuala Lumpur coordinates) - like field-portal
+    map = L.map('map').setView([3.1390, 101.6869], 11);
     
-    // Add tile layer with caching
+    // Add tile layer - simple like field-portal
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18,
-        cache: true,
-        crossOrigin: true,
-        updateWhenZooming: false,
-        keepBuffer: 2
+        attribution: '© OpenStreetMap contributors'
     }).addTo(map);
     
-    // Initialize map controls
-    addMapControls();
+    // Load ticket data
+    loadTicketData();
     
-    // Initialize live tracking
-    initializeLiveTracking();
-    
-    console.log('✅ Map initialized with caching');
+    console.log('✅ Simplified map initialized');
 }
 
-// Load basic map data
-function loadBasicMapData() {
-    console.log('📊 Loading basic map data...');
+// Load ticket data for map
+function loadTicketData() {
+    console.log('🎫 Loading ticket data for map...');
     
-    // Add some sample markers for Malaysia
-    addSampleMarkers();
+    // Clear existing markers
+    if (map) {
+        map.eachLayer(layer => {
+            if (layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+    }
     
-    // Update simple stats
-    updateSimpleStats();
+    // Add sample ticket markers
+    const sampleTickets = [
+        { id: 'T001', title: 'Network Outage - KL Central', lat: 3.1390, lng: 101.6869, priority: 'high', status: 'open' },
+        { id: 'T002', title: 'Fiber Installation - Penang', lat: 5.4164, lng: 100.3327, priority: 'medium', status: 'in_progress' },
+        { id: 'T003', title: 'Maintenance - Johor', lat: 1.4927, lng: 103.7414, priority: 'low', status: 'assigned' },
+        { id: 'T004', title: 'Equipment Check - Perak', lat: 4.5921, lng: 101.0901, priority: 'critical', status: 'open' }
+    ];
     
-    console.log('✅ Basic map data loaded');
+    sampleTickets.forEach(ticket => {
+        const color = ticket.priority === 'critical' ? '#dc3545' : 
+                     ticket.priority === 'high' ? '#fd7e14' : 
+                     ticket.priority === 'medium' ? '#ffc107' : '#28a745';
+        
+        const marker = L.marker([ticket.lat, ticket.lng], {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background: ${color}; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">T</div>`,
+                iconSize: [20, 20]
+            })
+        }).addTo(map);
+        
+        marker.bindPopup(`
+            <div>
+                <h6>${ticket.title}</h6>
+                <p><strong>Priority:</strong> ${ticket.priority}</p>
+                <p><strong>Status:</strong> ${ticket.status}</p>
+                <p><strong>Location:</strong> ${ticket.lat.toFixed(4)}, ${ticket.lng.toFixed(4)}</p>
+            </div>
+        `);
+        
+        // Add hover effect
+        marker.on('mouseover', function() {
+            this.openPopup();
+        });
+    });
+    
+    console.log('✅ Ticket data loaded');
 }
 
 // Add sample markers for Malaysia
@@ -4003,24 +4034,12 @@ async function refreshMap() {
         return;
     }
     
-    console.log('🔄 Refreshing map with ticket tracking only...');
+    console.log('🔄 Refreshing simplified map...');
     
-    // Clear existing markers and routes
-    clearMapMarkers();
+    // Reload ticket data
+    loadTicketData();
     
-    // Load live tracking data from backend
-    await loadLiveTrackingData();
-    
-    // Only add ticket markers with hover details
-    addLiveTicketMarkers();
-    
-    // Update map metrics
-    updateMapMetrics();
-    
-    // Start live tracking updates
-    startLiveTracking();
-    
-    console.log('✅ Map refreshed with ticket tracking only');
+    console.log('✅ Simplified map refreshed');
 }
 
 // Live Tracking Functions
