@@ -5301,6 +5301,7 @@ function displayTicketInfo(tickets) {
     const openTickets = tickets.filter(t => t.status === 'open').length;
     const closedTickets = tickets.filter(t => t.status === 'completed').length;
     const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
+    const backlogTickets = tickets.filter(t => t.status === 'backlog' || t.status === 'pending').length;
     
     container.innerHTML = `
         <div class="row">
@@ -5328,6 +5329,20 @@ function displayTicketInfo(tickets) {
                 <div class="metric-item">
                     <h4 class="text-danger">${openTickets}</h4>
                     <small class="text-muted">Open</small>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-6">
+                <div class="metric-item">
+                    <h4 class="text-secondary">${backlogTickets}</h4>
+                    <small class="text-muted">Backlog</small>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="metric-item">
+                    <h4 class="text-info">${Math.round((closedTickets / totalTickets) * 100)}%</h4>
+                    <small class="text-muted">Completion Rate</small>
                 </div>
             </div>
         </div>
@@ -5363,15 +5378,16 @@ function createTicketStatusChart(tickets) {
     const statusCounts = {
         'open': tickets.filter(t => t.status === 'open').length,
         'in_progress': tickets.filter(t => t.status === 'in_progress').length,
-        'completed': tickets.filter(t => t.status === 'completed').length
+        'completed': tickets.filter(t => t.status === 'completed').length,
+        'backlog': tickets.filter(t => t.status === 'backlog' || t.status === 'pending').length
     };
     
     const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
     if (total === 0) return;
     
-    const colors = ['#dc3545', '#ffc107', '#28a745'];
-    const labels = ['Open', 'In Progress', 'Completed'];
-    const values = [statusCounts.open, statusCounts.in_progress, statusCounts.completed];
+    const colors = ['#dc3545', '#ffc107', '#28a745', '#6c757d'];
+    const labels = ['Open', 'In Progress', 'Completed', 'Backlog'];
+    const values = [statusCounts.open, statusCounts.in_progress, statusCounts.completed, statusCounts.backlog];
     
     // Draw pie chart
     let currentAngle = 0;
@@ -5542,7 +5558,9 @@ function displaySampleTicketAnalytics() {
     const sampleTickets = [
         { title: 'Network Breakdown - NTT Class 1 (Major)', status: 'completed', priority: 'high' },
         { title: 'Customer - Drop Fiber', status: 'in_progress', priority: 'medium' },
-        { title: 'Network Breakdown - NTT (Minor)', status: 'open', priority: 'low' }
+        { title: 'Network Breakdown - NTT (Minor)', status: 'open', priority: 'low' },
+        { title: 'Legacy System Maintenance', status: 'backlog', priority: 'low' },
+        { title: 'Infrastructure Upgrade', status: 'backlog', priority: 'medium' }
     ];
     
     const sampleZones = {
