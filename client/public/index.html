@@ -3326,11 +3326,106 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Enhanced Map Styling */
-        .map-container {
-            border-radius: 16px;
+        /* Enhanced Live Tracking Map Styling */
+        .live-map-container {
+            height: 500px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(226, 232, 240, 0.5);
+        }
+
+        .live-tracking-container {
+            margin-bottom: 2rem;
+        }
+
+        .live-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .live-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .zone-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .zone-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .zone-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .zone-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .status-dot.inactive {
+            background: #64748b;
+        }
+
+        .status-dot.warning {
+            background: #f59e0b;
+        }
+
+        /* Malaysia-specific map styling */
+        .malaysia-map {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        /* Compact map container */
+        .map-container {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             border: 1px solid rgba(226, 232, 240, 0.5);
         }
 
@@ -6446,32 +6541,32 @@
                                     </div>
                                 </div>
 
-                                <!-- Map View Dashboard Metrics -->
+                                <!-- Live Tracking Dashboard Metrics -->
                                 <div class="domain-metrics">
                                     <div class="metric-card">
                                         <div class="metric-icon">
-                                            <i class="fas fa-map-marker-alt"></i>
+                                            <i class="fas fa-satellite-dish"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="map-active-locations">24</h3>
-                                            <p class="metric-label">Active Locations</p>
+                                            <h3 class="metric-value" id="live-active-teams">0</h3>
+                                            <p class="metric-label">Active Teams</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+3</span>
-                                                <span class="trend-text">vs last hour</span>
+                                                <span class="trend-indicator positive" id="live-teams-trend">+0</span>
+                                                <span class="trend-text">live tracking</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
                                         <div class="metric-icon">
-                                            <i class="fas fa-users"></i>
+                                            <i class="fas fa-ticket-alt"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="map-active-teams">6</h3>
-                                            <p class="metric-label">Active Teams</p>
+                                            <h3 class="metric-value" id="live-active-tickets">0</h3>
+                                            <p class="metric-label">Active Tickets</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+1</span>
-                                                <span class="trend-text">vs last hour</span>
+                                                <span class="trend-indicator positive" id="live-tickets-trend">+0</span>
+                                                <span class="trend-text">in progress</span>
                                             </div>
                                         </div>
                                     </div>
@@ -6481,11 +6576,11 @@
                                             <i class="fas fa-route"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="map-optimized-routes">12</h3>
-                                            <p class="metric-label">Optimized Routes</p>
+                                            <h3 class="metric-value" id="live-active-routes">0</h3>
+                                            <p class="metric-label">Live Routes</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">+2</span>
-                                                <span class="trend-text">vs last hour</span>
+                                                <span class="trend-indicator positive" id="live-routes-trend">+0</span>
+                                                <span class="trend-text">en route</span>
                                             </div>
                                         </div>
                                     </div>
@@ -6495,53 +6590,11 @@
                                             <i class="fas fa-clock"></i>
                                         </div>
                                         <div class="metric-content">
-                                            <h3 class="metric-value" id="map-avg-travel">18m</h3>
-                                            <p class="metric-label">Avg Travel Time</p>
+                                            <h3 class="metric-value" id="live-last-update">--:--</h3>
+                                            <p class="metric-label">Last Update</p>
                                             <div class="metric-trend">
-                                                <span class="trend-indicator positive">-12%</span>
-                                                <span class="trend-text">faster</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-signal"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="map-network-health">94%</h3>
-                                            <p class="metric-label">Network Health</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive">+2%</span>
-                                                <span class="trend-text">vs last hour</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="map-alerts">2</h3>
-                                            <p class="metric-label">Active Alerts</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative">+1</span>
-                                                <span class="trend-text">vs last hour</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-battery-three-quarters"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="map-device-battery">87%</h3>
-                                            <p class="metric-label">Avg Device Battery</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative">-5%</span>
-                                                <span class="trend-text">vs last hour</span>
+                                                <span class="trend-indicator positive" id="live-update-status">live</span>
+                                                <span class="trend-text">real-time</span>
                                             </div>
                                         </div>
                                     </div>
@@ -6561,66 +6614,70 @@
                                     </div>
                                 </div>
 
-                                <!-- Map Performance Summary -->
-                                <div class="performance-summary">
+                                <!-- Live Tracking Map Container -->
+                                <div class="live-tracking-container">
                                     <div class="row">
-                                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
-                                                        <i class="fas fa-map-marked-alt me-2"></i>Zone Coverage
-                                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                                    <div class="coverage-list">
-                                                        <div class="coverage-item">
-                                                            <span class="coverage-zone">Central (KL)</span>
-                                                            <span class="coverage-status active">Active</span>
-                                                            <span class="coverage-teams">3 teams</span>
-                                    </div>
-                                                        <div class="coverage-item">
-                                                            <span class="coverage-zone">Northern (Penang)</span>
-                                                            <span class="coverage-status active">Active</span>
-                                                            <span class="coverage-teams">2 teams</span>
-                                </div>
-                                                        <div class="coverage-item">
-                                                            <span class="coverage-zone">Southern (Johor)</span>
-                                                            <span class="coverage-status active">Active</span>
-                                                            <span class="coverage-teams">2 teams</span>
-                            </div>
-                                                        <div class="coverage-item">
-                                                            <span class="coverage-zone">East Malaysia</span>
-                                                            <span class="coverage-status standby">Standby</span>
-                                                            <span class="coverage-teams">1 team</span>
-                        </div>
+                                        <div class="col-lg-8">
+                                            <div class="card">
+                                                <div class="card-header d-flex justify-content-between align-items-center">
+                                                    <h5 class="card-title mb-0">
+                                                        <i class="fas fa-satellite-dish me-2"></i>
+                                                        Live Tracking Map - Malaysia
+                                                    </h5>
+                                                    <div class="live-controls">
+                                                        <button class="btn btn-sm btn-outline-primary" onclick="toggleLiveTracking()" id="live-toggle-btn">
+                                                            <i class="fas fa-pause"></i> Pause
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary" onclick="refreshMap()">
+                                                            <i class="fas fa-sync-alt"></i> Refresh
+                                                        </button>
                                                     </div>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <div id="map" class="live-map-container"></div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                                    <h6 class="card-title mb-0">
-                                                        <i class="fas fa-exclamation-circle me-2"></i>Live Alerts
-                                                    </h6>
-                                </div>
-                                <div class="card-body">
-                                                    <div class="live-alerts-list">
-                                                        <div class="live-alert-item critical">
-                                                            <span class="alert-icon">🔴</span>
-                                                            <span class="alert-text">Network Outage - KL Central</span>
-                                                            <span class="alert-time">2m ago</span>
-                                    </div>
-                                                        <div class="live-alert-item warning">
-                                                            <span class="alert-icon">🟡</span>
-                                                            <span class="alert-text">Low Battery - Team Penang</span>
-                                                            <span class="alert-time">5m ago</span>
+                                        <div class="col-lg-4">
+                                            <div class="card">
+                                                <div class="card-header">
+                                                    <h5 class="card-title">
+                                                        <i class="fas fa-info-circle me-2"></i>
+                                                        Live Status
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="live-stats" id="live-stats">
+                                                        <div class="stat-item">
+                                                            <span class="stat-label">Teams Online:</span>
+                                                            <span class="stat-value" id="live-teams-count">0</span>
                                                         </div>
-                                                        <div class="live-alert-item info">
-                                                            <span class="alert-icon">🔵</span>
-                                                            <span class="alert-text">Route Optimized - Johor Team</span>
-                                                            <span class="alert-time">8m ago</span>
+                                                        <div class="stat-item">
+                                                            <span class="stat-label">Tickets Active:</span>
+                                                            <span class="stat-value" id="live-tickets-count">0</span>
                                                         </div>
+                                                        <div class="stat-item">
+                                                            <span class="stat-label">Routes Active:</span>
+                                                            <span class="stat-value" id="live-routes-count">0</span>
+                                                        </div>
+                                                        <div class="stat-item">
+                                                            <span class="stat-label">Last Update:</span>
+                                                            <span class="stat-value" id="live-last-update-time">--:--</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="card mt-3">
+                                                <div class="card-header">
+                                                    <h5 class="card-title">
+                                                        <i class="fas fa-map-marked-alt me-2"></i>
+                                                        Malaysia Zones
+                                                    </h5>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="zone-list" id="malaysia-zones">
+                                                        <!-- Zones will be loaded here -->
                                                     </div>
                                                 </div>
                                             </div>
@@ -7278,7 +7335,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=17"></script>
+    <script src="/src/app.js?v=20"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

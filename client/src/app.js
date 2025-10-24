@@ -3887,32 +3887,123 @@ let liveTrackingData = {
     routes: []
 };
 
-// Map functions with Malaysian settings and Live Tracking
+// Malaysia-specific zones and caching
+const MALAYSIA_ZONES = {
+    'Kuala Lumpur': { lat: 3.1390, lng: 101.6869, teams: 0, tickets: 0 },
+    'Selangor': { lat: 3.0733, lng: 101.5185, teams: 0, tickets: 0 },
+    'Penang': { lat: 5.4164, lng: 100.3327, teams: 0, tickets: 0 },
+    'Johor': { lat: 1.4927, lng: 103.7414, teams: 0, tickets: 0 },
+    'Perak': { lat: 4.5921, lng: 101.0901, teams: 0, tickets: 0 },
+    'Sabah': { lat: 5.9804, lng: 116.0753, teams: 0, tickets: 0 },
+    'Sarawak': { lat: 1.5533, lng: 110.3593, teams: 0, tickets: 0 }
+};
+
+// Cache for live tracking data
+let liveTrackingCache = {
+    teams: new Map(),
+    tickets: new Map(),
+    routes: new Map(),
+    lastUpdate: null
+};
+
+// Enhanced Map functions with caching and ticket tracking
 function initializeMap() {
+    console.log('🗺️ Initializing map with caching...');
+    
     // Set view to Malaysia (Kuala Lumpur coordinates)
-    map = L.map('map').setView([3.1390, 101.6869], 7); // Malaysia view
+    map = L.map('map').setView([3.1390, 101.6869], 7);
     
-    // Use OpenStreetMap tiles with Malaysian attribution
+    // Add tile layer with caching
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors | Malaysia Field Operations',
+        attribution: '© OpenStreetMap contributors',
         maxZoom: 18,
-        minZoom: 6
+        cache: true,
+        crossOrigin: true,
+        updateWhenZooming: false,
+        keepBuffer: 2
     }).addTo(map);
-    
-    // Add Malaysian state boundaries (simplified)
-    addMalaysianStateBoundaries();
     
     // Initialize map controls
     addMapControls();
     
     // Initialize live tracking
     initializeLiveTracking();
+    
+    console.log('✅ Map initialized with caching');
+}
+
+// Load basic map data
+function loadBasicMapData() {
+    console.log('📊 Loading basic map data...');
+    
+    // Add some sample markers for Malaysia
+    addSampleMarkers();
+    
+    // Update simple stats
+    updateSimpleStats();
+    
+    console.log('✅ Basic map data loaded');
+}
+
+// Add sample markers for Malaysia
+function addSampleMarkers() {
+    if (!map) return;
+    
+    // Sample team locations in Malaysia
+    const sampleTeams = [
+        { name: 'Team KL', lat: 3.1390, lng: 101.6869, status: 'active' },
+        { name: 'Team Penang', lat: 5.4164, lng: 100.3327, status: 'busy' },
+        { name: 'Team Johor', lat: 1.4927, lng: 103.7414, status: 'active' },
+        { name: 'Team Perak', lat: 4.5921, lng: 101.0901, status: 'inactive' }
+    ];
+    
+    sampleTeams.forEach(team => {
+        const color = team.status === 'active' ? '#10b981' : 
+                     team.status === 'busy' ? '#f59e0b' : '#64748b';
+        
+        L.marker([team.lat, team.lng], {
+            icon: L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="background: ${color}; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">T</div>`,
+                iconSize: [20, 20]
+            })
+        }).addTo(map).bindPopup(`
+            <div>
+                <h6>${team.name}</h6>
+                <p><strong>Status:</strong> ${team.status}</p>
+                <p><strong>Location:</strong> ${team.lat.toFixed(4)}, ${team.lng.toFixed(4)}</p>
+            </div>
+        `);
+    });
+}
+
+// Update simple stats
+function updateSimpleStats() {
+    const teamsElement = document.getElementById('live-teams-simple');
+    const ticketsElement = document.getElementById('live-tickets-simple');
+    const routesElement = document.getElementById('live-routes-simple');
+    const updateElement = document.getElementById('live-update-simple');
+    
+    if (teamsElement) teamsElement.textContent = '4';
+    if (ticketsElement) ticketsElement.textContent = '12';
+    if (routesElement) routesElement.textContent = '8';
+    if (updateElement) {
+        const now = new Date();
+        updateElement.textContent = now.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
 }
 
 async function refreshMap() {
     if (!map) {
         initializeMap();
+        return;
     }
+    
+    console.log('🔄 Refreshing map with ticket tracking...');
     
     // Clear existing markers and routes
     clearMapMarkers();
@@ -3923,7 +4014,7 @@ async function refreshMap() {
     // Add live team markers with real-time positions
     addLiveTeamMarkers();
     
-    // Add active ticket markers
+    // Add active ticket markers with hover details
     addLiveTicketMarkers();
     
     // Add route lines for active assignments
@@ -3937,6 +4028,8 @@ async function refreshMap() {
     
     // Start live tracking updates
     startLiveTracking();
+    
+    console.log('✅ Map refreshed with ticket tracking');
 }
 
 // Live Tracking Functions
@@ -3961,22 +4054,69 @@ async function loadLiveTrackingData() {
     console.log('📡 Loading live tracking data from backend...');
     
     try {
-        // Load live teams data from backend
-        const teamsResponse = await fetch(`${API_BASE}/live-tracking/teams`);
+        // Check cache first (10 second cache for better performance)
+        const now = Date.now();
+        if (liveTrackingCache.lastUpdate && (now - liveTrackingCache.lastUpdate) < 10000) {
+            console.log('📡 Using cached live tracking data');
+            return liveTrackingData;
+        }
+        
+        // Load live teams data from backend with timeout
+        const teamsResponse = await fetch(`${API_BASE}/live-tracking/teams`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        
+        if (!teamsResponse.ok) {
+            throw new Error(`Teams API error: ${teamsResponse.status}`);
+        }
+        
         const teamsData = await teamsResponse.json();
         liveTrackingData.teams = teamsData.teams || [];
         
-        // Load live tickets data from backend
-        const ticketsResponse = await fetch(`${API_BASE}/live-tracking/tickets`);
+        // Load live tickets data from backend with timeout
+        const ticketsResponse = await fetch(`${API_BASE}/live-tracking/tickets`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        
+        if (!ticketsResponse.ok) {
+            throw new Error(`Tickets API error: ${ticketsResponse.status}`);
+        }
+        
         const ticketsData = await ticketsResponse.json();
         liveTrackingData.tickets = ticketsData.tickets || [];
         
-        // Load live routes data from backend
-        const routesResponse = await fetch(`${API_BASE}/live-tracking/routes`);
+        // Load live routes data from backend with timeout
+        const routesResponse = await fetch(`${API_BASE}/live-tracking/routes`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            signal: AbortSignal.timeout(5000) // 5 second timeout
+        });
+        
+        if (!routesResponse.ok) {
+            throw new Error(`Routes API error: ${routesResponse.status}`);
+        }
+        
         const routesData = await routesResponse.json();
         liveTrackingData.routes = routesData.routes || [];
         
         liveTrackingData.lastUpdate = new Date();
+        liveTrackingCache.lastUpdate = now;
+        
+        // Update Malaysia zones with live data
+        updateMalaysiaZones(liveTrackingData.teams, liveTrackingData.tickets);
         
         console.log('✅ Live tracking data loaded from backend:', {
             teams: liveTrackingData.teams.length,
@@ -3994,12 +4134,83 @@ async function loadLiveTrackingData() {
         liveTrackingData.routes = generateLiveRouteData();
         liveTrackingData.lastUpdate = new Date();
         
+        // Update Malaysia zones with simulated data
+        updateMalaysiaZones(liveTrackingData.teams, liveTrackingData.tickets);
+        
         console.log('✅ Live tracking data loaded (fallback):', {
             teams: liveTrackingData.teams.length,
             tickets: liveTrackingData.tickets.length,
             routes: liveTrackingData.routes.length
         });
     }
+}
+
+// Load Malaysia zones
+function loadMalaysiaZones() {
+    console.log('🇲🇾 Loading Malaysia zones...');
+    
+    const zonesContainer = document.getElementById('malaysia-zones');
+    if (!zonesContainer) return;
+    
+    let zonesHTML = '';
+    Object.entries(MALAYSIA_ZONES).forEach(([zoneName, zoneData]) => {
+        const status = zoneData.teams > 0 ? 'active' : 'inactive';
+        const statusClass = zoneData.teams > 0 ? '' : 'inactive';
+        
+        zonesHTML += `
+            <div class="zone-item">
+                <div class="zone-name">${zoneName}</div>
+                <div class="zone-status">
+                    <div class="status-dot ${statusClass}"></div>
+                    <span>${zoneData.teams} teams, ${zoneData.tickets} tickets</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    zonesContainer.innerHTML = zonesHTML;
+    console.log('✅ Malaysia zones loaded');
+}
+
+// Update Malaysia zones with live data
+function updateMalaysiaZones(teams, tickets) {
+    // Reset zone counts
+    Object.keys(MALAYSIA_ZONES).forEach(zone => {
+        MALAYSIA_ZONES[zone].teams = 0;
+        MALAYSIA_ZONES[zone].tickets = 0;
+    });
+    
+    // Count teams by zone
+    teams.forEach(team => {
+        const zone = getZoneFromCoordinates(team.latitude, team.longitude);
+        if (zone && MALAYSIA_ZONES[zone]) {
+            MALAYSIA_ZONES[zone].teams++;
+        }
+    });
+    
+    // Count tickets by zone
+    tickets.forEach(ticket => {
+        const zone = getZoneFromCoordinates(ticket.latitude, ticket.longitude);
+        if (zone && MALAYSIA_ZONES[zone]) {
+            MALAYSIA_ZONES[zone].tickets++;
+        }
+    });
+    
+    // Update zones display
+    loadMalaysiaZones();
+}
+
+// Get zone from coordinates (simplified)
+function getZoneFromCoordinates(lat, lng) {
+    // Simple zone detection based on coordinates
+    if (lat >= 2.5 && lat <= 3.5 && lng >= 101.0 && lng <= 102.0) return 'Kuala Lumpur';
+    if (lat >= 2.5 && lat <= 3.5 && lng >= 100.5 && lng <= 101.5) return 'Selangor';
+    if (lat >= 5.0 && lat <= 6.0 && lng >= 100.0 && lng <= 100.5) return 'Penang';
+    if (lat >= 1.0 && lat <= 2.0 && lng >= 103.0 && lng <= 104.0) return 'Johor';
+    if (lat >= 4.0 && lat <= 5.0 && lng >= 100.5 && lng <= 101.5) return 'Perak';
+    if (lat >= 5.5 && lat <= 6.5 && lng >= 115.5 && lng <= 116.5) return 'Sabah';
+    if (lat >= 1.0 && lat <= 2.0 && lng >= 109.5 && lng <= 111.0) return 'Sarawak';
+    return 'Kuala Lumpur'; // Default
 }
 
 function generateLiveTeamData() {
@@ -4240,6 +4451,17 @@ function addLiveTicketMarkers() {
                 iconAnchor: [15, 15]
             }));
             
+            // Add hover effect for better UX
+            marker.on('mouseover', function() {
+                this.openPopup();
+            });
+            
+            // Add click effect
+            marker.on('click', function() {
+                console.log('🎫 Ticket clicked:', ticket.id);
+                // You can add more click functionality here
+            });
+            
             ticketMarkers.push(marker);
         }
     });
@@ -4362,10 +4584,25 @@ function updateLiveTrackingDashboard() {
         'live-busy-teams': busyTeams,
         'live-active-tickets': activeTickets,
         'live-active-routes': activeRoutes,
-        'live-last-update': liveTrackingData.lastUpdate.toLocaleTimeString()
+        'live-last-update': liveTrackingData.lastUpdate ? liveTrackingData.lastUpdate.toLocaleTimeString() : '--:--'
     };
     
     Object.entries(elements).forEach(([id, value]) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    });
+    
+    // Update live stats panel
+    const liveStatsElements = {
+        'live-teams-count': activeTeams,
+        'live-tickets-count': activeTickets,
+        'live-routes-count': activeRoutes,
+        'live-last-update-time': liveTrackingData.lastUpdate ? liveTrackingData.lastUpdate.toLocaleTimeString() : '--:--'
+    };
+    
+    Object.entries(liveStatsElements).forEach(([id, value]) => {
         const element = document.getElementById(id);
         if (element) {
             element.textContent = value;
