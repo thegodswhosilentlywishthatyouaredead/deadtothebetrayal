@@ -5301,7 +5301,7 @@ function displayTicketInfo(tickets) {
     const openTickets = tickets.filter(t => t.status === 'open').length;
     const closedTickets = tickets.filter(t => t.status === 'completed').length;
     const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
-    const backlogTickets = tickets.filter(t => t.status === 'backlog' || t.status === 'pending').length;
+    const cancelledTickets = tickets.filter(t => t.status === 'cancelled').length;
     
     container.innerHTML = `
         <div class="row">
@@ -5335,8 +5335,8 @@ function displayTicketInfo(tickets) {
         <div class="row mt-3">
             <div class="col-6">
                 <div class="metric-item">
-                    <h4 class="text-secondary">${backlogTickets}</h4>
-                    <small class="text-muted">Backlog</small>
+                    <h4 class="text-secondary">${cancelledTickets}</h4>
+                    <small class="text-muted">Cancelled</small>
                 </div>
             </div>
             <div class="col-6">
@@ -5379,15 +5379,15 @@ function createTicketStatusChart(tickets) {
         'open': tickets.filter(t => t.status === 'open').length,
         'in_progress': tickets.filter(t => t.status === 'in_progress').length,
         'completed': tickets.filter(t => t.status === 'completed').length,
-        'backlog': tickets.filter(t => t.status === 'backlog' || t.status === 'pending').length
+        'cancelled': tickets.filter(t => t.status === 'cancelled').length
     };
     
     const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
     if (total === 0) return;
     
     const colors = ['#dc3545', '#ffc107', '#28a745', '#6c757d'];
-    const labels = ['Open', 'In Progress', 'Completed', 'Backlog'];
-    const values = [statusCounts.open, statusCounts.in_progress, statusCounts.completed, statusCounts.backlog];
+    const labels = ['Open', 'In Progress', 'Completed', 'Cancelled'];
+    const values = [statusCounts.open, statusCounts.in_progress, statusCounts.completed, statusCounts.cancelled];
     
     // Draw pie chart
     let currentAngle = 0;
@@ -5559,8 +5559,8 @@ function displaySampleTicketAnalytics() {
         { title: 'Network Breakdown - NTT Class 1 (Major)', status: 'completed', priority: 'high' },
         { title: 'Customer - Drop Fiber', status: 'in_progress', priority: 'medium' },
         { title: 'Network Breakdown - NTT (Minor)', status: 'open', priority: 'low' },
-        { title: 'Legacy System Maintenance', status: 'backlog', priority: 'low' },
-        { title: 'Infrastructure Upgrade', status: 'backlog', priority: 'medium' }
+        { title: 'Legacy System Maintenance', status: 'cancelled', priority: 'low' },
+        { title: 'Infrastructure Upgrade', status: 'cancelled', priority: 'medium' }
     ];
     
     const sampleZones = {
