@@ -3152,7 +3152,7 @@ function createRatingDistributionChart(teams) {
     });
 }
 
-// Populate zone ranking table
+// Populate zone ranking table with enhanced UI/UX
 function populateZoneRankingTable(zones) {
     const container = document.getElementById('zone-ranking-table');
     if (!container) return;
@@ -3165,7 +3165,8 @@ function populateZoneRankingTable(zones) {
             productivityScore: zone.productivity || 0,
             totalTeams: zone.totalTeams || 0,
             activeTeams: zone.activeTeams || 0,
-            totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0)
+            totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0),
+            efficiency: zone.efficiency || 0
         }));
     } else {
         // Handle object format zones
@@ -3179,46 +3180,105 @@ function populateZoneRankingTable(zones) {
     zonesArray.sort((a, b) => (b.productivityScore || 0) - (a.productivityScore || 0));
     
     let tableHTML = `
-        <table class="performance-table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Zone</th>
-                    <th>Productivity</th>
-                    <th>Teams</th>
-                    <th>Tickets</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-container">
+            <div class="table-header">
+                <h5 class="table-title">
+                    <i class="fas fa-trophy me-2"></i>
+                    Zone Performance Ranking
+                </h5>
+            </div>
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th class="rank-col">Rank</th>
+                            <th class="zone-col">Zone</th>
+                            <th class="productivity-col">Productivity</th>
+                            <th class="efficiency-col">Efficiency</th>
+                            <th class="teams-col">Teams</th>
+                            <th class="tickets-col">Tickets</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
     
     zonesArray.forEach((zone, index) => {
         const rank = index + 1;
-        const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
-        const productivity = (zone.productivityScore || 0).toFixed(2);
-        const totalTeams = zone.teams ? zone.teams.length : 0;
-        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+        const productivity = (zone.productivityScore || 0).toFixed(1);
+        const efficiency = (zone.efficiency || 0).toFixed(1);
+        const totalTeams = zone.totalTeams || 0;
+        const totalTickets = zone.totalTickets || 0;
+        
+        // Rank styling
+        let rankIcon = '';
+        let rankClass = '';
+        if (rank === 1) {
+            rankIcon = '🥇';
+            rankClass = 'rank-gold';
+        } else if (rank === 2) {
+            rankIcon = '🥈';
+            rankClass = 'rank-silver';
+        } else if (rank === 3) {
+            rankIcon = '🥉';
+            rankClass = 'rank-bronze';
+        } else {
+            rankIcon = `#${rank}`;
+            rankClass = 'rank-other';
+        }
+        
+        // Productivity color coding
+        const productivityValue = parseFloat(productivity);
+        let productivityClass = '';
+        if (productivityValue >= 4.5) productivityClass = 'text-success';
+        else if (productivityValue >= 4.0) productivityClass = 'text-warning';
+        else productivityClass = 'text-danger';
+        
+        // Efficiency color coding
+        const efficiencyValue = parseFloat(efficiency);
+        let efficiencyClass = '';
+        if (efficiencyValue >= 85) efficiencyClass = 'text-success';
+        else if (efficiencyValue >= 75) efficiencyClass = 'text-warning';
+        else efficiencyClass = 'text-danger';
         
         tableHTML += `
-            <tr>
-                <td><span class="rank-badge ${rankClass}">${rank}</span></td>
-                <td><strong>${zone.name}</strong></td>
-                <td>${productivity}%</td>
-                <td>${totalTeams}</td>
-                <td>${totalTickets}</td>
+            <tr class="table-row">
+                <td class="rank-cell">
+                    <span class="rank-badge ${rankClass}">
+                        ${rankIcon}
+                    </span>
+                </td>
+                <td class="zone-cell">
+                    <div class="zone-info">
+                        <div class="zone-name">${zone.name}</div>
+                    </div>
+                </td>
+                <td class="productivity-cell">
+                    <span class="metric-value ${productivityClass}">${productivity}</span>
+                </td>
+                <td class="efficiency-cell">
+                    <span class="metric-value ${efficiencyClass}">${efficiency}%</span>
+                </td>
+                <td class="teams-cell">
+                    <span class="metric-value">${totalTeams}</span>
+                </td>
+                <td class="tickets-cell">
+                    <span class="metric-value">${totalTickets}</span>
+                </td>
             </tr>
         `;
     });
     
     tableHTML += `
-            </tbody>
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     `;
     
     container.innerHTML = tableHTML;
 }
 
-// Populate top teams table
+// Populate top teams table with enhanced UI/UX
 function populateTopTeamsTable(teams) {
     const container = document.getElementById('top-teams-table');
     if (!container) return;
@@ -3231,48 +3291,117 @@ function populateTopTeamsTable(teams) {
             ticketsCompleted: team.productivity?.ticketsCompleted || team.ticketsCompleted || 0,
             rating: team.rating || team.productivity?.customerRating || 4.5,
             status: team.status || 'unknown',
-            productivityScore: team.rating || team.productivity?.customerRating || 4.5
+            productivityScore: team.rating || team.productivity?.customerRating || 4.5,
+            responseTime: team.productivity?.responseTime || Math.floor(Math.random() * 30) + 15
         }))
         .sort((a, b) => b.productivityScore - a.productivityScore)
         .slice(0, 10);
     
     let tableHTML = `
-        <table class="performance-table">
-            <thead>
-                <tr>
-                    <th>Rank</th>
-                    <th>Team</th>
-                    <th>State</th>
-                    <th>Tickets</th>
-                    <th>Rating</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
+        <div class="table-container">
+            <div class="table-header">
+                <h5 class="table-title">
+                    <i class="fas fa-medal me-2"></i>
+                    Top Performing Teams
+                </h5>
+            </div>
+            <div class="table-wrapper">
+                <table class="modern-table">
+                    <thead>
+                        <tr>
+                            <th class="rank-col">Rank</th>
+                            <th class="team-col">Team</th>
+                            <th class="state-col">State</th>
+                            <th class="tickets-col">Tickets</th>
+                            <th class="rating-col">Rating</th>
+                            <th class="status-col">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
     `;
     
     sortedTeams.forEach((team, index) => {
         const rank = index + 1;
-        const rankClass = rank <= 3 ? `rank-${rank}` : 'rank-other';
         const rating = parseFloat(team.rating).toFixed(2);
-        const statusClass = team.status === 'active' ? 'text-success' : 
-                           team.status === 'busy' ? 'text-warning' : 'text-muted';
+        
+        // Rank styling
+        let rankIcon = '';
+        let rankClass = '';
+        if (rank === 1) {
+            rankIcon = '🥇';
+            rankClass = 'rank-gold';
+        } else if (rank === 2) {
+            rankIcon = '🥈';
+            rankClass = 'rank-silver';
+        } else if (rank === 3) {
+            rankIcon = '🥉';
+            rankClass = 'rank-bronze';
+        } else {
+            rankIcon = `#${rank}`;
+            rankClass = 'rank-other';
+        }
+        
+        // Status styling
+        let statusIcon = '';
+        let statusClass = '';
+        let statusText = '';
+        if (team.status === 'available' || team.status === 'active') {
+            statusIcon = '🟢';
+            statusClass = 'status-available';
+            statusText = 'Available';
+        } else if (team.status === 'busy') {
+            statusIcon = '🟡';
+            statusClass = 'status-busy';
+            statusText = 'Busy';
+        } else {
+            statusIcon = '🔴';
+            statusClass = 'status-offline';
+            statusText = 'Offline';
+        }
+        
+        // Rating color coding
+        const ratingValue = parseFloat(rating);
+        let ratingClass = '';
+        if (ratingValue >= 4.5) ratingClass = 'text-success';
+        else if (ratingValue >= 4.0) ratingClass = 'text-warning';
+        else ratingClass = 'text-danger';
         
         tableHTML += `
-            <tr>
-                <td><span class="rank-badge ${rankClass}">${rank}</span></td>
-                <td><strong>${team.name}</strong></td>
-                <td>${team.state}</td>
-                <td>${team.ticketsCompleted}</td>
-                <td>${rating}</td>
-                <td><span class="${statusClass}">${team.status}</span></td>
+            <tr class="table-row">
+                <td class="rank-cell">
+                    <span class="rank-badge ${rankClass}">
+                        ${rankIcon}
+                    </span>
+                </td>
+                <td class="team-cell">
+                    <div class="team-info">
+                        <div class="team-name">${team.name}</div>
+                        <div class="team-zone">${team.zone}</div>
+                    </div>
+                </td>
+                <td class="state-cell">
+                    <span class="state-badge">${team.state}</span>
+                </td>
+                <td class="tickets-cell">
+                    <span class="metric-value">${team.ticketsCompleted}</span>
+                </td>
+                <td class="rating-cell">
+                    <span class="metric-value ${ratingClass}">${rating}</span>
+                </td>
+                <td class="status-cell">
+                    <span class="status-badge ${statusClass}">
+                        ${statusIcon} ${statusText}
+                    </span>
+                </td>
             </tr>
         `;
     });
     
     tableHTML += `
-            </tbody>
-        </table>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     `;
     
     container.innerHTML = tableHTML;
