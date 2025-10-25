@@ -2369,7 +2369,15 @@ function loadSamplePerformanceAnalytics() {
     updateAnalyticsKPIs(sampleTeams, sampleZones, sampleTickets);
     
     // Create charts with sample data
-    createZonePerformanceChart(sampleZones);
+    // Convert sample zones to the format expected by createZonePerformanceAnalysisChart
+    const zonesArray = Object.keys(sampleZones).map(zoneName => ({
+        zoneName: zoneName,
+        zone: zoneName,
+        openTickets: sampleZones[zoneName].openTickets,
+        closedTickets: sampleZones[zoneName].closedTickets,
+        productivity: sampleZones[zoneName].productivityScore
+    }));
+    createZonePerformanceAnalysisChart(zonesArray);
     // createStatePerformanceChart(sampleTeams); // DISABLED - conflicts with createZonePerformanceAnalysisChart
     // Only create chart if canvas exists
     if (document.getElementById('teamsProductivityChart')) {
@@ -2652,14 +2660,25 @@ function createZonePerformanceAnalysisChart(zones) {
     }
     
     console.log('📊 Creating new zone chart with zones:', zones.length);
+    console.log('📊 Raw zones data:', zones.slice(0, 2));
     
     // Process zones data - simple and direct
-    const processedZones = zones.map(zone => ({
-        name: zone.zoneName || zone.zone || 'Unknown Zone',
-        totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0),
-        closedTickets: zone.closedTickets || 0,
-        openTickets: zone.openTickets || 0
-    }));
+    const processedZones = zones.map(zone => {
+        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+        console.log('📊 Processing zone:', {
+            name: zone.zoneName || zone.zone,
+            openTickets: zone.openTickets,
+            closedTickets: zone.closedTickets,
+            totalTickets
+        });
+        
+        return {
+            name: zone.zoneName || zone.zone || 'Unknown Zone',
+            totalTickets,
+            closedTickets: zone.closedTickets || 0,
+            openTickets: zone.openTickets || 0
+        };
+    });
     
     // Sort by total tickets (highest first)
     processedZones.sort((a, b) => b.totalTickets - a.totalTickets);
@@ -2673,6 +2692,12 @@ function createZonePerformanceAnalysisChart(zones) {
         zones: zoneNames.slice(0, 3),
         totals: totalTickets.slice(0, 3),
         closed: closedTickets.slice(0, 3)
+    });
+    
+    console.log('📊 Full chart data arrays:', {
+        zoneNames: zoneNames,
+        totalTickets: totalTickets,
+        closedTickets: closedTickets
     });
     
     try {
