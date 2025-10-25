@@ -10034,7 +10034,7 @@ function populateTopPerformersMain(teams) {
     // Group teams by zones and calculate zone productivity
     const zoneData = {};
     enrichedTeams.forEach(team => {
-        const zone = team.zone;
+        const zone = team.zone || 'Unknown Zone';
         if (!zoneData[zone]) {
             zoneData[zone] = {
                 zone: zone,
@@ -10054,6 +10054,8 @@ function populateTopPerformersMain(teams) {
         zoneData[zone].teamCount += 1;
     });
     
+    console.log('🔍 Zone data after grouping:', zoneData);
+    
     // Calculate average productivity for each zone
     Object.values(zoneData).forEach(zone => {
         zone.avgRating = (zone.totalRating / zone.teamCount).toFixed(1);
@@ -10067,6 +10069,8 @@ function populateTopPerformersMain(teams) {
         .slice(0, 5);
     
     console.log('🔍 Sorted zones for rendering:', sortedZones);
+    console.log('🔍 Zone names:', sortedZones.map(z => z.zone));
+    console.log('🔍 Zone team counts:', sortedZones.map(z => z.teamCount));
     
     const html = sortedZones.map((zone, index) => {
         console.log(`🔍 Rendering zone ${index + 1}:`, {
