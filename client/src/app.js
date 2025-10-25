@@ -2649,7 +2649,7 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create Zone Performance Analysis Chart - Simple Bar Chart with Smooth Transitions
+// Create States Ticket Analysis Chart - Shows Total, Open, and Closed Tickets by State
 function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
     if (!canvas) {
@@ -2668,57 +2668,64 @@ function createZonePerformanceAnalysisChart(zones) {
         return;
     }
     
-    console.log('📊 Creating new zone chart with zones:', zones.length);
-    console.log('📊 Raw zones data:', zones.slice(0, 2));
+    console.log('📊 Creating states ticket analysis chart with zones:', zones.length);
     
-    // Process zones data - simple and direct
-    const processedZones = zones.map(zone => {
+    // Process zones data for states analysis
+    const statesData = zones.map(zone => {
+        const stateName = zone.zoneName || zone.zone || 'Unknown State';
         const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
-        console.log('📊 Processing zone:', {
-            name: zone.zoneName || zone.zone,
-            openTickets: zone.openTickets,
-            closedTickets: zone.closedTickets,
-            totalTickets
+        const openTickets = zone.openTickets || 0;
+        const closedTickets = zone.closedTickets || 0;
+        
+        console.log('📊 Processing state:', {
+            name: stateName,
+            totalTickets,
+            openTickets,
+            closedTickets
         });
         
         return {
-            name: zone.zoneName || zone.zone || 'Unknown Zone',
+            name: stateName,
             totalTickets,
-            closedTickets: zone.closedTickets || 0,
-            openTickets: zone.openTickets || 0
+            openTickets,
+            closedTickets
         };
     });
     
-    // Sort by total tickets (highest first)
-    processedZones.sort((a, b) => b.totalTickets - a.totalTickets);
+    // Sort by total tickets (highest to lowest)
+    statesData.sort((a, b) => b.totalTickets - a.totalTickets);
     
     // Extract data for chart
-    const zoneNames = processedZones.map(z => z.name);
-    const totalTickets = processedZones.map(z => z.totalTickets);
-    const closedTickets = processedZones.map(z => z.closedTickets);
+    const stateNames = statesData.map(s => s.name);
+    const totalTickets = statesData.map(s => s.totalTickets);
+    const openTickets = statesData.map(s => s.openTickets);
+    const closedTickets = statesData.map(s => s.closedTickets);
     
-    console.log('📊 Chart data:', {
-        zones: zoneNames.slice(0, 3),
+    console.log('📊 States chart data:', {
+        states: stateNames.slice(0, 3),
         totals: totalTickets.slice(0, 3),
+        open: openTickets.slice(0, 3),
         closed: closedTickets.slice(0, 3)
-    });
-    
-    console.log('📊 Full chart data arrays:', {
-        zoneNames: zoneNames,
-        totalTickets: totalTickets,
-        closedTickets: closedTickets
     });
     
     try {
         chartRegistry.statePerformanceChart = new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: zoneNames,
+                labels: stateNames,
                 datasets: [{
                     label: 'Total Tickets',
                     data: totalTickets,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }, {
+                    label: 'Open Tickets',
+                    data: openTickets,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
                     borderWidth: 2,
                     borderRadius: 4,
                     borderSkipped: false
@@ -2736,13 +2743,13 @@ function createZonePerformanceAnalysisChart(zones) {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 1000,
+                    duration: 1200,
                     easing: 'easeInOutQuart'
                 },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Total Tickets by Zones',
+                        text: 'Ticket Analysis by States (Sorted by Total Tickets)',
                         font: {
                             size: 16,
                             weight: 'bold'
@@ -2771,8 +2778,8 @@ function createZonePerformanceAnalysisChart(zones) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
-                                const zoneName = context.label || '';
-                                return `${zoneName}: ${value} tickets`;
+                                const stateName = context.label || '';
+                                return `${stateName}: ${value} tickets`;
                             }
                         }
                     }
@@ -2803,7 +2810,7 @@ function createZonePerformanceAnalysisChart(zones) {
                     x: {
                         title: {
                             display: true,
-                            text: 'Zones',
+                            text: 'States (Sorted by Total Tickets)',
                             font: {
                                 size: 12,
                                 weight: 'bold'
@@ -2824,9 +2831,9 @@ function createZonePerformanceAnalysisChart(zones) {
             }
         });
         
-        console.log('✅ New Zone Performance Chart created successfully');
+        console.log('✅ States Ticket Analysis Chart created successfully');
     } catch (error) {
-        console.error('❌ Error creating zone chart:', error);
+        console.error('❌ Error creating states chart:', error);
     }
 }
 
