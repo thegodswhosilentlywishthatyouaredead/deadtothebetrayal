@@ -1680,18 +1680,26 @@ function pauseTicket(ticketId) {
 
 // Enhanced ticket details widget similar to main dashboard
 function viewTicketDetails(ticketId) {
+    console.log('🔍 viewTicketDetails called with ticketId:', ticketId);
+    console.log('🔍 Available tickets:', myTickets.length);
+    console.log('🔍 Sample ticket IDs:', myTickets.slice(0, 3).map(t => ({ id: t.id, _id: t._id, ticket_number: t.ticket_number })));
+    
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (!ticket) {
+        console.error('❌ Ticket not found:', ticketId);
         showNotification('Ticket not found', 'error');
         return;
     }
     
-    console.log('🔍 Opening ticket details for:', ticketId, ticket);
+    console.log('✅ Found ticket:', ticket);
     
     // Create or get ticket details drawer
     let drawer = document.getElementById('ticket-details-drawer');
+    console.log('🔍 Existing drawer:', !!drawer);
     if (!drawer) {
+        console.log('🔧 Creating new ticket details drawer...');
         drawer = createTicketDetailsDrawer();
+        console.log('✅ Drawer created:', !!drawer);
     }
     
     // Populate ticket details
@@ -1804,6 +1812,7 @@ function viewTicketDetails(ticketId) {
 
 // Create ticket details drawer
 function createTicketDetailsDrawer() {
+    console.log('🔧 Creating ticket details drawer...');
     const drawer = document.createElement('div');
     drawer.id = 'ticket-details-drawer';
     drawer.style.cssText = `
@@ -1844,6 +1853,7 @@ function createTicketDetailsDrawer() {
         }
     };
     
+    console.log('✅ Ticket details drawer created and added to DOM');
     return drawer;
 }
 
@@ -2220,8 +2230,8 @@ function removeFieldAITyping() {
 
 let currentReportTicket = null;
 
-// View ticket details (replaces viewTicketDetails)
-function viewTicketDetails(ticketId) {
+// View ticket report (different from viewTicketDetails)
+function viewTicketReport(ticketId) {
     console.log('📄 Opening ticket report for:', ticketId);
     
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
