@@ -171,7 +171,10 @@ async def get_teams_zones(db: Session = Depends(get_db)):
         
         # Generate realistic data for each team
         import random
-        random.seed(team.id)
+        import time
+        
+        # Use current time + team ID for more varied random data
+        random.seed(int(time.time() * 1000) + team.id)
         
         tickets_completed = random.randint(15, 65)
         open_tickets = random.randint(2, 12)
@@ -220,7 +223,8 @@ async def get_live_tracking_data(db: Session = Depends(get_db)):
         # Generate realistic live tracking data
         import random
         import math
-        random.seed(team.id + int(datetime.now().timestamp() / 300))  # Change every 5 minutes
+        import time
+        random.seed(int(time.time() * 1000) + team.id)  # Truly random data
         
         # Base location around Malaysia
         base_lat = 3.1390 + (random.random() - 0.5) * 0.5
