@@ -4300,6 +4300,12 @@ function displayTicketMarkers(tickets) {
     console.log('📍 Displaying ticket markers:', tickets.length);
     console.log('📍 First ticket sample:', tickets[0]);
     
+    // Test ticket name generation with first ticket
+    if (tickets.length > 0) {
+        const testName = getTicketName(tickets[0]);
+        console.log('🧪 First ticket name test:', testName, 'for zone:', tickets[0].zone);
+    }
+    
     // Clear existing markers
     if (window.ticketMarkers) {
         window.ticketMarkers.forEach(marker => map.removeLayer(marker));
@@ -4512,6 +4518,11 @@ function updateLiveMetrics() {
 function initializeLiveTracking() {
     console.log('🚀 Initializing live tracking...');
     
+    // Test the getTicketName function
+    const testTicket = { id: 1, zone: 'Melaka', title: 'Test Ticket' };
+    const testName = getTicketName(testTicket);
+    console.log('🧪 Test ticket name generation:', testName);
+    
     // Show loading indicator
     const mapContainer = document.getElementById('map');
     if (mapContainer) {
@@ -4525,6 +4536,7 @@ function initializeLiveTracking() {
     
     // Load ticket data and display markers with caching
     loadTicketDataOptimized().then(() => {
+        console.log('📊 Loaded tickets:', window.allTickets?.length);
         displayTicketMarkers(window.allTickets || []);
         updateLiveMetrics();
         
