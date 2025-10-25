@@ -458,18 +458,19 @@ function displayMyTickets(filter = 'all') {
     
     container.innerHTML = '';
     
-    // Filter tickets based on status
+    // Filter tickets based on status with proper mapping
     let filteredTickets = myTickets;
     if (filter !== 'all') {
         filteredTickets = myTickets.filter(ticket => {
-            const status = ticket.status.replace('_', '-');
+            // Map filter button values to actual database status values
+            const statusMap = {
+                'open': 'open',
+                'in-progress': 'in_progress',
+                'resolved': 'completed'
+            };
             
-            // Handle 'resolved' filter to include both resolved and closed
-            if (filter === 'resolved') {
-                return status === 'resolved' || status === 'closed' || status === 'completed';
-            }
-            
-            return status === filter;
+            const expectedStatus = statusMap[filter] || filter;
+            return ticket.status === expectedStatus;
         });
     }
     
@@ -1677,10 +1678,204 @@ function pauseTicket(ticketId) {
     }
 }
 
+// Enhanced ticket details widget similar to main dashboard
 function viewTicketDetails(ticketId) {
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
+    if (!ticket) {
+        showNotification('Ticket not found', 'error');
+        return;
+    }
+    
+    console.log('🔍 Opening ticket details for:', ticketId, ticket);
+    
+    // Create or get ticket details drawer
+    let drawer = document.getElementById('ticket-details-drawer');
+    if (!drawer) {
+        drawer = createTicketDetailsDrawer();
+    }
+    
+    // Populate ticket details
+    const body = document.getElementById('ticket-details-body');
+    if (body) {
+        const ticketName = getTicketName(ticket);
+        const statusClass = getStatusClass(ticket.status);
+        const priorityClass = getPriorityClass(ticket.priority);
+        
+        body.innerHTML = `
+            <div class="ticket-details-widget">
+                <div class="ticket-header mb-3">
+                    <h4 class="mb-1">${ticketName}</h4>
+                    <div class="d-flex gap-2 mb-2">
+                        <span class="badge ${statusClass}">${ticket.status.toUpperCase()}</span>
+                        <span class="badge ${priorityClass}">${ticket.priority.toUpperCase()}</span>
+                    </div>
+                </div>
+                
+                <div class="ticket-info mb-3">
+                    <h6 class="text-muted mb-2">Ticket Information</h6>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-tag text-primary"></i>
+                            <span class="label">Category:</span>
+                            <span class="value">${ticket.category || 'General'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-map-marker-alt text-success"></i>
+                            <span class="label">Location:</span>
+                            <span class="value">${ticket.location || ticket.zone || 'Not specified'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-calendar text-info"></i>
+                            <span class="label">Created:</span>
+                            <span class="value">${new Date(ticket.created_at || ticket.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-clock text-warning"></i>
+                            <span class="label">SLA:</span>
+                            <span class="value">${ticket.sla_hours || 24} hours</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ticket-description mb-3">
+                    <h6 class="text-muted mb-2">Description</h6>
+                    <p class="mb-0">${ticket.description || 'No description provided'}</p>
+                </div>
+                
+                <div class="ticket-customer mb-3">
+                    <h6 class="text-muted mb-2">Customer Information</h6>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-user text-primary"></i>
+                            <span class="label">Name:</span>
+                            <span class="value">${ticket.customer_name || 'Not specified'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-phone text-success"></i>
+                            <span class="label">Contact:</span>
+                            <span class="value">${ticket.customer_contact || 'Not provided'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ticket-assignment mb-3">
+                    <h6 class="text-muted mb-2">Assignment</h6>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <i class="fas fa-user-tie text-info"></i>
+                            <span class="label">Assigned to:</span>
+                            <span class="value">${ticket.assigned_user || 'Unassigned'}</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-users text-warning"></i>
+                            <span class="label">Team:</span>
+                            <span class="value">${ticket.assigned_team || 'Not assigned'}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ticket-actions">
+                    <div class="d-grid gap-2">
+                        ${ticket.status === 'open' ? `
+                            <button class="btn btn-primary" onclick="startTicketWork('${ticketId}')">
+                                <i class="fas fa-play me-2"></i>Start Work
+                            </button>
+                        ` : ticket.status === 'in_progress' ? `
+                            <button class="btn btn-success" onclick="completeTicketWork('${ticketId}')">
+                                <i class="fas fa-check me-2"></i>Complete Work
+                            </button>
+                            <button class="btn btn-warning" onclick="pauseTicketWork('${ticketId}')">
+                                <i class="fas fa-pause me-2"></i>Pause Work
+                            </button>
+                        ` : `
+                            <button class="btn btn-outline-secondary" disabled>
+                                <i class="fas fa-check-circle me-2"></i>Completed
+                            </button>
+                        `}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show the drawer
+    drawer.style.transform = 'translateX(0)';
+}
+
+// Create ticket details drawer
+function createTicketDetailsDrawer() {
+    const drawer = document.createElement('div');
+    drawer.id = 'ticket-details-drawer';
+    drawer.style.cssText = `
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 420px;
+        height: 100%;
+        background: #fff;
+        box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        z-index: 1050;
+        overflow: hidden;
+    `;
+    
+    drawer.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #e5e7eb; background: #f8f9fa;">
+            <h5 class="mb-0">Ticket Details</h5>
+            <button id="ticket-details-close" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="ticket-details-body" style="padding: 16px; overflow-y: auto; height: calc(100% - 60px);"></div>
+    `;
+    
+    document.body.appendChild(drawer);
+    
+    // Close button functionality
+    document.getElementById('ticket-details-close').onclick = () => {
+        drawer.style.transform = 'translateX(100%)';
+    };
+    
+    // Close on outside click
+    drawer.onclick = (e) => {
+        if (e.target === drawer) {
+            drawer.style.transform = 'translateX(100%)';
+        }
+    };
+    
+    return drawer;
+}
+
+// Helper functions for styling
+function getStatusClass(status) {
+    const statusMap = {
+        'open': 'bg-warning',
+        'in_progress': 'bg-info', 
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
+    };
+    return statusMap[status] || 'bg-secondary';
+}
+
+function getPriorityClass(priority) {
+    const priorityMap = {
+        'critical': 'bg-danger',
+        'high': 'bg-warning',
+        'medium': 'bg-info',
+        'low': 'bg-success'
+    };
+    return priorityMap[priority] || 'bg-secondary';
+}
+
+// Pause ticket work function
+function pauseTicketWork(ticketId) {
+    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
-        alert(`Ticket Details:\n\nTitle: ${ticket.title}\nDescription: ${ticket.description}\nCustomer: ${ticket.customer.name}\nPhone: ${ticket.customer.phone}\nAddress: ${ticket.location.address}`);
+        ticket.status = 'open';
+        showNotification(`⏸️ Paused work on ${getTicketName(ticket)}`, 'info');
+        displayMyTickets(currentTicketFilter);
+        loadQuickStats();
     }
 }
 
@@ -1731,32 +1926,7 @@ function submitExpense() {
     loadExpenseData();
 }
 
-// Filter tickets
-function filterTickets(status) {
-    const container = document.getElementById('my-tickets-list');
-    container.innerHTML = '';
-    
-    let filteredTickets = myTickets;
-    if (status !== 'all') {
-        filteredTickets = myTickets.filter(ticket => ticket.status === status);
-    }
-    
-    if (filteredTickets.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5">
-                <i class="fas fa-filter fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets found</h5>
-                <p class="text-muted">No tickets match the selected filter.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    filteredTickets.forEach(ticket => {
-        const ticketElement = createTicketCard(ticket);
-        container.appendChild(ticketElement);
-    });
-}
+// Duplicate function removed - using the main filterTickets function above
 
 // Utility functions
 function showNotification(message, type = 'info') {
