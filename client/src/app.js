@@ -6,6 +6,9 @@ let fieldTeams = [];
 let assignments = [];
 let chartInstances = {};
 
+// API Configuration
+const API_BASE = window.API_BASE || 'http://localhost:8085/api';
+
 // Test global variable to verify JavaScript is loading
 // Track which tab is active to avoid background refresh races
 let currentActiveTab = 'overview';
