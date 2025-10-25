@@ -522,11 +522,8 @@ function showTab(tabName) {
             showMaterialForecast(); // Show material forecast by default
             break;
         case 'map':
-            // Initialize map if not already done
-            if (!map) {
-                initializeMap();
-            }
-            refreshMap();
+            // Initialize live tracking
+            initializeLiveTracking();
             break;
     }
 }
@@ -4184,26 +4181,294 @@ function updateSimpleStats() {
     }
 }
 
+// Live Tracking Filter Functions
+function filterByState() {
+    const selectedState = document.getElementById('state-filter').value;
+    console.log('🔍 Filtering by state:', selectedState);
+    
+    if (!map) return;
+    
+    // Clear existing markers
+    if (window.ticketMarkers) {
+        window.ticketMarkers.forEach(marker => map.removeLayer(marker));
+        window.ticketMarkers = [];
+    }
+    
+    // Filter and display tickets by state
+    const filteredTickets = selectedState ? 
+        window.allTickets.filter(ticket => ticket.zone === selectedState) : 
+        window.allTickets;
+    
+    displayTicketMarkers(filteredTickets);
+    updateLiveMetrics();
+}
+
+function filterByZone() {
+    const selectedZone = document.getElementById('zone-filter').value;
+    console.log('🔍 Filtering by zone:', selectedZone);
+    
+    if (!map) return;
+    
+    // Clear existing markers
+    if (window.ticketMarkers) {
+        window.ticketMarkers.forEach(marker => map.removeLayer(marker));
+        window.ticketMarkers = [];
+    }
+    
+    // Filter and display tickets by zone
+    const filteredTickets = selectedZone ? 
+        window.allTickets.filter(ticket => ticket.zone === selectedZone) : 
+        window.allTickets;
+    
+    displayTicketMarkers(filteredTickets);
+    updateLiveMetrics();
+}
+
+function filterByStatus() {
+    const selectedStatus = document.getElementById('status-filter').value;
+    console.log('🔍 Filtering by status:', selectedStatus);
+    
+    if (!map) return;
+    
+    // Clear existing markers
+    if (window.ticketMarkers) {
+        window.ticketMarkers.forEach(marker => map.removeLayer(marker));
+        window.ticketMarkers = [];
+    }
+    
+    // Filter and display tickets by status
+    const filteredTickets = selectedStatus ? 
+        window.allTickets.filter(ticket => ticket.status === selectedStatus) : 
+        window.allTickets;
+    
+    displayTicketMarkers(filteredTickets);
+    updateLiveMetrics();
+}
+
+function centerMapOnMalaysia() {
+    if (!map) return;
+    
+    // Center map on Malaysia
+    map.setView([4.2105, 101.9758], 7);
+    console.log('🎯 Map centered on Malaysia');
+}
+
+function toggleMapLayers() {
+    console.log('🗺️ Toggling map layers');
+    // Add layer toggle functionality here
+}
+
+function toggleFullscreen() {
+    const mapContainer = document.getElementById('map');
+    if (!document.fullscreenElement) {
+        mapContainer.requestFullscreen().then(() => {
+            console.log('📺 Map entered fullscreen');
+        }).catch(err => {
+            console.error('Error attempting to enable fullscreen:', err);
+        });
+    } else {
+        document.exitFullscreen().then(() => {
+            console.log('📺 Map exited fullscreen');
+        }).catch(err => {
+            console.error('Error attempting to exit fullscreen:', err);
+        });
+    }
+}
+
 async function refreshMap() {
     if (!map) {
         initializeMap();
         return;
     }
     
-    console.log('🔄 Refreshing simplified map...');
+    console.log('🔄 Refreshing live tracking map...');
     
     // Reload ticket data
-    loadTicketData();
+    await loadTicketData();
     
-    console.log('✅ Simplified map refreshed');
+    // Update live metrics
+    updateLiveMetrics();
 }
 
-// Live Tracking Functions
-function initializeLiveTracking() {
-    console.log('🔄 Initializing live tracking system...');
+// Display ticket markers on map with hover details
+function displayTicketMarkers(tickets) {
+    if (!map || !tickets) return;
     
-    // Initialize live tracking data structure
-    liveTrackingData = {
+    console.log('📍 Displaying ticket markers:', tickets.length);
+    
+    // Clear existing markers
+    if (window.ticketMarkers) {
+        window.ticketMarkers.forEach(marker => map.removeLayer(marker));
+    }
+    window.ticketMarkers = [];
+    
+    tickets.forEach(ticket => {
+        if (ticket.coordinates) {
+            const [lat, lng] = ticket.coordinates.split(',').map(coord => parseFloat(coord.trim()));
+            
+            // Create custom icon based on priority
+            const iconColor = getPriorityColor(ticket.priority);
+            const customIcon = L.divIcon({
+                className: 'custom-ticket-marker',
+                html: `<div style="
+                    width: 20px; 
+                    height: 20px; 
+                    background-color: ${iconColor}; 
+                    border: 2px solid white; 
+                    border-radius: 50%; 
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 10px;
+                    font-weight: bold;
+                ">${ticket.priority.charAt(0).toUpperCase()}</div>`,
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            
+            const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
+            
+            // Create detailed popup content
+            const popupContent = createTicketPopupContent(ticket);
+            marker.bindPopup(popupContent, {
+                maxWidth: 300,
+                className: 'live-tracking-popup'
+            });
+            
+            window.ticketMarkers.push(marker);
+        }
+    });
+}
+
+// Get priority color for markers
+function getPriorityColor(priority) {
+    const colors = {
+        'emergency': '#ef4444',
+        'urgent': '#6f42c1', 
+        'high': '#f59e0b',
+        'medium': '#3b82f6',
+        'low': '#10b981'
+    };
+    return colors[priority] || colors['medium'];
+}
+
+// Create detailed popup content for tickets
+function createTicketPopupContent(ticket) {
+    const assignedTeam = ticket.assigned_team_id ? `Team ${ticket.assigned_team_id}` : 'Unassigned';
+    const statusColor = getStatusColor(ticket.status);
+    
+    return `
+        <div class="live-tracking-popup">
+            <div class="popup-header">
+                <h6>${ticket.title || 'Ticket ' + ticket.id}</h6>
+                <div class="live-indicator">
+                    <i class="fas fa-circle" style="color: #10b981;"></i>
+                    <span>Live</span>
+                </div>
+            </div>
+            <div class="popup-content">
+                <div class="status-row">
+                    <span class="status-label">Status:</span>
+                    <span class="status-badge ${statusColor}">${ticket.status.toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Priority:</span>
+                    <span class="priority-badge ${ticket.priority}">${ticket.priority.toUpperCase()}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Assigned Team:</span>
+                    <span class="info-value">${assignedTeam}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Location:</span>
+                    <span class="info-value">${ticket.location || 'Unknown'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Zone:</span>
+                    <span class="info-value">${ticket.zone || 'Unknown'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Created:</span>
+                    <span class="info-value">${new Date(ticket.created_at).toLocaleDateString()}</span>
+                </div>
+            </div>
+            <div class="popup-actions">
+                <button class="btn btn-sm btn-primary" onclick="viewTicketDetails(${ticket.id})">
+                    <i class="fas fa-eye"></i> View Details
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="assignTicket(${ticket.id})">
+                    <i class="fas fa-user-plus"></i> Assign
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Get status color for popup
+function getStatusColor(status) {
+    const colors = {
+        'open': 'bg-warning',
+        'in_progress': 'bg-info', 
+        'completed': 'bg-success',
+        'cancelled': 'bg-danger'
+    };
+    return colors[status] || 'bg-secondary';
+}
+
+// Update live tracking metrics
+function updateLiveMetrics() {
+    const tickets = window.allTickets || [];
+    const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
+    const assignedTickets = tickets.filter(t => t.assigned_team_id);
+    const activeTeams = new Set(assignedTickets.map(t => t.assigned_team_id)).size;
+    
+    // Update metrics
+    updateElement('live-active-teams', activeTeams);
+    updateElement('live-active-tickets', openTickets.length);
+    updateElement('live-active-routes', Math.floor(activeTeams * 0.7)); // Simulate routes
+    updateElement('live-last-update', new Date().toLocaleTimeString());
+    
+    // Update trend indicators
+    updateElement('live-teams-trend', `+${activeTeams} live tracking`);
+    updateElement('live-tickets-trend', `+${openTickets.length} in progress`);
+    updateElement('live-routes-trend', `+${Math.floor(activeTeams * 0.7)} en route`);
+    updateElement('live-update-status', 'live real-time');
+    
+    console.log('📊 Live metrics updated:', {
+        activeTeams,
+        openTickets: openTickets.length,
+        totalTickets: tickets.length
+    });
+}
+
+// Initialize live tracking when map tab is shown
+function initializeLiveTracking() {
+    console.log('🚀 Initializing live tracking...');
+    
+    // Initialize map if not already done
+    if (!map) {
+        initializeMap();
+    }
+    
+    // Load ticket data and display markers
+    loadTicketData().then(() => {
+        displayTicketMarkers(window.allTickets || []);
+        updateLiveMetrics();
+    });
+    
+    // Set up auto-refresh every 30 seconds
+    if (window.liveTrackingInterval) {
+        clearInterval(window.liveTrackingInterval);
+    }
+    
+    window.liveTrackingInterval = setInterval(() => {
+        refreshMap();
+    }, 30000);
+    
+    console.log('✅ Live tracking initialized');
+}
         teams: [],
         tickets: [],
         routes: [],

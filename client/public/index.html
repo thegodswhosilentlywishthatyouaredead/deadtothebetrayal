@@ -6675,13 +6675,13 @@
                                 </div>
                             </div>
 
-                            <!-- Map View Tab -->
+                            <!-- Live Tracking Tab -->
                             <div class="tab-pane" id="map-tab">
-                                <!-- Map View Domain Header -->
+                                <!-- Live Tracking Header -->
                                 <div class="domain-header">
                                     <div class="domain-title">
-                                        <h1 class="page-title">Live Tracking & Real-time Monitoring</h1>
-                                        <p class="page-subtitle">Field Team Locations & Network Infrastructure Monitoring</p>
+                                        <h1 class="page-title">Live Tracking</h1>
+                                        <p class="page-subtitle">Real-time Field Team & Ticket Monitoring</p>
                                     </div>
                                     <div class="domain-actions">
                                         <button type="button" class="btn btn-primary" onclick="refreshMap()">
@@ -6690,123 +6690,128 @@
                                     </div>
                                 </div>
 
-                                <!-- Live Tracking Dashboard Metrics -->
+                                <!-- Live Tracking Metrics - 4 Main Cards -->
                                 <div class="domain-metrics">
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-satellite-dish"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-active-teams">0</h3>
-                                            <p class="metric-label">Active Teams</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-teams-trend">+0</span>
-                                                <span class="trend-text">live tracking</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Active Teams</h3>
+                                            <div class="metric-icon blue">
+                                                <i class="fas fa-users"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="live-active-teams">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="live-teams-trend">+0 live tracking</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-ticket-alt"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-active-tickets">0</h3>
-                                            <p class="metric-label">Active Tickets</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-tickets-trend">+0</span>
-                                                <span class="trend-text">in progress</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Open Tickets</h3>
+                                            <div class="metric-icon orange">
+                                                <i class="fas fa-ticket-alt"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="live-active-tickets">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="live-tickets-trend">+0 in progress</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-route"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-active-routes">0</h3>
-                                            <p class="metric-label">Live Routes</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-routes-trend">+0</span>
-                                                <span class="trend-text">en route</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Live Routes</h3>
+                                            <div class="metric-icon green">
+                                                <i class="fas fa-route"></i>
                                             </div>
+                                        </div>
+                                        <div class="metric-value" id="live-active-routes">0</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="live-routes-trend">+0 en route</span>
                                         </div>
                                     </div>
 
                                     <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-clock"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-last-update">--:--</h3>
-                                            <p class="metric-label">Last Update</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-update-status">live</span>
-                                                <span class="trend-text">real-time</span>
+                                        <div class="metric-header">
+                                            <h3 class="metric-title">Last Update</h3>
+                                            <div class="metric-icon purple">
+                                                <i class="fas fa-clock"></i>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-map-marker-alt"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-locations">0</h3>
-                                            <p class="metric-label">Active Locations</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-locations-trend">+0</span>
-                                                <span class="trend-text">monitored</span>
-                                            </div>
+                                        <div class="metric-value" id="live-last-update">--:--</div>
+                                        <div class="metric-trend trend-up">
+                                            <i class="fas fa-arrow-up"></i>
+                                            <span id="live-update-status">live real-time</span>
                                         </div>
                                     </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-signal"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-network-health">0%</h3>
-                                            <p class="metric-label">Network Health</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator positive" id="live-network-trend">+0%</span>
-                                                <span class="trend-text">vs last hour</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-battery-three-quarters"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-device-battery">0%</h3>
-                                            <p class="metric-label">Avg Device Battery</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative" id="live-battery-trend">-0%</span>
-                                                <span class="trend-text">vs last hour</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="metric-card">
-                                        <div class="metric-icon">
-                                            <i class="fas fa-exclamation-triangle"></i>
-                                        </div>
-                                        <div class="metric-content">
-                                            <h3 class="metric-value" id="live-alerts">0</h3>
-                                            <p class="metric-label">Active Alerts</p>
-                                            <div class="metric-trend">
-                                                <span class="trend-indicator negative" id="live-alerts-trend">+0</span>
-                                                <span class="trend-text">vs last hour</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
                                 </div>
 
-                                <!-- Enhanced Live Tracking Map -->
+                                <!-- Map Filters -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Filter by State:</label>
+                                                        <select class="form-select" id="state-filter" onchange="filterByState()">
+                                                            <option value="">All States</option>
+                                                            <option value="Kuala Lumpur">Kuala Lumpur</option>
+                                                            <option value="Selangor">Selangor</option>
+                                                            <option value="Penang">Penang</option>
+                                                            <option value="Johor">Johor</option>
+                                                            <option value="Perak">Perak</option>
+                                                            <option value="Kedah">Kedah</option>
+                                                            <option value="Kelantan">Kelantan</option>
+                                                            <option value="Terengganu">Terengganu</option>
+                                                            <option value="Pahang">Pahang</option>
+                                                            <option value="Negeri Sembilan">Negeri Sembilan</option>
+                                                            <option value="Melaka">Melaka</option>
+                                                            <option value="Sabah">Sabah</option>
+                                                            <option value="Sarawak">Sarawak</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Filter by Zone:</label>
+                                                        <select class="form-select" id="zone-filter" onchange="filterByZone()">
+                                                            <option value="">All Zones</option>
+                                                            <option value="Central">Central</option>
+                                                            <option value="North">North</option>
+                                                            <option value="South">South</option>
+                                                            <option value="East">East</option>
+                                                            <option value="West">West</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Filter by Status:</label>
+                                                        <select class="form-select" id="status-filter" onchange="filterByStatus()">
+                                                            <option value="">All Status</option>
+                                                            <option value="open">Open</option>
+                                                            <option value="in_progress">In Progress</option>
+                                                            <option value="completed">Completed</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Map Controls:</label>
+                                                        <div class="btn-group w-100" role="group">
+                                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="centerMapOnMalaysia()">
+                                                                <i class="fas fa-crosshairs"></i> Center
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="toggleMapLayers()">
+                                                                <i class="fas fa-layer-group"></i> Layers
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Live Tracking Map - Center of Everything -->
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="card">
@@ -6814,108 +6819,69 @@
                                                 <h5 class="card-title mb-0">
                                                     <i class="fas fa-satellite-dish me-2"></i>
                                                     Live Tracking Map - Malaysia
+                                                    <span class="badge bg-success ms-2" id="live-indicator">
+                                                        <i class="fas fa-circle"></i> Live
+                                                    </span>
                                                 </h5>
                                                 <div class="d-flex gap-2">
                                                     <button class="btn btn-sm btn-primary" onclick="refreshMap()">
                                                         <i class="fas fa-sync-alt"></i> Refresh
                                                     </button>
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick="toggleFullscreen()">
+                                                        <i class="fas fa-expand"></i> Fullscreen
+                                                    </button>
                                                 </div>
                                             </div>
                                             <div class="card-body p-0">
-                                                <div id="map" class="map-container" style="height: 500px;"></div>
+                                                <div id="map" class="map-container" style="height: 600px;"></div>
                                             </div>
                                         </div>
-                                    </div>
-                                </div>
-
-                                <!-- Ticket Details Table -->
-                                <div class="row mt-3" id="ticket-details-section" style="display: none;">
-                                    <div class="col-12">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h5 class="card-title mb-0">
-                                                    <i class="fas fa-ticket-alt me-2"></i>
-                                                    Ticket Details
-                                                </h5>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="table-responsive">
-                                                    <table class="table table-hover">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Ticket ID</th>
-                                                                <th>Title</th>
-                                                                <th>Priority</th>
-                                                                <th>Status</th>
-                                                                <th>Assigned Team</th>
-                                                                <th>Location</th>
-                                                                <th>Created</th>
-                                                                <th>Actions</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody id="ticket-details-table">
-                                                            <!-- Ticket details will be loaded here -->
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Map View Controls -->
-                                <div class="view-controls">
-                                    <button type="button" class="view-btn active" onclick="showMapView()">
-                                        <i class="fas fa-satellite-dish"></i> Live Tracking
-                                    </button>
-                                    <button type="button" class="view-btn" onclick="showTrackingView()">
-                                        <i class="fas fa-route"></i> Tracking
-                                    </button>
-                                    <button type="button" class="view-btn" onclick="toggleMapLayers()">
-                                        <i class="fas fa-layer-group"></i> Layers
-                                    </button>
-                                </div>
-
-                                <div class="card">
-                                    <div class="card-body p-0">
-                                        <div id="map" class="map-container" style="height: 500px;"></div>
                                     </div>
                                 </div>
 
                                 <!-- Map Legend -->
                                 <div class="row mt-3">
                                     <div class="col-md-6">
-                                        <h6>Team Members</h6>
-                                        <div class="d-flex gap-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 20px; height: 20px; background-color: #10b981; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>Active</span>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 20px; height: 20px; background-color: #f59e0b; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>Busy</span>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 20px; height: 20px; background-color: #ef4444; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>Offline</span>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Team Members</h6>
+                                                <div class="d-flex gap-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 20px; height: 20px; background-color: #10b981; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>Active</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 20px; height: 20px; background-color: #f59e0b; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>Busy</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 20px; height: 20px; background-color: #ef4444; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>Offline</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <h6>Tickets</h6>
-                                        <div class="d-flex gap-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 15px; height: 15px; background-color: #ef4444; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>Emergency</span>
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Tickets</h6>
+                                                <div class="d-flex gap-3">
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 15px; height: 15px; background-color: #ef4444; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>Emergency</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 15px; height: 15px; background-color: #6f42c1; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>Urgent</span>
+                                                    </div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="me-2" style="width: 15px; height: 15px; background-color: #f59e0b; border-radius: 50%; border: 2px solid white;"></div>
+                                                        <span>High</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 15px; height: 15px; background-color: #6f42c1; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>Urgent</span>
-                                            </div>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2" style="width: 15px; height: 15px; background-color: #f59e0b; border-radius: 50%; border: 2px solid white;"></div>
-                                                <span>High</span>
-                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
