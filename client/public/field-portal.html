@@ -1692,7 +1692,7 @@
                 <h5><i class="fas fa-robot"></i> NRO-Bots</h5>
                 <div class="field-ai-status">
                     <div class="field-ai-status-dot"></div>
-                    <span>Online</span>
+                    <span id="field-ai-user-name">Loading...</span>
                 </div>
             </div>
             <button class="field-ai-close-btn" onclick="toggleFieldAIWidget()" title="Minimize AI Assistant">
@@ -1707,8 +1707,8 @@
                     <i class="fas fa-robot"></i>
                 </div>
                 <div class="field-ai-bubble">
-                    <strong>👋 Hello! I'm your AI Field Assistant</strong>
-                    <p style="margin: 8px 0 0 0;">I'm here to help you with:</p>
+                    <strong id="field-ai-welcome-title">👋 Hello! I'm your AI Field Assistant</strong>
+                    <p style="margin: 8px 0 0 0;" id="field-ai-welcome-text">I'm here to help you with:</p>
                     <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
                         <li>Your performance and tasks</li>
                         <li>Troubleshooting tips</li>

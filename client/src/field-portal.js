@@ -180,6 +180,35 @@ function updateUserDisplay() {
     if (userRoleElement) {
         userRoleElement.textContent = 'Field Technician';
     }
+    
+    // Update chatbot user name
+    updateChatbotUserDisplay(currentUser);
+}
+
+// Update chatbot user display
+function updateChatbotUserDisplay(currentUser) {
+    const chatbotUserNameElement = document.getElementById('field-ai-user-name');
+    if (chatbotUserNameElement) {
+        chatbotUserNameElement.textContent = `Assisting ${currentUser}`;
+        console.log('🤖 Updated chatbot user display to:', currentUser);
+    }
+    
+    // Update welcome message
+    updateChatbotWelcomeMessage(currentUser);
+}
+
+// Update chatbot welcome message
+function updateChatbotWelcomeMessage(currentUser) {
+    const welcomeTitle = document.getElementById('field-ai-welcome-title');
+    const welcomeText = document.getElementById('field-ai-welcome-text');
+    
+    if (welcomeTitle) {
+        welcomeTitle.textContent = `👋 Hello ${currentUser}! I'm your AI Field Assistant`;
+    }
+    
+    if (welcomeText) {
+        welcomeText.textContent = `I'm here to help you with your field operations:`;
+    }
 }
 
 // Get current user ID from team data
