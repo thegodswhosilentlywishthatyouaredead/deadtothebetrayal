@@ -2681,6 +2681,8 @@ function createZonePerformanceAnalysisChart(zones) {
     }
     
     console.log('📊 Original zones data for performance analysis:', zones.slice(0, 3));
+    console.log('📊 Zones data type:', typeof zones, 'Length:', zones?.length);
+    console.log('📊 First zone structure:', zones[0]);
     
     // Create array with zone data and ticket counts for sorting
     const zonesWithScores = zones.map(zone => {
@@ -2688,6 +2690,13 @@ function createZonePerformanceAnalysisChart(zones) {
         const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
         const productivity = zone.productivity || 0;
         const efficiency = zone.efficiency || 0;
+        
+        console.log('📊 Processing zone:', {
+            zoneName,
+            openTickets: zone.openTickets,
+            closedTickets: zone.closedTickets,
+            totalTickets
+        });
         
         return {
             zoneName,
