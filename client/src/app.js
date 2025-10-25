@@ -2661,12 +2661,16 @@ function createZonePerformanceAnalysisChart(zones) {
         return;
     }
     
+    // Force destroy any existing chart instances
     if (chartRegistry.statePerformanceChart) {
+        console.log('🗑️ Destroying existing statePerformanceChart');
         chartRegistry.statePerformanceChart.destroy();
+        chartRegistry.statePerformanceChart = null;
     }
     
     // Also destroy from chartInstances if it exists
     if (chartInstances.statePerformanceChart) {
+        console.log('🗑️ Destroying existing chartInstances.statePerformanceChart');
         chartInstances.statePerformanceChart.destroy();
         delete chartInstances.statePerformanceChart;
     }
@@ -2708,6 +2712,12 @@ function createZonePerformanceAnalysisChart(zones) {
         zoneNames,
         totalTickets,
         closedTickets
+    });
+    
+    console.log('📊 First 3 zones data:', {
+        zone1: { name: zoneNames[0], total: totalTickets[0], closed: closedTickets[0] },
+        zone2: { name: zoneNames[1], total: totalTickets[1], closed: closedTickets[1] },
+        zone3: { name: zoneNames[2], total: totalTickets[2], closed: closedTickets[2] }
     });
     
     console.log('📊 Zone Performance Summary:', {
@@ -2815,6 +2825,11 @@ function createZonePerformanceAnalysisChart(zones) {
             }
         });
         console.log('✅ Zone Performance Analysis Chart created successfully');
+        console.log('📊 Chart data verification:', {
+            labels: zoneNames.slice(0, 3),
+            totalTickets: totalTickets.slice(0, 3),
+            closedTickets: closedTickets.slice(0, 3)
+        });
     } catch (error) {
         console.error('❌ Error creating zone distribution chart:', error);
     }
