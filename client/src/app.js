@@ -4371,7 +4371,7 @@ function getPriorityColor(priority) {
     return colors[priority] || colors['medium'];
 }
 
-// Get ticket name in CTT format
+// Get ticket name in CTT format with team association
 function getTicketName(ticket) {
     // Extract zone number from zone field
     let zoneNumber = '01'; // Default zone number
@@ -4396,14 +4396,26 @@ function getTicketName(ticket) {
                 'Negeri Sembilan': '10',
                 'Melaka': '11',
                 'Sabah': '12',
-                'Sarawak': '13'
+                'Sarawak': '13',
+                'Putrajaya': '14',
+                'Perlis': '15'
             };
             zoneNumber = zoneMap[ticket.zone] || '01';
         }
     }
     
-    const ticketName = `CTT-${zoneNumber}`;
-    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
+    // Get team information
+    let teamInfo = '';
+    if (ticket.assigned_team_id) {
+        // Format team ID to 2 digits
+        const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
+        teamInfo = `-T${teamId}`;
+    } else {
+        teamInfo = '-UN'; // Unassigned
+    }
+    
+    const ticketName = `CTT-${zoneNumber}${teamInfo}`;
+    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone, 'team:', ticket.assigned_team_id);
     return ticketName;
 }
 
