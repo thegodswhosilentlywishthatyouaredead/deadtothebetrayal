@@ -108,7 +108,7 @@ async def get_tickets(
         if ticket.assigned_user_id:
             user = db.query(User).filter(User.id == ticket.assigned_user_id).first()
             if user:
-                ticket_dict["assigned_user"] = user.name
+                ticket_dict["assigned_user"] = user.full_name or user.username
         
         enhanced_tickets.append(ticket_dict)
     
