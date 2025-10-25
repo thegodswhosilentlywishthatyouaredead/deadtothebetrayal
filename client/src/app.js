@@ -10002,20 +10002,49 @@ function populateTopPerformersMain(teams) {
         };
     });
     
-    // Sort by tickets completed (highest first)
-    const sortedTeams = enrichedTeams
-        .sort((a, b) => b.ticketsCompleted - a.ticketsCompleted)
+    // Group teams by zones and calculate zone productivity
+    const zoneData = {};
+    enrichedTeams.forEach(team => {
+        const zone = team.zone;
+        if (!zoneData[zone]) {
+            zoneData[zone] = {
+                zone: zone,
+                teams: [],
+                totalTickets: 0,
+                totalRating: 0,
+                totalEfficiency: 0,
+                teamCount: 0,
+                avgProductivity: 0
+            };
+        }
+        
+        zoneData[zone].teams.push(team);
+        zoneData[zone].totalTickets += team.ticketsCompleted;
+        zoneData[zone].totalRating += parseFloat(team.rating);
+        zoneData[zone].totalEfficiency += parseFloat(team.efficiency);
+        zoneData[zone].teamCount += 1;
+    });
+    
+    // Calculate average productivity for each zone
+    Object.values(zoneData).forEach(zone => {
+        zone.avgRating = (zone.totalRating / zone.teamCount).toFixed(1);
+        zone.avgEfficiency = (zone.totalEfficiency / zone.teamCount).toFixed(1);
+        zone.avgProductivity = ((parseFloat(zone.avgRating) + parseFloat(zone.avgEfficiency)) / 2).toFixed(1);
+    });
+    
+    // Sort zones by productivity score (highest first)
+    const sortedZones = Object.values(zoneData)
+        .sort((a, b) => parseFloat(b.avgProductivity) - parseFloat(a.avgProductivity))
         .slice(0, 5);
     
-    console.log('🔍 Sorted teams for rendering:', sortedTeams);
+    console.log('🔍 Sorted zones for rendering:', sortedZones);
     
-    const html = sortedTeams.map((team, index) => {
-        console.log(`🔍 Rendering team ${index + 1}:`, {
-            name: team.name,
-            zone: team.zone,
-            rating: team.rating,
-            ticketsCompleted: team.ticketsCompleted,
-            efficiency: team.efficiency
+    const html = sortedZones.map((zone, index) => {
+        console.log(`🔍 Rendering zone ${index + 1}:`, {
+            zone: zone.zone,
+            avgProductivity: zone.avgProductivity,
+            totalTickets: zone.totalTickets,
+            teamCount: zone.teamCount
         });
         
         return `
@@ -10025,22 +10054,22 @@ function populateTopPerformersMain(teams) {
                     <span class="rank-number">${index + 1}</span>
                 </div>
                 <div class="performer-title">
-                    <div class="performer-name">${team.name}</div>
-                    <div class="performer-location">${team.zone}, ${team.state}</div>
-                    <div class="performer-members">${team.members} members</div>
+                    <div class="performer-name">${zone.zone}</div>
+                    <div class="performer-location">${zone.teamCount} teams</div>
+                    <div class="performer-members">${zone.totalTickets} total tickets</div>
                 </div>
             </div>
             <div class="performer-stats">
                 <div class="stat-item">
-                    <div class="stat-value">${team.rating}</div>
+                    <div class="stat-value">${zone.avgProductivity}</div>
+                    <div class="stat-label">PRODUCTIVITY</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${zone.avgRating}</div>
                     <div class="stat-label">RATING</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-value">${team.ticketsCompleted}</div>
-                    <div class="stat-label">TICKETS</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value">${team.efficiency}%</div>
+                    <div class="stat-value">${zone.avgEfficiency}%</div>
                     <div class="stat-label">EFFICIENCY</div>
                 </div>
             </div>
