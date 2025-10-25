@@ -1340,7 +1340,7 @@ function createTicketElement(ticket, isCompact = false) {
     const div = document.createElement('div');
     
     // Handle different data structures from backend
-    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || (ticket._id ? ticket._id.substring(0, 8) : ticket.id);
+    const ticketNumber = getTicketName(ticket); // Use CTT format
     const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     const ticketStatus = ticket.status || 'open';

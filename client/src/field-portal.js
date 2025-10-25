@@ -8,6 +8,32 @@ let routeMap = null;
 let routeMarkers = [];
 let charts = {};
 
+// Get ticket name in CTT format
+function getTicketName(ticket) {
+    // Extract zone number from zone field
+    let zoneNumber = '01'; // Default zone number
+    
+    if (ticket.zone) {
+        // Try to extract number from zone name
+        const zoneMatch = ticket.zone.match(/(\d+)/);
+        if (zoneMatch) {
+            zoneNumber = zoneMatch[1].padStart(2, '0');
+        } else {
+            // Map zone names to numbers
+            const zoneMap = {
+                'Kuala Lumpur': '01', 'Selangor': '02', 'Penang': '03', 'Johor': '04', 'Perak': '05',
+                'Kedah': '06', 'Kelantan': '07', 'Terengganu': '08', 'Pahang': '09', 'Negeri Sembilan': '10',
+                'Melaka': '11', 'Sabah': '12', 'Sarawak': '13'
+            };
+            zoneNumber = zoneMap[ticket.zone] || '01';
+        }
+    }
+    
+    const ticketName = `CTT-${zoneNumber}`;
+    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
+    return ticketName;
+}
+
 // API Base URL
 // API_BASE is now set by config.js
 
@@ -273,7 +299,7 @@ function createTicketCard(ticket) {
     card.className = 'ticket-card';
     
     // Handle different data structures from backend
-    const ticketNumber = ticket.ticket_number || ticket.ticket_number || ticket.ticketNumber || (ticket._id ? ticket._id.substring(0, 8) : ticket.id);
+    const ticketNumber = getTicketName(ticket); // Use CTT format
     const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     const estimatedDuration = ticket.estimatedDuration || 90;
@@ -416,7 +442,7 @@ function startTicketWork(ticketId) {
         return;
     }
     
-    const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticketId.substring(0, 8);
+    const ticketNum = getTicketName(ticket); // Use CTT format
     
     // Confirm start
     if (confirm(`Start work on ${ticketNum}?\n\n${ticket.title}\n${ticket.location?.address || ''}`)) {
@@ -447,7 +473,7 @@ function completeTicketWork(ticketId) {
         return;
     }
     
-    const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticketId.substring(0, 8);
+    const ticketNum = getTicketName(ticket); // Use CTT format
     
     // Confirm completion
     if (confirm(`Mark ${ticketNum} as complete?\n\n${ticket.title}\n\nThis will update the ticket status to resolved.`)) {
@@ -862,7 +888,7 @@ function updateRouteList(tickets) {
         routeItem.className = 'route-item';
         routeItem.style.cursor = 'pointer';
         const duration = ticket.estimatedDuration || 90;
-        const ticketNum = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
+        const ticketNum = getTicketName(ticket); // Use CTT format
         
         routeItem.innerHTML = `
             <div class="route-number">${index + 1}</div>
@@ -1906,7 +1932,7 @@ function populateReportDetails(ticket) {
     const detailsContainer = document.getElementById('reportDetails');
     if (!detailsContainer) return;
     
-    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
+    const ticketNumber = getTicketName(ticket); // Use CTT format
     const customerName = ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location?.address || 'N/A';
     const created = new Date(ticket.created_at || ticket.createdAt).toLocaleString();
@@ -2027,7 +2053,7 @@ function downloadTicketReport() {
     if (!currentReportTicket) return;
     
     const ticket = currentReportTicket;
-    const ticketNumber = ticket.ticket_number || ticket.ticketNumber || ticket._id.substring(0, 8);
+    const ticketNumber = getTicketName(ticket); // Use CTT format
     
     // Create report content
     const reportContent = `
