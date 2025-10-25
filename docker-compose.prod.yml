@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aiff}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aiffpass}
+      POSTGRES_DB: ${POSTGRES_DB:-aiff_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aiff}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  gateway:
+    build: .
+    environment:
+      GATEWAY_PORT: 8080
+      AUTH_URL: http://auth:8000
+      TICKETS_URL: http://tickets:8001
+      ANALYTICS_URL: http://analytics:8002
+      AI_URL: http://ai:8003
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aiff}:${POSTGRES_PASSWORD:-aiffpass}@postgres:5432/${POSTGRES_DB:-aiff_db}
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - auth
+      - tickets
+      - analytics
+      - ai
+    restart: unless-stopped
+
+  auth:
+    build: ./services/auth
+    environment:
+      SERVICE_PORT: 8000
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aiff}:${POSTGRES_PASSWORD:-aiffpass}@postgres:5432/${POSTGRES_DB:-aiff_db}
+      JWT_SECRET: ${JWT_SECRET:-supersecretlocal}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  tickets:
+    build: ./services/tickets
+    environment:
+      SERVICE_PORT: 8001
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aiff}:${POSTGRES_PASSWORD:-aiffpass}@postgres:5432/${POSTGRES_DB:-aiff_db}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  analytics:
+    build: ./services/analytics
+    environment:
+      SERVICE_PORT: 8002
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-aiff}:${POSTGRES_PASSWORD:-aiffpass}@postgres:5432/${POSTGRES_DB:-aiff_db}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  ai:
+    build: ./services/ai
+    environment:
+      SERVICE_PORT: 8003
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      TICKETS_URL: http://tickets:8001
+      ANALYTICS_URL: http://analytics:8002
+    depends_on:
+      - tickets
+    restart: unless-stopped
+
+volumes:
+  pgdata:
