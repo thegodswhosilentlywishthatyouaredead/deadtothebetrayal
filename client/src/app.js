@@ -2649,7 +2649,7 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create Zone Performance Analysis Chart - Shows Productivity vs Efficiency
+// Create States Ticket Breakdown Chart - Shows Total, Open, and Closed Tickets by State
 function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
     if (!canvas) {
@@ -2668,77 +2668,88 @@ function createZonePerformanceAnalysisChart(zones) {
         return;
     }
     
-    console.log('📊 Creating zone performance chart with zones:', zones.length);
+    console.log('📊 Creating states ticket breakdown chart with zones:', zones.length);
     
-    // Process zones data for productivity vs efficiency analysis
-    const zonesData = zones.map(zone => {
-        const zoneName = zone.zoneName || zone.zone || 'Unknown Zone';
-        const productivity = zone.productivity || 0;
-        const efficiency = zone.efficiency || 0;
+    // Process zones data for ticket breakdown analysis
+    const statesData = zones.map(zone => {
+        const stateName = zone.zoneName || zone.zone || 'Unknown State';
+        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+        const openTickets = zone.openTickets || 0;
+        const closedTickets = zone.closedTickets || 0;
         
-        console.log('📊 Processing zone:', {
-            name: zoneName,
-            productivity,
-            efficiency
+        console.log('📊 Processing state:', {
+            name: stateName,
+            totalTickets,
+            openTickets,
+            closedTickets
         });
         
         return {
-            name: zoneName,
-            productivity,
-            efficiency
+            name: stateName,
+            totalTickets,
+            openTickets,
+            closedTickets
         };
     });
     
-    // Sort by productivity (highest to lowest)
-    zonesData.sort((a, b) => b.productivity - a.productivity);
+    // Sort by total tickets (highest to lowest)
+    statesData.sort((a, b) => b.totalTickets - a.totalTickets);
     
     // Extract data for chart
-    const zoneNames = zonesData.map(z => z.name);
-    const productivityScores = zonesData.map(z => z.productivity);
-    const efficiencyScores = zonesData.map(z => z.efficiency);
+    const stateNames = statesData.map(s => s.name);
+    const totalTickets = statesData.map(s => s.totalTickets);
+    const openTickets = statesData.map(s => s.openTickets);
+    const closedTickets = statesData.map(s => s.closedTickets);
     
-    console.log('📊 Zone performance chart data:', {
-        zones: zoneNames.slice(0, 3),
-        productivity: productivityScores.slice(0, 3),
-        efficiency: efficiencyScores.slice(0, 3)
+    console.log('📊 States ticket breakdown chart data:', {
+        states: stateNames.slice(0, 3),
+        totals: totalTickets.slice(0, 3),
+        open: openTickets.slice(0, 3),
+        closed: closedTickets.slice(0, 3)
     });
     
     try {
         chartRegistry.statePerformanceChart = new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: zoneNames,
+                labels: stateNames,
                 datasets: [{
-                    label: 'Productivity Score',
-                    data: productivityScores,
+                    label: 'Total Tickets',
+                    data: totalTickets,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 2,
                     borderRadius: 4,
-                    borderSkipped: false,
-                    yAxisID: 'y'
+                    borderSkipped: false
                 }, {
-                    label: 'Efficiency Rate (%)',
-                    data: efficiencyScores,
+                    label: 'Open Tickets',
+                    data: openTickets,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }, {
+                    label: 'Closed Tickets',
+                    data: closedTickets,
                     backgroundColor: 'rgba(16, 185, 129, 0.8)',
                     borderColor: 'rgba(16, 185, 129, 1)',
                     borderWidth: 2,
                     borderRadius: 4,
-                    borderSkipped: false,
-                    yAxisID: 'y1'
+                    borderSkipped: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 1000,
+                    duration: 1200,
                     easing: 'easeInOutQuart'
                 },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Productivity vs Efficiency by Zones',
+                        text: 'States Ticket Breakdown',
                         font: {
                             size: 16,
                             weight: 'bold'
@@ -2767,74 +2778,39 @@ function createZonePerformanceAnalysisChart(zones) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
-                                const zoneName = context.label || '';
-                                if (label === 'Productivity Score') {
-                                    return `${zoneName}: ${value} productivity score`;
-                                } else if (label === 'Efficiency Rate (%)') {
-                                    return `${zoneName}: ${value}% efficiency`;
-                                }
-                                return `${zoneName}: ${value}`;
+                                const stateName = context.label || '';
+                                return `${stateName}: ${value} ${label.toLowerCase()}`;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Productivity Score',
+                            text: 'Number of Tickets',
                             font: {
                                 size: 12,
                                 weight: 'bold'
                             },
-                            color: '#3b82f6'
+                            color: '#374151'
                         },
                         ticks: {
-                            color: '#3b82f6',
+                            color: '#6b7280',
                             font: {
                                 size: 11
                             }
                         },
                         grid: {
-                            color: 'rgba(59, 130, 246, 0.1)'
-                        }
-                    },
-                    y1: {
-                        type: 'linear',
-                        display: true,
-                        position: 'right',
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Efficiency Rate (%)',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            },
-                            color: '#10b981'
-                        },
-                        ticks: {
-                            color: '#10b981',
-                            font: {
-                                size: 11
-                            },
-                            callback: function(value) {
-                                return value + '%';
-                            }
-                        },
-                        grid: {
-                            drawOnChartArea: false
+                            color: 'rgba(0, 0, 0, 0.1)',
+                            drawBorder: false
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Zones (Sorted by Productivity)',
+                            text: 'States (Sorted by Total Tickets)',
                             font: {
                                 size: 12,
                                 weight: 'bold'
@@ -2855,9 +2831,9 @@ function createZonePerformanceAnalysisChart(zones) {
             }
         });
         
-        console.log('✅ Zone Performance Chart (Productivity vs Efficiency) created successfully');
+        console.log('✅ States Ticket Breakdown Chart created successfully');
     } catch (error) {
-        console.error('❌ Error creating zone performance chart:', error);
+        console.error('❌ Error creating states ticket breakdown chart:', error);
     }
 }
 
