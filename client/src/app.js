@@ -4292,9 +4292,13 @@ async function refreshMap() {
 
 // Display ticket markers on map with hover details
 function displayTicketMarkers(tickets) {
-    if (!map || !tickets) return;
+    if (!map || !tickets) {
+        console.log('❌ Cannot display markers - map:', !!map, 'tickets:', tickets?.length);
+        return;
+    }
     
     console.log('📍 Displaying ticket markers:', tickets.length);
+    console.log('📍 First ticket sample:', tickets[0]);
     
     // Clear existing markers
     if (window.ticketMarkers) {
@@ -4399,8 +4403,10 @@ function getTicketName(ticket) {
 
 // Create simple tooltip for hover
 function createSimpleTooltip(ticket) {
+    console.log('🎫 Creating tooltip for ticket:', ticket.id, 'zone:', ticket.zone);
     const assignedTeam = ticket.assigned_team_id ? `Team ${ticket.assigned_team_id}` : 'Unassigned';
     const ticketName = getTicketName(ticket);
+    console.log('🎫 Tooltip ticket name:', ticketName);
     
     return `
         <div style="font-size: 12px; line-height: 1.3;">
