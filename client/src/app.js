@@ -8265,6 +8265,13 @@ async function loadPerformanceAnalysis() {
         lastPerfData = { tickets: allTickets, teams: allTeams };
 
         console.log('📊 Performance Analysis data:', { tickets: allTickets.length, teams: allTeams.length });
+    console.log('🔍 Teams data sample:', allTeams[0]);
+    console.log('🔍 Teams API response structure:', {
+        hasTeamName: !!allTeams[0]?.teamName,
+        hasName: !!allTeams[0]?.name,
+        hasProductivity: !!allTeams[0]?.productivity,
+        productivityKeys: allTeams[0]?.productivity ? Object.keys(allTeams[0].productivity) : []
+    });
         
         // Update KPIs
         updatePerformanceKPIs(allTickets, allTeams);
@@ -10024,13 +10031,17 @@ function populateTopPerformersForAnalysis(teams) {
             team.productivity = {};
         }
         
-        // Generate realistic performance data if missing
-        const baseRating = team.rating || 4.0 + Math.random() * 1.0; // 4.0-5.0
-        const baseTickets = team.tickets_completed || team.productivity?.ticketsCompleted || Math.floor(Math.random() * 50) + 10;
-        const baseEfficiency = team.efficiency_score || team.productivity?.efficiency || 70 + Math.random() * 30; // 70-100%
+        // Use backend data if available, otherwise generate realistic data
+        const baseRating = team.productivity?.customerRating || team.rating || 4.0 + Math.random() * 1.0; // 4.0-5.0
+        const baseTickets = team.productivity?.ticketsCompleted || team.tickets_completed || Math.floor(Math.random() * 50) + 10;
+        const baseEfficiency = team.productivity?.efficiencyScore || team.productivity?.efficiency || team.efficiency_score || 70 + Math.random() * 30; // 70-100%
+        
+        // Ensure we have the correct name field
+        const teamName = team.name || team.teamName || team.team_name || 'Unknown Team';
         
         return {
             ...team,
+            name: teamName, // Ensure name field is set correctly
             productivity: {
                 customerRating: baseRating,
                 ticketsCompleted: baseTickets,
@@ -10070,13 +10081,16 @@ function populateTopPerformersForAnalysis(teams) {
         // Ensure we have proper zone information - use fallback if needed
         const zone = team.zone || team.zoneName || 'Malaysia';
         
+        // Fix the name field mapping - check multiple possible field names
+        const teamName = team.name || team.teamName || team.team_name || 'Unknown Team';
+        
         return `
             <div class="performer-item">
                 <div class="performer-rank">
                     <span class="rank-badge rank-${index + 1}">${index + 1}</span>
                 </div>
                 <div class="performer-info">
-                    <div class="performer-name">${team.name}</div>
+                    <div class="performer-name">${teamName}</div>
                     <div class="performer-details">
                         <span class="performer-zone">${zone}</span>
                         <span class="performer-members">${team.members?.length || 0} members</span>
@@ -10108,6 +10122,12 @@ function populateTopPerformersForAnalysis(teams) {
         tickets: t.productivity?.ticketsCompleted,
         efficiency: t.productivity?.efficiency
     })));
+    console.log('🔍 Debug - First team data:', sortedTeams[0]);
+    console.log('🔍 Debug - Team name sources:', sortedTeams[0] ? {
+        name: sortedTeams[0].name,
+        teamName: sortedTeams[0].teamName,
+        team_name: sortedTeams[0].team_name
+    } : 'No teams');
 }
 
 // Populate Top Performers for Main Dashboard
