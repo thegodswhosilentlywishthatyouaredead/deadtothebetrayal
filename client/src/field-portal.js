@@ -97,6 +97,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Load all field portal data
 async function loadFieldPortalData() {
     try {
+        // Set current user for field portal
+        setCurrentUser();
+        
         await Promise.all([
             loadMyTickets(),
             loadQuickStats(),
@@ -110,6 +113,28 @@ async function loadFieldPortalData() {
     }
 }
 
+// Set current user for field portal
+function setCurrentUser() {
+    // Get user type from login
+    const userType = localStorage.getItem('aiff_user_type');
+    
+    if (userType === 'field_team') {
+        // Set a default field team member for demo
+        const fieldTeamMembers = [
+            'Hajiji Noor', 'Muhammad Sanusi 2', 'Azalina Othman', 'Anwar Ibrahim',
+            'Najib Razak', 'Rosmah Mansor', 'Ismail Sabri', 'Muhyiddin Yassin'
+        ];
+        
+        // Use a consistent field team member based on some identifier
+        const userId = localStorage.getItem('user_id') || '1';
+        const memberIndex = parseInt(userId) % fieldTeamMembers.length;
+        const currentUser = fieldTeamMembers[memberIndex];
+        
+        localStorage.setItem('currentUser', currentUser);
+        console.log('👤 Set current field team member:', currentUser);
+    }
+}
+
 // Load my assigned tickets
 async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
@@ -120,11 +145,23 @@ async function loadMyTickets() {
         
         console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
         
-        // Get a mix of tickets with different statuses for demo
+        // Get current user from localStorage or use default
+        const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+        console.log('👤 Current user:', currentUser);
+        
+        // Filter tickets assigned to current user only
         const allTickets = data.tickets || [];
-        const openTickets = allTickets.filter(t => t.status === 'open' || t.status === 'assigned').slice(0, 4);
-        const inProgressTickets = allTickets.filter(t => t.status === 'in_progress').slice(0, 4);
-        const resolvedTickets = allTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed').slice(0, 3);
+        const myAssignedTickets = allTickets.filter(ticket => {
+            const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+            return assignedTo === currentUser;
+        });
+        
+        console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
+        
+        // Get tickets by status for current user
+        const openTickets = myAssignedTickets.filter(t => t.status === 'open' || t.status === 'assigned');
+        const inProgressTickets = myAssignedTickets.filter(t => t.status === 'in_progress');
+        const resolvedTickets = myAssignedTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed');
         
         myTickets = [...openTickets, ...inProgressTickets, ...resolvedTickets];
         
@@ -398,7 +435,10 @@ function createTicketCard(ticket) {
 
 // Generate team-specific data for ticket details
 function generateTeamSpecificData(teamName, ticket) {
-    // Malaysian locations
+    // Get current user (the assigned field team member)
+    const currentUser = localStorage.getItem('currentUser') || teamName;
+    
+    // Malaysian locations specific to the assigned field team member
     const locations = [
         'Jalan Ampang, Kuala Lumpur', 'Lorong 68, Kuala Lumpur', 'Jalan 95, Penang',
         'Jalan Tebrau, Johor Bahru', 'Jalan Sultan Ismail, Kuala Lumpur',
@@ -418,7 +458,7 @@ function generateTeamSpecificData(teamName, ticket) {
     const locationIndex = Math.abs(teamHash) % locations.length;
     
     return {
-        customerName: teamName, // Use the same team name as the assigned team
+        customerName: currentUser, // Show the assigned field team member as the contact
         locationAddress: locations[locationIndex]
     };
 }
