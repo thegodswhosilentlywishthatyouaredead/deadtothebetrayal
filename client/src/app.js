@@ -2632,119 +2632,51 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create Zone Performance Analysis Chart (shows productivity and efficiency)
+// Create Zone Performance Analysis Chart - Simple Bar Chart with Smooth Transitions
 function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
     if (!canvas) {
         console.error('❌ Canvas "statePerformanceChart" not found in DOM');
-        console.log('Available canvas elements:', document.querySelectorAll('canvas'));
-        console.log('Current DOM state:', document.readyState);
         return;
     }
     
-    // Check if the performance analytics tab is visible
-    const performanceTab = document.getElementById('teams-performance-analytics');
-    if (performanceTab && performanceTab.style.display === 'none') {
-        console.warn('⚠️ Performance analytics tab is hidden, chart may not render properly');
-        return;
-    }
-    
-    // Check if the canvas is visible (not hidden)
-    const canvasContainer = canvas.closest('.analysis-card-body');
-    if (canvasContainer && canvasContainer.offsetParent === null) {
-        console.warn('⚠️ Canvas container is hidden, chart may not render properly');
-    }
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('❌ Could not get 2D context from canvas element');
-        return;
-    }
-    
-    // Force destroy any existing chart instances
+    // Destroy any existing chart
     if (chartRegistry.statePerformanceChart) {
-        console.log('🗑️ Destroying existing statePerformanceChart');
         chartRegistry.statePerformanceChart.destroy();
         chartRegistry.statePerformanceChart = null;
     }
     
-    // Also destroy from chartInstances if it exists
-    if (chartInstances.statePerformanceChart) {
-        console.log('🗑️ Destroying existing chartInstances.statePerformanceChart');
-        chartInstances.statePerformanceChart.destroy();
-        delete chartInstances.statePerformanceChart;
-    }
-    
     if (!zones || zones.length === 0) {
-        console.warn('⚠️ No zones data available for zone distribution chart');
+        console.warn('⚠️ No zones data available');
         return;
     }
     
-    console.log('📊 Original zones data for performance analysis:', zones.slice(0, 3));
-    console.log('📊 Zones data type:', typeof zones, 'Length:', zones?.length);
-    console.log('📊 First zone structure:', zones[0]);
+    console.log('📊 Creating new zone chart with zones:', zones.length);
     
-    // Create array with zone data and ticket counts for sorting
-    const zonesWithScores = zones.map(zone => {
-        const zoneName = (zone.zoneName || zone.zone || 'Unknown Zone').split(',')[0].trim();
-        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
-        const productivity = zone.productivity || 0;
-        const efficiency = zone.efficiency || 0;
-        
-        console.log('📊 Processing zone:', {
-            zoneName,
-            openTickets: zone.openTickets,
-            closedTickets: zone.closedTickets,
-            totalTickets
-        });
-        
-        return {
-            zoneName,
-            totalTickets,
-            productivity,
-            efficiency,
-            originalZone: zone
-        };
+    // Process zones data - simple and direct
+    const processedZones = zones.map(zone => ({
+        name: zone.zoneName || zone.zone || 'Unknown Zone',
+        totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0),
+        closedTickets: zone.closedTickets || 0,
+        openTickets: zone.openTickets || 0
+    }));
+    
+    // Sort by total tickets (highest first)
+    processedZones.sort((a, b) => b.totalTickets - a.totalTickets);
+    
+    // Extract data for chart
+    const zoneNames = processedZones.map(z => z.name);
+    const totalTickets = processedZones.map(z => z.totalTickets);
+    const closedTickets = processedZones.map(z => z.closedTickets);
+    
+    console.log('📊 Chart data:', {
+        zones: zoneNames.slice(0, 3),
+        totals: totalTickets.slice(0, 3),
+        closed: closedTickets.slice(0, 3)
     });
-    
-    // Sort by ticket count (highest to lowest)
-    zonesWithScores.sort((a, b) => b.totalTickets - a.totalTickets);
-    
-    console.log('📊 Zones sorted by ticket count (highest to lowest):', zonesWithScores.slice(0, 3));
-    
-    // Extract sorted data
-    const zoneNames = zonesWithScores.map(zone => zone.zoneName);
-    const totalTickets = zonesWithScores.map(zone => zone.totalTickets);
-    const closedTickets = zonesWithScores.map(zone => zone.originalZone.closedTickets || 0);
-    
-    console.log('📊 Zone Performance Analysis Data:', {
-        zoneNames,
-        totalTickets,
-        closedTickets
-    });
-    
-    console.log('📊 First 3 zones data:', {
-        zone1: { name: zoneNames[0], total: totalTickets[0], closed: closedTickets[0] },
-        zone2: { name: zoneNames[1], total: totalTickets[1], closed: closedTickets[1] },
-        zone3: { name: zoneNames[2], total: totalTickets[2], closed: closedTickets[2] }
-    });
-    
-    console.log('📊 Zone Performance Summary:', {
-        totalZones: zoneNames.length,
-        totalTickets: totalTickets.reduce((a, b) => a + b, 0),
-        totalClosed: closedTickets.reduce((a, b) => a + b, 0)
-    });
-    
-    // Ensure we have data
-    if (zoneNames.length === 0) {
-        console.warn('⚠️ No zone data available, using sample data');
-        zoneNames.push('Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah');
-        totalTickets.push(25, 20, 18, 15, 12);
-        closedTickets.push(20, 16, 14, 12, 10);
-    }
     
     try {
-        chartRegistry.statePerformanceChart = new Chart(ctx, {
+        chartRegistry.statePerformanceChart = new Chart(canvas, {
             type: 'bar',
             data: {
                 labels: zoneNames,
@@ -2753,28 +2685,35 @@ function createZonePerformanceAnalysisChart(zones) {
                     data: totalTickets,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
                 }, {
                     label: 'Closed Tickets',
                     data: closedTickets,
                     backgroundColor: 'rgba(16, 185, 129, 0.8)',
                     borderColor: 'rgba(16, 185, 129, 1)',
-                    borderWidth: 1,
-                    yAxisID: 'y'
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                animation: {
+                    duration: 1000,
+                    easing: 'easeInOutQuart'
+                },
                 plugins: {
                     title: {
                         display: true,
                         text: 'Total Tickets by Zones',
                         font: {
-                            size: 14,
+                            size: 16,
                             weight: 'bold'
-                        }
+                        },
+                        color: '#1f2937'
                     },
                     legend: {
                         position: 'top',
@@ -2782,65 +2721,78 @@ function createZonePerformanceAnalysisChart(zones) {
                             usePointStyle: true,
                             padding: 20,
                             font: {
-                                size: 12
+                                size: 12,
+                                weight: '500'
                             }
                         }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
                                 const zoneName = context.label || '';
-                                if (label === 'Total Tickets') {
-                                    return `${zoneName} - ${label}: ${value} tickets`;
-                                } else if (label === 'Closed Tickets') {
-                                    return `${zoneName} - ${label}: ${value} tickets`;
-                                } else {
-                                    return `${zoneName} - ${label}: ${value}`;
-                                }
+                                return `${zoneName}: ${value} tickets`;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
-                        type: 'linear',
-                        display: true,
-                        position: 'left',
                         beginAtZero: true,
                         title: {
                             display: true,
                             text: 'Number of Tickets',
-                            color: 'rgba(59, 130, 246, 1)'
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            color: '#374151'
                         },
                         ticks: {
-                            color: 'rgba(59, 130, 246, 1)',
-                            callback: function(value) {
-                                return Math.round(value);
+                            color: '#6b7280',
+                            font: {
+                                size: 11
                             }
                         },
                         grid: {
-                            color: 'rgba(59, 130, 246, 0.1)'
+                            color: 'rgba(0, 0, 0, 0.1)',
+                            drawBorder: false
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Zones'
+                            text: 'Zones',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            color: '#374151'
+                        },
+                        ticks: {
+                            color: '#6b7280',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
                         }
                     }
                 }
             }
         });
-        console.log('✅ Zone Performance Analysis Chart created successfully');
-        console.log('📊 Chart data verification:', {
-            labels: zoneNames.slice(0, 3),
-            totalTickets: totalTickets.slice(0, 3),
-            closedTickets: closedTickets.slice(0, 3)
-        });
+        
+        console.log('✅ New Zone Performance Chart created successfully');
     } catch (error) {
-        console.error('❌ Error creating zone distribution chart:', error);
+        console.error('❌ Error creating zone chart:', error);
     }
 }
 
