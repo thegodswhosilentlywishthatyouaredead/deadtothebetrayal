@@ -2196,11 +2196,18 @@ async function loadTeamsPerformanceAnalytics() {
         hideErrorMessage();
         
         // Fetch all required data
+        console.log('📊 Fetching data from API_BASE:', API_BASE);
         const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
             fetch(`${API_BASE}/teams/analytics/zones`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/tickets?limit=1000`)
         ]);
+        
+        console.log('📊 API Responses received:', {
+            zones: zonesResponse.status,
+            teams: teamsResponse.status,
+            tickets: ticketsResponse.status
+        });
         
         // Check if responses are ok
         if (!zonesResponse.ok || !teamsResponse.ok || !ticketsResponse.ok) {
@@ -2262,6 +2269,8 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
             createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
+            console.log('📊 About to create zone performance chart with zones:', zones.length);
+            console.log('📊 First few zones data:', zones.slice(0, 2));
             createZonePerformanceAnalysisChart(zones); // Pass zones array for zone performance analysis
             createTeamProductivityChart(teams); // Pass teams array for productivity analysis
             createRatingDistributionChart(teams); // Pass teams array for rating analysis
