@@ -1347,7 +1347,14 @@ function createTicketElement(ticket, isCompact = false) {
     const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
     const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     const ticketStatus = ticket.status || 'open';
-    const assignedTeam = ticket.assigned_team_id || ticket.assignedTeam || 'Unassigned';
+    // Get team name for display
+    let assignedTeam = 'Unassigned';
+    if (ticket.assigned_team_id) {
+        const teamName = getTeamName(ticket.assigned_team_id);
+        assignedTeam = teamName;
+    } else if (ticket.assignedTeam) {
+        assignedTeam = ticket.assignedTeam;
+    }
     
     // Get status display info
     const getStatusInfo = (status) => {
@@ -4374,7 +4381,7 @@ function getPriorityColor(priority) {
     return colors[priority] || colors['medium'];
 }
 
-// Get ticket name in CTT format with team name association
+// Get ticket name in CTT format
 function getTicketName(ticket) {
     // Extract zone number from zone field
     let zoneNumber = '01'; // Default zone number
@@ -4407,26 +4414,14 @@ function getTicketName(ticket) {
         }
     }
     
-    // Get team name information from cache
-    let teamInfo = '';
-    if (ticket.assigned_team_id) {
-        const teamName = teamNameCache[ticket.assigned_team_id];
-        if (teamName) {
-            // Use first name only for brevity
-            const firstName = teamName.split(' ')[0];
-            teamInfo = `-${firstName}`;
-        } else {
-            // Fallback to team ID if name not found
-            const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
-            teamInfo = `-T${teamId}`;
-        }
-    } else {
-        teamInfo = '-UN'; // Unassigned
-    }
-    
-    const ticketName = `CTT-${zoneNumber}${teamInfo}`;
-    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone, 'team:', ticket.assigned_team_id);
+    const ticketName = `CTT-${zoneNumber}`;
+    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
     return ticketName;
+}
+
+// Get team name by ID
+function getTeamName(teamId) {
+    return teamNameCache[teamId] || `Team ${teamId}`;
 }
 
 // Cache for team names to avoid repeated API calls
