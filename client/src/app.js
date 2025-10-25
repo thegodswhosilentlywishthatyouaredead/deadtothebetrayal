@@ -2675,48 +2675,50 @@ function createZonePerformanceAnalysisChart(zones) {
     
     console.log('📊 Original zones data for performance analysis:', zones.slice(0, 3));
     
-    // Create array with zone data and productivity scores for sorting
+    // Create array with zone data and ticket counts for sorting
     const zonesWithScores = zones.map(zone => {
         const zoneName = (zone.zoneName || zone.zone || 'Unknown Zone').split(',')[0].trim();
+        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
         const productivity = zone.productivity || 0;
         const efficiency = zone.efficiency || 0;
         
         return {
             zoneName,
+            totalTickets,
             productivity,
             efficiency,
             originalZone: zone
         };
     });
     
-    // Sort by productivity scores (highest to lowest)
-    zonesWithScores.sort((a, b) => b.productivity - a.productivity);
+    // Sort by ticket count (highest to lowest)
+    zonesWithScores.sort((a, b) => b.totalTickets - a.totalTickets);
     
-    console.log('📊 Zones sorted by productivity (highest to lowest):', zonesWithScores.slice(0, 3));
+    console.log('📊 Zones sorted by ticket count (highest to lowest):', zonesWithScores.slice(0, 3));
     
     // Extract sorted data
     const zoneNames = zonesWithScores.map(zone => zone.zoneName);
+    const ticketCounts = zonesWithScores.map(zone => zone.totalTickets);
     const productivityScores = zonesWithScores.map(zone => zone.productivity);
-    const efficiencyScores = zonesWithScores.map(zone => zone.efficiency);
     
     console.log('📊 Zone Performance Analysis Data:', {
         zoneNames,
-        productivityScores,
-        efficiencyScores
+        ticketCounts,
+        productivityScores
     });
     
     console.log('📊 Zone Performance Summary:', {
         totalZones: zoneNames.length,
-        avgProductivity: (productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length).toFixed(2),
-        avgEfficiency: (efficiencyScores.reduce((a, b) => a + b, 0) / efficiencyScores.length).toFixed(2)
+        totalTickets: ticketCounts.reduce((a, b) => a + b, 0),
+        avgProductivity: (productivityScores.reduce((a, b) => a + b, 0) / productivityScores.length).toFixed(2)
     });
     
     // Ensure we have data
     if (zoneNames.length === 0) {
         console.warn('⚠️ No zone data available, using sample data');
         zoneNames.push('Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Sabah');
+        ticketCounts.push(25, 20, 18, 15, 12);
         productivityScores.push(4.5, 4.3, 4.2, 4.1, 4.0);
-        efficiencyScores.push(85, 82, 78, 75, 70);
     }
     
     try {
@@ -2725,15 +2727,15 @@ function createZonePerformanceAnalysisChart(zones) {
             data: {
                 labels: zoneNames,
                 datasets: [{
-                    label: 'Productivity Score',
-                    data: productivityScores,
+                    label: 'Number of Tickets',
+                    data: ticketCounts,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 1,
                     yAxisID: 'y'
                 }, {
-                    label: 'Efficiency %',
-                    data: efficiencyScores,
+                    label: 'Productivity Score',
+                    data: productivityScores,
                     backgroundColor: 'rgba(16, 185, 129, 0.8)',
                     borderColor: 'rgba(16, 185, 129, 1)',
                     borderWidth: 1,
@@ -2746,7 +2748,7 @@ function createZonePerformanceAnalysisChart(zones) {
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Zone Performance Analysis - Dual Axis Chart',
+                        text: 'Zone Performance Analysis - Tickets & Productivity',
                         font: {
                             size: 14,
                             weight: 'bold'
@@ -2768,10 +2770,12 @@ function createZonePerformanceAnalysisChart(zones) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
                                 const zoneName = context.label || '';
-                                if (label === 'Productivity Score') {
-                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0 (Left Axis)`;
+                                if (label === 'Number of Tickets') {
+                                    return `${zoneName} - ${label}: ${value} tickets (Left Axis)`;
+                                } else if (label === 'Productivity Score') {
+                                    return `${zoneName} - ${label}: ${value.toFixed(2)}/5.0 (Right Axis)`;
                                 } else {
-                                    return `${zoneName} - ${label}: ${value.toFixed(1)}% (Right Axis)`;
+                                    return `${zoneName} - ${label}: ${value.toFixed(1)}`;
                                 }
                             }
                         }
@@ -2783,16 +2787,15 @@ function createZonePerformanceAnalysisChart(zones) {
                         display: true,
                         position: 'left',
                         beginAtZero: true,
-                        max: 5,
                         title: {
                             display: true,
-                            text: 'Productivity Score (1-5)',
+                            text: 'Number of Tickets',
                             color: 'rgba(59, 130, 246, 1)'
                         },
                         ticks: {
                             color: 'rgba(59, 130, 246, 1)',
                             callback: function(value) {
-                                return value.toFixed(1);
+                                return Math.round(value);
                             }
                         },
                         grid: {
@@ -2804,16 +2807,16 @@ function createZonePerformanceAnalysisChart(zones) {
                         display: true,
                         position: 'right',
                         beginAtZero: true,
-                        max: 100,
+                        max: 5,
                         title: {
                             display: true,
-                            text: 'Efficiency (%)',
+                            text: 'Productivity Score (1-5)',
                             color: 'rgba(16, 185, 129, 1)'
                         },
                         ticks: {
                             color: 'rgba(16, 185, 129, 1)',
                             callback: function(value) {
-                                return value + '%';
+                                return value.toFixed(1);
                             }
                         },
                         grid: {
