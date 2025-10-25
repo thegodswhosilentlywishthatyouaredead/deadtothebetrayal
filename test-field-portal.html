@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Portal Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Field Portal Test</h1>
+    
+    <div class="test-section">
+        <h2>API Test</h2>
+        <div id="api-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>Ticket Status Distribution</h2>
+        <div id="status-test">Testing...</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>User Assignment Test</h2>
+        <div id="user-test">Testing...</div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:8085/api/tickets?limit=100');
+                const data = await response.json();
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="success">✅ API Working</span><br>
+                     Total tickets: ${data.tickets.length}`;
+                return data.tickets;
+            } catch (error) {
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="error">❌ API Error: ${error.message}</span>`;
+                return [];
+            }
+        }
+        
+        async function testStatusDistribution(tickets) {
+            const statusCounts = {};
+            tickets.forEach(ticket => {
+                statusCounts[ticket.status] = (statusCounts[ticket.status] || 0) + 1;
+            });
+            
+            let html = '<span class="success">✅ Status Distribution:</span><br>';
+            Object.entries(statusCounts).forEach(([status, count]) => {
+                const percentage = ((count / tickets.length) * 100).toFixed(1);
+                html += `${status}: ${count} (${percentage}%)<br>`;
+            });
+            
+            document.getElementById('status-test').innerHTML = html;
+        }
+        
+        async function testUserAssignment(tickets) {
+            const assignedTickets = tickets.filter(t => t.assigned_user);
+            const unassignedTickets = tickets.filter(t => !t.assigned_user);
+            
+            let html = `<span class="info">📊 Assignment Status:</span><br>
+                       Assigned: ${assignedTickets.length}<br>
+                       Unassigned: ${unassignedTickets.length}<br><br>`;
+            
+            if (assignedTickets.length > 0) {
+                html += '<span class="success">✅ Sample Assigned Tickets:</span><br>';
+                assignedTickets.slice(0, 3).forEach(ticket => {
+                    html += `${ticket.ticket_number} - ${ticket.assigned_user} (${ticket.status})<br>`;
+                });
+            }
+            
+            document.getElementById('user-test').innerHTML = html;
+        }
+        
+        async function runTests() {
+            console.log('🧪 Running Field Portal Tests...');
+            const tickets = await testAPI();
+            if (tickets.length > 0) {
+                await testStatusDistribution(tickets);
+                await testUserAssignment(tickets);
+            }
+        }
+        
+        runTests();
+    </script>
+</body>
+</html>
