@@ -62,7 +62,7 @@ async function preloadTeamNames() {
 
 // Initialize the field portal
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Field Team Portal Initializing...');
+    console.log('🚀 Field Team Portal Initializing... (v6 - Updated with realistic ticket mix)');
     
     // Preload team names for ticket naming
     preloadTeamNames();
@@ -253,11 +253,24 @@ async function loadMyTickets() {
         // Use standardized filtering logic
         const myAssignedTickets = filterTicketsByUser(allTickets, currentUser, currentUserId);
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
+        console.log('🎫 Sample assigned tickets:', myAssignedTickets.slice(0, 3).map(t => ({
+            id: t.id,
+            title: t.title,
+            status: t.status,
+            assigned_user: t.assigned_user,
+            assigned_team: t.assigned_team
+        })));
         
         // Use standardized status filtering with realistic mix
         const openTickets = filterTicketsByStatus(myAssignedTickets, 'open');
         const inProgressTickets = filterTicketsByStatus(myAssignedTickets, 'in_progress');
         const completedTickets = filterTicketsByStatus(myAssignedTickets, 'completed');
+        
+        console.log('🎫 Status breakdown:', {
+            open: openTickets.length,
+            inProgress: inProgressTickets.length,
+            completed: completedTickets.length
+        });
         
         // Create realistic mix: 30% open, 40% in_progress, 30% completed
         const totalTickets = myAssignedTickets.length;
@@ -278,8 +291,27 @@ async function loadMyTickets() {
             allStatuses: [...new Set(myTickets.map(t => t.status))]
         });
         
+        // If no tickets assigned to user, show a mix of all tickets for demonstration
         if (myTickets.length === 0) {
-            // Show sample data
+            console.log('🎫 No tickets assigned to user, showing sample mix for demonstration');
+            
+            // Get a realistic mix from all tickets
+            const allOpenTickets = filterTicketsByStatus(allTickets, 'open');
+            const allInProgressTickets = filterTicketsByStatus(allTickets, 'in_progress');
+            const allCompletedTickets = filterTicketsByStatus(allTickets, 'completed');
+            
+            // Take a sample from each status
+            const sampleOpen = allOpenTickets.slice(0, 2);
+            const sampleInProgress = allInProgressTickets.slice(0, 3);
+            const sampleCompleted = allCompletedTickets.slice(0, 2);
+            
+            myTickets = [...sampleOpen, ...sampleInProgress, ...sampleCompleted];
+            
+            console.log('🎫 Showing sample tickets for demonstration:', myTickets.length);
+        }
+        
+        if (myTickets.length === 0) {
+            // Show sample data as last resort
             myTickets = [
                 {
                     _id: '1',
