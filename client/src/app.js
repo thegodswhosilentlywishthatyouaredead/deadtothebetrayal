@@ -3650,7 +3650,7 @@ async function loadFieldTeams() {
         await updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
         
         // Populate top performers with team data - use the basic teams data which has the correct structure
-        populateTopPerformers(basicTeams);
+        populateTopPerformersMain(basicTeams);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
         console.log('👥 First team sample:', fieldTeams[0]);
@@ -9950,12 +9950,23 @@ function populateTopPerformersMain(teams) {
     
     // Enrich teams with proper data and sort by performance
     const enrichedTeams = teams.map(team => {
-        const name = team.teamName || team.name || 'Unknown Team';
-        const zone = team.zone || team.zoneName || 'Malaysia';
-        const state = team.state || team.stateName || 'Unknown State';
-        const ticketsCompleted = team.productivity?.ticketsCompleted || team.ticketsCompleted || 0;
-        const rating = team.productivity?.customerRating || team.rating || (4.0 + Math.random() * 1.0);
-        const efficiency = team.productivity?.efficiency || team.efficiency || (85 + Math.random() * 15);
+        // Use the actual backend data structure
+        const name = team.name || 'Unknown Team';
+        const zone = team.zone || 'Malaysia';
+        const state = team.zone || 'Malaysia'; // Use zone as state fallback
+        const ticketsCompleted = team.productivity?.ticketsCompleted || 0;
+        const rating = team.productivity?.customerRating || 4.5;
+        const efficiency = team.productivity?.efficiency || 85.0;
+        const status = team.status || 'available';
+        
+        console.log('🔍 Team data:', {
+            name,
+            zone,
+            ticketsCompleted,
+            rating,
+            efficiency,
+            status
+        });
         
         return {
             name,
@@ -9964,7 +9975,8 @@ function populateTopPerformersMain(teams) {
             ticketsCompleted,
             rating: parseFloat(rating).toFixed(1),
             efficiency: parseFloat(efficiency).toFixed(1),
-            members: team.members || Math.floor(Math.random() * 8) + 2
+            status,
+            members: Math.floor(Math.random() * 8) + 2 // Generate random member count
         };
     });
     
