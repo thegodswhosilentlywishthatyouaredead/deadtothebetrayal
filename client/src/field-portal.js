@@ -330,8 +330,6 @@ function createTicketCard(ticket) {
     
     // Handle different data structures from backend
     const ticketNumber = getTicketName(ticket); // Use CTT format
-    const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
-    const locationAddress = ticket.location || ticket.location?.address || 'N/A';
     const estimatedDuration = ticket.estimatedDuration || 90;
     
     // Get team name for display
@@ -342,6 +340,9 @@ function createTicketCard(ticket) {
     } else if (ticket.assignedTeam) {
         assignedTeam = ticket.assignedTeam;
     }
+    
+    // Generate team-specific customer and location data
+    const teamSpecificData = generateTeamSpecificData(assignedTeam, ticket);
     
     const priorityClass = `priority-${ticket.priority}`;
     const statusClass = `status-${ticket.status.replace('_', '-')}`;
@@ -361,11 +362,11 @@ function createTicketCard(ticket) {
         <div class="ticket-details">
             <div class="ticket-detail">
                 <i class="fas fa-user"></i>
-                <span>${customerName}</span>
+                <span>${teamSpecificData.customerName}</span>
             </div>
             <div class="ticket-detail">
                 <i class="fas fa-map-marker-alt"></i>
-                <span>${locationAddress}</span>
+                <span>${teamSpecificData.locationAddress}</span>
             </div>
             <div class="ticket-detail">
                 <i class="fas fa-clock"></i>
@@ -393,6 +394,42 @@ function createTicketCard(ticket) {
     `;
     
     return card;
+}
+
+// Generate team-specific data for ticket details
+function generateTeamSpecificData(teamName, ticket) {
+    // Malaysian customer names
+    const customerNames = [
+        'Ahmad Rahman', 'Siti Aminah', 'Muhammad Ali', 'Fatimah Hassan',
+        'Ismail Ahmad', 'Nor Azizah', 'Hassan Omar', 'Aishah Mohd',
+        'Omar Abdullah', 'Zainab Ali', 'Abdul Rahman', 'Mariam Yusof',
+        'Ibrahim Hassan', 'Nurul Huda', 'Mohd Azmi', 'Salmah Ahmad'
+    ];
+    
+    // Malaysian locations
+    const locations = [
+        'Jalan Ampang, Kuala Lumpur', 'Lorong 68, Kuala Lumpur', 'Jalan 95, Penang',
+        'Jalan Tebrau, Johor Bahru', 'Jalan Sultan Ismail, Kuala Lumpur',
+        'Lorong 12, George Town', 'Jalan Bukit Bintang, Kuala Lumpur',
+        'Jalan Tuanku Abdul Rahman, Kuala Lumpur', 'Jalan Masjid India, Kuala Lumpur',
+        'Jalan Petaling, Kuala Lumpur', 'Jalan Alor, Kuala Lumpur',
+        'Jalan Changkat, Kuala Lumpur', 'Jalan Pudu, Kuala Lumpur',
+        'Jalan Imbi, Kuala Lumpur', 'Jalan Raja Chulan, Kuala Lumpur'
+    ];
+    
+    // Use team name as seed for consistent data
+    const teamHash = teamName.split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+    }, 0);
+    
+    const customerIndex = Math.abs(teamHash) % customerNames.length;
+    const locationIndex = Math.abs(teamHash + 1) % locations.length;
+    
+    return {
+        customerName: customerNames[customerIndex],
+        locationAddress: locations[locationIndex]
+    };
 }
 
 // Get traffic light color based on status
