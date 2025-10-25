@@ -829,7 +829,8 @@ async function loadRecentTickets() {
             const sampleTickets = [
                 {
                     _id: '1',
-                    ticketNumber: 'TK-001',
+                    ticketNumber: 'CTT_01_KUALA_LUMPUR',
+                    zone: 'Kuala Lumpur',
                     title: 'Network Breakdown - NTT Class 1 (Major)',
                     description: 'Complete network infrastructure failure - NTT Class 1 major breakdown affecting all customer services and network connectivity',
                     priority: 'emergency',
@@ -840,7 +841,8 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '2',
-                    ticketNumber: 'TK-002',
+                    ticketNumber: 'CTT_02_SELANGOR',
+                    zone: 'Selangor',
                     title: 'Network Breakdown - NTT Class 2 (Intermediate)',
                     description: 'Intermediate network infrastructure issues - NTT Class 2 breakdown affecting multiple customer services and network segments',
                     priority: 'high',
@@ -851,7 +853,8 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '3',
-                    ticketNumber: 'TK-003',
+                    ticketNumber: 'CTT_03_PENANG',
+                    zone: 'Penang',
                     title: 'Customer - Drop Fiber',
                     description: 'Customer drop fiber connection failure - fiber optic cable damage or termination issues requiring immediate field repair',
                     priority: 'high',
@@ -862,7 +865,8 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '4',
-                    ticketNumber: 'TK-004',
+                    ticketNumber: 'CTT_04_JOHOR',
+                    zone: 'Johor',
                     title: 'Customer - CPE',
                     description: 'Customer Premises Equipment (CPE) troubleshooting - router, modem, or network equipment configuration and connectivity issues',
                     priority: 'medium',
@@ -873,7 +877,8 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '5',
-                    ticketNumber: 'TK-005',
+                    ticketNumber: 'CTT_05_PERAK',
+                    zone: 'Perak',
                     title: 'Customer - FDP Breakdown',
                     description: 'Fiber Distribution Point (FDP) equipment failure - distribution cabinet or fiber optic splitter issues affecting multiple customer connections',
                     priority: 'high',
@@ -884,7 +889,8 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '6',
-                    ticketNumber: 'TK-006',
+                    ticketNumber: 'CTT_06_KEDAH',
+                    zone: 'Kedah',
                     title: 'Network Breakdown - NTT (Minor)',
                     description: 'Minor network infrastructure issues - NTT minor breakdown with localized impact on specific network segments or customer services',
                     priority: 'low',
