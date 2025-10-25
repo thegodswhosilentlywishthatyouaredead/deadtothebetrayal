@@ -4330,6 +4330,13 @@ function displayTicketMarkers(tickets) {
             
             const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
             
+            // Add simple hover tooltip
+            marker.bindTooltip(createSimpleTooltip(ticket), {
+                permanent: false,
+                direction: 'top',
+                offset: [0, -10]
+            });
+            
             // Create detailed popup content
             const popupContent = createTicketPopupContent(ticket);
             marker.bindPopup(popupContent, {
@@ -4352,6 +4359,20 @@ function getPriorityColor(priority) {
         'low': '#10b981'
     };
     return colors[priority] || colors['medium'];
+}
+
+// Create simple tooltip for hover
+function createSimpleTooltip(ticket) {
+    const assignedTeam = ticket.assigned_team_id ? `Team ${ticket.assigned_team_id}` : 'Unassigned';
+    
+    return `
+        <div style="font-size: 12px; line-height: 1.3;">
+            <strong>${ticket.ticket_number || 'TKT-' + ticket.id}</strong><br>
+            Status: ${ticket.status.toUpperCase()}<br>
+            Priority: ${ticket.priority.toUpperCase()}<br>
+            Team: ${assignedTeam}
+        </div>
+    `;
 }
 
 // Create detailed popup content for tickets
