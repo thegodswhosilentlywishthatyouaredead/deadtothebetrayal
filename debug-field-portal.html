@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Field Portal Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Field Portal Debug</h1>
+    
+    <div class="debug-section">
+        <h2>API Test</h2>
+        <div id="api-test">Testing...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>User Assignment Test</h2>
+        <div id="user-test">Testing...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Status Filtering Test</h2>
+        <div id="status-test">Testing...</div>
+    </div>
+    
+    <div class="debug-section">
+        <h2>Final Result</h2>
+        <div id="final-test">Testing...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8085';
+        
+        // Copy the filtering functions from ticket-utils.js
+        function filterTicketsByUser(tickets, currentUser, currentUserId) {
+            return tickets.filter(ticket => {
+                const assignedUserId = ticket.assigned_user_id;
+                const assignedTeamId = ticket.assigned_team_id;
+                const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+                const assignedUser = ticket.assigned_user;
+                
+                const matchesUser = assignedUserId === currentUserId;
+                const matchesTeam = assignedTeamId === currentUserId;
+                const matchesName = assignedTo === currentUser || assignedUser === currentUser;
+                
+                return matchesUser || matchesTeam || matchesName;
+            });
+        }
+        
+        function filterTicketsByStatus(tickets, status) {
+            switch (status) {
+                case 'open':
+                    return tickets.filter(t => t.status === 'open' || t.status === 'OPEN' || t.status === 'assigned');
+                case 'in_progress':
+                    return tickets.filter(t => t.status === 'in_progress' || t.status === 'IN_PROGRESS');
+                case 'completed':
+                    return tickets.filter(t => t.status === 'completed' || t.status === 'COMPLETED' || t.status === 'resolved' || t.status === 'closed');
+                case 'resolved':
+                    return tickets.filter(t => t.status === 'resolved' || t.status === 'RESOLVED' || t.status === 'completed' || t.status === 'COMPLETED' || t.status === 'closed');
+                default:
+                    return tickets;
+            }
+        }
+        
+        async function getCurrentUserId(currentUser) {
+            try {
+                const response = await fetch(`${API_BASE}/teams`);
+                const data = await response.json();
+                const teams = data.teams || [];
+                
+                const userTeam = teams.find(team => team.name === currentUser);
+                if (userTeam) {
+                    return userTeam.id;
+                }
+                
+                const userId = currentUser.split('').reduce((a, b) => {
+                    a = ((a << 5) - a) + b.charCodeAt(0);
+                    return a & a;
+                }, 0);
+                
+                return Math.abs(userId) % 10 + 1;
+            } catch (error) {
+                console.error('Error getting user ID:', error);
+                return 1;
+            }
+        }
+        
+        async function runDebug() {
+            try {
+                // Test API
+                const response = await fetch(`${API_BASE}/tickets?limit=1000`);
+                const data = await response.json();
+                const allTickets = data.tickets || [];
+                
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="success">✅ API Working</span><br>Total tickets: ${allTickets.length}`;
+                
+                // Test user assignment
+                const currentUser = 'Anwar Ibrahim';
+                const currentUserId = await getCurrentUserId(currentUser);
+                
+                const myAssignedTickets = filterTicketsByUser(allTickets, currentUser, currentUserId);
+                
+                document.getElementById('user-test').innerHTML = 
+                    `<span class="info">👤 Current User: ${currentUser} (ID: ${currentUserId})</span><br>
+                     <span class="success">✅ Assigned Tickets: ${myAssignedTickets.length}</span><br>
+                     <pre>${JSON.stringify(myAssignedTickets.slice(0, 3).map(t => ({
+                         id: t.id,
+                         title: t.title,
+                         status: t.status,
+                         assigned_user: t.assigned_user,
+                         assigned_user_id: t.assigned_user_id
+                     })), null, 2)}</pre>`;
+                
+                // Test status filtering
+                const openTickets = filterTicketsByStatus(myAssignedTickets, 'open');
+                const inProgressTickets = filterTicketsByStatus(myAssignedTickets, 'in_progress');
+                const completedTickets = filterTicketsByStatus(myAssignedTickets, 'completed');
+                
+                document.getElementById('status-test').innerHTML = 
+                    `<span class="info">📊 Status Breakdown:</span><br>
+                     Open: ${openTickets.length}<br>
+                     In Progress: ${inProgressTickets.length}<br>
+                     Completed: ${completedTickets.length}`;
+                
+                // Test final mix
+                const totalTickets = myAssignedTickets.length;
+                const openCount = Math.min(Math.floor(totalTickets * 0.3), openTickets.length);
+                const inProgressCount = Math.min(Math.floor(totalTickets * 0.4), inProgressTickets.length);
+                const completedCount = Math.min(Math.floor(totalTickets * 0.3), completedTickets.length);
+                
+                const finalTickets = [
+                    ...openTickets.slice(0, openCount),
+                    ...inProgressTickets.slice(0, inProgressCount),
+                    ...completedTickets.slice(0, completedCount)
+                ];
+                
+                document.getElementById('final-test').innerHTML = 
+                    `<span class="success">✅ Final Result:</span><br>
+                     Total tickets to display: ${finalTickets.length}<br>
+                     Open: ${openCount}, In Progress: ${inProgressCount}, Completed: ${completedCount}<br>
+                     <pre>${JSON.stringify(finalTickets.slice(0, 5).map(t => ({
+                         id: t.id,
+                         title: t.title,
+                         status: t.status,
+                         assigned_user: t.assigned_user
+                     })), null, 2)}</pre>`;
+                
+            } catch (error) {
+                document.getElementById('api-test').innerHTML = 
+                    `<span class="error">❌ Error: ${error.message}</span>`;
+            }
+        }
+        
+        runDebug();
+    </script>
+</body>
+</html>

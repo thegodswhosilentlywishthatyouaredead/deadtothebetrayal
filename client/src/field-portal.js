@@ -245,6 +245,9 @@ async function loadMyTickets() {
         // Get current user from localStorage or use default
         const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Current user:', currentUser);
+        console.log('👤 localStorage currentUser:', localStorage.getItem('currentUser'));
+        console.log('👤 localStorage user_id:', localStorage.getItem('user_id'));
+        console.log('👤 localStorage aiff_user_type:', localStorage.getItem('aiff_user_type'));
         
         // Get current user ID from team data
         const currentUserId = await getCurrentUserId(currentUser);
@@ -300,6 +303,12 @@ async function loadMyTickets() {
             const allInProgressTickets = filterTicketsByStatus(allTickets, 'in_progress');
             const allCompletedTickets = filterTicketsByStatus(allTickets, 'completed');
             
+            console.log('🎫 Available tickets for sample:', {
+                open: allOpenTickets.length,
+                inProgress: allInProgressTickets.length,
+                completed: allCompletedTickets.length
+            });
+            
             // Take a sample from each status
             const sampleOpen = allOpenTickets.slice(0, 2);
             const sampleInProgress = allInProgressTickets.slice(0, 3);
@@ -308,6 +317,12 @@ async function loadMyTickets() {
             myTickets = [...sampleOpen, ...sampleInProgress, ...sampleCompleted];
             
             console.log('🎫 Showing sample tickets for demonstration:', myTickets.length);
+            console.log('🎫 Sample tickets:', myTickets.map(t => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                assigned_user: t.assigned_user
+            })));
         }
         
         if (myTickets.length === 0) {
