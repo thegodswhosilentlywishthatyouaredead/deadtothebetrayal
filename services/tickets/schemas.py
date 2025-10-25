@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
 from models import TicketStatus, TicketPriority, TicketCategory
@@ -40,20 +40,22 @@ class TicketUpdate(BaseModel):
 class TicketResponse(TicketBase):
     id: int
     ticket_number: str
-    ticketNumber: str  # Alias for frontend compatibility
     status: TicketStatus
     assigned_team_id: Optional[int] = None
     assigned_user_id: Optional[int] = None
     assigned_team: Optional[str] = None  # Team name for display
     assigned_user: Optional[str] = None  # User name for display
     created_at: datetime
-    createdAt: datetime  # Alias for frontend compatibility
     updated_at: Optional[datetime] = None
-    due_date: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+    
+    # Add aliases for frontend compatibility
+    ticketNumber: str = Field(alias='ticket_number')
+    createdAt: datetime = Field(alias='created_at')
     
     class Config:
         from_attributes = True
+        populate_by_name = True
 
 class AssignmentBase(BaseModel):
     ticket_id: int

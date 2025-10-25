@@ -99,6 +99,24 @@ async def get_tickets(request: Request):
             logger.error(f"Tickets service error: {e}")
             raise HTTPException(status_code=503, detail="Tickets service unavailable")
 
+@app.post("/api/tickets")
+async def create_ticket(request: Request):
+    logger.info("Create ticket endpoint called")
+    # Get the request body
+    body = await request.json()
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(f"{TICKETS_URL}/tickets", json=body)
+            logger.info(f"Tickets service response: {response.status_code}")
+            return JSONResponse(
+                content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
+                status_code=response.status_code
+            )
+        except httpx.RequestError as e:
+            logger.error(f"Tickets service error: {e}")
+            raise HTTPException(status_code=503, detail="Tickets service unavailable")
+
 @app.get("/api/tickets/analytics/overview")
 async def get_tickets_overview():
     logger.info("Tickets overview endpoint called")
