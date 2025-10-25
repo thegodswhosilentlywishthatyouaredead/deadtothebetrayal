@@ -5963,6 +5963,49 @@ async function loadZoneDetails() {
     }
 }
 
+// Standardized ticket name function
+function getTicketName(ticket) {
+    // Use consistent ticket naming format (CTT_Num_Zone)
+    if (ticket.ticket_number) {
+        return ticket.ticket_number;
+    }
+    if (ticket.ticketNumber) {
+        return ticket.ticketNumber;
+    }
+    if (ticket.id) {
+        // Generate CTT_Num_Zone format based on ticket ID and zone
+        const ticketId = typeof ticket.id === 'string' ? parseInt(ticket.id) : ticket.id;
+        const zone = ticket.zone || 'GEN';
+        const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
+        return `CTT_${String(ticketId).padStart(2, '0')}_${zoneSuffix}`;
+    }
+    // Fallback with random number and zone
+    const zone = ticket.zone || 'GEN';
+    const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
+    return `CTT_${String(Math.floor(Math.random() * 99) + 1).padStart(2, '0')}_${zoneSuffix}`;
+}
+
+// Standardized ticket display function
+function createTicketDisplay(ticket) {
+    const ticketName = getTicketName(ticket);
+    const status = ticket.status || 'unknown';
+    const priority = ticket.priority || 'medium';
+    const description = ticket.description || ticket.title || 'No description available';
+    const assignedTeam = ticket.assigned_team || ticket.assignedTeam || ticket.assigned_to || 'Unassigned';
+    const createdDate = ticket.created_at || ticket.createdAt || new Date().toISOString();
+    const location = ticket.location || ticket.zone || 'Unknown';
+    
+    return {
+        name: ticketName,
+        status: status,
+        priority: priority,
+        description: description,
+        assignedTeam: assignedTeam,
+        createdDate: createdDate,
+        location: location
+    };
+}
+
 // Create Zone Details List
 function createZoneDetailsList(zones, teams, tickets) {
     const container = document.getElementById('zone-details-list');
@@ -6143,15 +6186,29 @@ function createZoneDetailsList(zones, teams, tickets) {
                         ticket.status === 'open' || 
                         ticket.status === 'pending' || 
                         ticket.status === 'in_progress'
-                    ).slice(0, 5).map(ticket => `
+                    ).slice(0, 5).map(ticket => {
+                        const ticketDisplay = createTicketDisplay(ticket);
+                        const customerName = ticket.customer_name || ticket.customer?.name || ticket.customerInfo?.name || 'N/A';
+                        const locationAddress = ticket.location || ticket.location?.address || 'N/A';
+                        const createdDate = ticket.created_at || ticket.createdAt || new Date().toISOString();
+                        
+                        return `
                         <div class="zone-ticket-item">
                             <div class="zone-item-info">
-                                <p class="zone-item-name">${ticket.ticket_number || ticket.ticketNumber || ticket.id}</p>
-                                <p class="zone-item-details">${ticket.description || 'No description'}</p>
+                                <p class="zone-item-name">${ticketDisplay.name}</p>
+                                <p class="zone-item-details">${ticketDisplay.description}</p>
+                                <p class="zone-item-meta">
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> ${customerName} | 
+                                        <i class="fas fa-map-marker-alt"></i> ${locationAddress} | 
+                                        <i class="fas fa-clock"></i> ${new Date(createdDate).toLocaleDateString()}
+                                    </small>
+                                </p>
                             </div>
-                            <span class="zone-item-status status-${ticket.status}">${ticket.status}</span>
+                            <span class="zone-item-status status-${ticketDisplay.status}">${ticketDisplay.status}</span>
                         </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                     ${zoneTickets.filter(ticket => 
                         ticket.status === 'open' || 
                         ticket.status === 'pending' || 
@@ -6163,19 +6220,28 @@ function createZoneDetailsList(zones, teams, tickets) {
                     <h6 class="zone-section-title">
                         <i class="fas fa-users"></i>Teams in Zone
                     </h6>
-                    ${zoneTeams.map(team => `
+                    ${zoneTeams.map(team => {
+                        const teamName = team.name || team.teamName || team.team_name || 'Unknown Team';
+                        const isActive = team.is_active === true || team.status === 'active' || team.status === 'available';
+                        const productivity = team.productivity_score || team.productivity?.productivityScore || team.productivity?.efficiencyScore || 75;
+                        const rating = team.rating || team.productivity?.customerRating || 4.5;
+                        const efficiency = team.productivity?.efficiency || team.efficiency_score || 80;
+                        
+                        return `
                         <div class="zone-team-item">
                             <div class="zone-item-info">
-                                <p class="zone-item-name">${team.name}</p>
+                                <p class="zone-item-name">${teamName}</p>
                                 <p class="zone-item-details">
-                                    Availability: ${team.is_active === true ? 'Active' : 'Inactive'} | 
-                                    Productivity: ${(team.productivity_score || team.productivity?.productivityScore || 75).toFixed(1)}% | 
-                                    Rating: ${(team.rating || 4.5).toFixed(1)}⭐
+                                    Availability: ${isActive ? 'Active' : 'Inactive'} | 
+                                    Productivity: ${productivity.toFixed(1)}% | 
+                                    Rating: ${rating.toFixed(1)}⭐ | 
+                                    Efficiency: ${efficiency.toFixed(1)}%
                                 </p>
                             </div>
-                            <span class="zone-item-status status-${team.is_active === true ? 'active' : 'inactive'}">${team.is_active === true ? 'Active' : 'Inactive'}</span>
+                            <span class="zone-item-status status-${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span>
                         </div>
-                    `).join('')}
+                    `;
+                    }).join('')}
                     ${zoneTeams.length === 0 ? '<p class="text-muted text-center">No teams in this zone</p>' : ''}
                 </div>
                 

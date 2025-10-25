@@ -35,10 +35,11 @@ def get_db():
     finally:
         db.close()
 
-def generate_ticket_number(db: Session) -> str:
-    """Generate unique ticket number"""
+def generate_ticket_number(db: Session, zone: str = None) -> str:
+    """Generate unique ticket number in CTT_Num_Zone format"""
     count = db.query(Ticket).count()
-    return f"TK-{datetime.now().strftime('%Y%m%d')}-{count + 1:04d}"
+    zone_suffix = zone.replace(' ', '_').replace(',', '').upper() if zone else 'GEN'
+    return f"CTT_{count + 1:02d}_{zone_suffix}"
 
 @app.get("/health")
 async def health_check():
@@ -66,7 +67,52 @@ async def get_tickets(
         query = query.filter(Ticket.zone == zone)
     
     tickets = query.offset(skip).limit(limit).all()
-    return {"tickets": tickets}
+    
+    # Enhance tickets with additional fields for frontend compatibility
+    enhanced_tickets = []
+    for ticket in tickets:
+        ticket_dict = {
+            "id": ticket.id,
+            "ticket_number": ticket.ticket_number,
+            "ticketNumber": ticket.ticket_number,  # Alias for frontend
+            "title": ticket.title,
+            "description": ticket.description,
+            "status": ticket.status,
+            "priority": ticket.priority,
+            "category": ticket.category,
+            "location": ticket.location,
+            "zone": ticket.zone,
+            "coordinates": ticket.coordinates,
+            "assigned_team_id": ticket.assigned_team_id,
+            "assigned_user_id": ticket.assigned_user_id,
+            "assigned_team": None,  # Will be populated if team exists
+            "assigned_user": None,  # Will be populated if user exists
+            "created_at": ticket.created_at,
+            "createdAt": ticket.created_at,  # Alias for frontend
+            "updated_at": ticket.updated_at,
+            "due_date": ticket.due_date,
+            "completed_at": ticket.completed_at,
+            "sla_hours": ticket.sla_hours,
+            "estimated_duration": ticket.estimated_duration,
+            "customer_name": ticket.customer_name,
+            "customer_contact": ticket.customer_contact
+        }
+        
+        # Try to get team name if assigned
+        if ticket.assigned_team_id:
+            team = db.query(Team).filter(Team.id == ticket.assigned_team_id).first()
+            if team:
+                ticket_dict["assigned_team"] = team.name
+        
+        # Try to get user name if assigned
+        if ticket.assigned_user_id:
+            user = db.query(User).filter(User.id == ticket.assigned_user_id).first()
+            if user:
+                ticket_dict["assigned_user"] = user.name
+        
+        enhanced_tickets.append(ticket_dict)
+    
+    return {"tickets": enhanced_tickets}
 
 @app.get("/tickets/{ticket_id}", response_model=TicketWithDetails)
 async def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
@@ -77,7 +123,7 @@ async def get_ticket(ticket_id: int, db: Session = Depends(get_db)):
 
 @app.post("/tickets", response_model=TicketResponse)
 async def create_ticket(ticket: TicketCreate, db: Session = Depends(get_db)):
-    ticket_number = generate_ticket_number(db)
+    ticket_number = generate_ticket_number(db, ticket.zone)
     db_ticket = Ticket(
         ticket_number=ticket_number,
         **ticket.dict()
