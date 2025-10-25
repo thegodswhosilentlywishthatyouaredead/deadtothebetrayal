@@ -100,6 +100,9 @@ async function loadFieldPortalData() {
         // Set current user for field portal
         await setCurrentUser();
         
+        // Update user display in header
+        updateUserDisplay();
+        
         await Promise.all([
             loadMyTickets(),
             loadQuickStats(),
@@ -160,6 +163,22 @@ async function setCurrentUser() {
             localStorage.setItem('currentUser', currentUser);
             console.log('👤 Set current field team member (error fallback):', currentUser);
         }
+    }
+}
+
+// Update user display in header
+function updateUserDisplay() {
+    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
+    const userNameElement = document.getElementById('user-name');
+    const userRoleElement = document.getElementById('user-role');
+    
+    if (userNameElement) {
+        userNameElement.textContent = currentUser;
+        console.log('👤 Updated user display to:', currentUser);
+    }
+    
+    if (userRoleElement) {
+        userRoleElement.textContent = 'Field Technician';
     }
 }
 
