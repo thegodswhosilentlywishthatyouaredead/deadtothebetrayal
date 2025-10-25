@@ -275,22 +275,18 @@ async function loadMyTickets() {
             completed: completedTickets.length
         });
         
-        // Create realistic mix: 30% open, 40% in_progress, 30% completed
-        const totalTickets = myAssignedTickets.length;
-        const openCount = Math.min(Math.floor(totalTickets * 0.3), openTickets.length);
-        const inProgressCount = Math.min(Math.floor(totalTickets * 0.4), inProgressTickets.length);
-        const completedCount = Math.min(Math.floor(totalTickets * 0.3), completedTickets.length);
-        
+        // Create realistic mix: Show all available tickets for the user
+        // This ensures we show the actual data from the backend
         myTickets = [
-            ...openTickets.slice(0, openCount),
-            ...inProgressTickets.slice(0, inProgressCount),
-            ...completedTickets.slice(0, completedCount)
+            ...openTickets,
+            ...inProgressTickets,
+            ...completedTickets.slice(0, 10) // Show last 10 completed for context
         ];
         
         console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
-            open: openCount,
-            inProgress: inProgressCount,
-            completed: completedCount,
+            open: openTickets.length,
+            inProgress: inProgressTickets.length,
+            completed: completedTickets.length,
             allStatuses: [...new Set(myTickets.map(t => t.status))]
         });
         
