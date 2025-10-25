@@ -9704,22 +9704,83 @@ function createProductivityMetricsChart(tickets, teams) {
         data: {
             labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
             datasets: [{
-                label: 'Tickets per Week',
+                label: 'Productivity',
                 data: weeklyData,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
                 fill: true,
-                tension: 0.4
+                tension: 0.6,
+                smooth: true
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#3b82f6',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `Productivity: ${context.parsed.y}`;
+                        }
+                    }
+                }
             },
             scales: {
-                y: { beginAtZero: true }
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#6b7280'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(107, 114, 128, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        color: '#6b7280',
+                        callback: function(value) {
+                            return value;
+                        }
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.6
+                }
             }
         }
     });
@@ -9768,12 +9829,12 @@ function createEfficiencyTrendsChart(tickets) {
         labels.push(`Week ${4 - i}`);
     }
     
-    // Calculate metrics
+    // Calculate metrics with proper formatting
     const firstTimeFix = weeklyEfficiency[weeklyEfficiency.length - 1] || 0;
-    const slaCompliance = (weeklyEfficiency.reduce((a, b) => a + b, 0) / weeklyEfficiency.length).toFixed(2);
+    const slaCompliance = (weeklyEfficiency.reduce((a, b) => a + b, 0) / weeklyEfficiency.length);
     
-    updateElement('first-time-fix', `${firstTimeFix}%`);
-    updateElement('sla-compliance', `${slaCompliance}%`);
+    updateElement('first-time-fix', `${firstTimeFix.toFixed(1)}%`);
+    updateElement('sla-compliance', `${slaCompliance.toFixed(1)}%`);
     
     // Destroy existing chart instance if it exists
     if (chartInstances.efficiencyTrendsChart) {
@@ -9789,18 +9850,89 @@ function createEfficiencyTrendsChart(tickets) {
                 data: weeklyEfficiency,
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#10b981',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
                 fill: true,
-                tension: 0.4
+                tension: 0.6,
+                smooth: true
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#10b981',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return `Efficiency: ${context.parsed.y.toFixed(1)}%`;
+                        }
+                    }
+                }
             },
             scales: {
-                y: { beginAtZero: true, max: 100, title: { display: true, text: 'Efficiency (%)' } }
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#6b7280'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(107, 114, 128, 0.1)',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 11,
+                            weight: '500'
+                        },
+                        color: '#6b7280',
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Efficiency (%)',
+                        font: {
+                            size: 12,
+                            weight: '600'
+                        },
+                        color: '#374151'
+                    }
+                }
+            },
+            elements: {
+                line: {
+                    tension: 0.6
+                }
             }
         }
     });
