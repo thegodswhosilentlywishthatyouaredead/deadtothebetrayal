@@ -581,8 +581,15 @@ function formatStatus(status) {
 
 // Get ticket action buttons based on status
 function getTicketActionButtons(ticket) {
+    console.log('🔍 getTicketActionButtons called with ticket:', ticket);
     const status = ticket.status.replace('_', '-');
-    const ticketId = ticket._id;
+    const ticketId = ticket.id || ticket._id || ticket.ticket_number;
+    console.log('🔍 Getting ticket actions for ticket:', { id: ticket.id, _id: ticket._id, ticket_number: ticket.ticket_number, ticketId, status });
+    
+    if (!ticketId) {
+        console.error('❌ No valid ticket ID found for ticket:', ticket);
+        return '<button class="btn btn-sm btn-outline-secondary" disabled>No ID</button>';
+    }
     
     switch (status) {
         case 'open':
@@ -1684,9 +1691,10 @@ function viewTicketDetails(ticketId) {
     console.log('🔍 Available tickets:', myTickets.length);
     console.log('🔍 Sample ticket IDs:', myTickets.slice(0, 3).map(t => ({ id: t.id, _id: t._id, ticket_number: t.ticket_number })));
     
-    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
+    const ticket = myTickets.find(t => t.id == ticketId || t._id == ticketId || t.ticket_number === ticketId);
     if (!ticket) {
         console.error('❌ Ticket not found:', ticketId);
+        console.error('❌ Available ticket IDs:', myTickets.map(t => ({ id: t.id, _id: t._id, ticket_number: t.ticket_number })));
         showNotification('Ticket not found', 'error');
         return;
     }
