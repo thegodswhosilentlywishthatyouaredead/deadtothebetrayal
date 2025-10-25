@@ -802,10 +802,10 @@ function updateDashboardMetricsWithSampleData() {
 
 async function loadRecentTickets() {
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
-        const data = await response.json();
+        // Use standardized ticket fetching
+        const allTickets = await fetchTickets(API_BASE, 1000);
         
-        console.log('📋 Loaded tickets:', data.tickets ? data.tickets.length : 0);
+        console.log('📋 Loaded tickets:', allTickets.length);
         
         const container = document.getElementById('recent-tickets');
         if (!container) {
@@ -815,9 +815,9 @@ async function loadRecentTickets() {
         
         container.innerHTML = '';
         
-        if (data.tickets && data.tickets.length > 0) {
+        if (allTickets && allTickets.length > 0) {
             // Show first 5 tickets
-            const recentTickets = data.tickets.slice(0, 5);
+            const recentTickets = allTickets.slice(0, 5);
             console.log('📋 Displaying', recentTickets.length, 'recent tickets');
             
             recentTickets.forEach(ticket => {
@@ -1123,10 +1123,9 @@ function displaySampleZonePerformance() {
 async function loadTickets() {
     try {
         console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE);
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
-        console.log('🔧 loadTickets: Response status:', response.status);
-        const data = await response.json();
-        tickets = data.tickets || [];
+        
+        // Use standardized ticket fetching
+        tickets = await fetchTickets(API_BASE, 1000);
         
         console.log('🎫 Loading tickets tab data:', tickets.length);
         console.log('🎫 Sample ticket:', tickets[0]);
@@ -4616,43 +4615,7 @@ function getPriorityColor(priority) {
     return colors[priority] || colors['medium'];
 }
 
-// Get ticket name in CTT format
-function getTicketName(ticket) {
-    // Extract zone number from zone field
-    let zoneNumber = '01'; // Default zone number
-    
-    if (ticket.zone) {
-        // Try to extract number from zone name
-        const zoneMatch = ticket.zone.match(/(\d+)/);
-        if (zoneMatch) {
-            zoneNumber = zoneMatch[1].padStart(2, '0');
-        } else {
-            // Map zone names to numbers
-            const zoneMap = {
-                'Kuala Lumpur': '01',
-                'Selangor': '02', 
-                'Penang': '03',
-                'Johor': '04',
-                'Perak': '05',
-                'Kedah': '06',
-                'Kelantan': '07',
-                'Terengganu': '08',
-                'Pahang': '09',
-                'Negeri Sembilan': '10',
-                'Melaka': '11',
-                'Sabah': '12',
-                'Sarawak': '13',
-                'Putrajaya': '14',
-                'Perlis': '15'
-            };
-            zoneNumber = zoneMap[ticket.zone] || '01';
-        }
-    }
-    
-    const ticketName = `CTT-${zoneNumber}`;
-    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
-    return ticketName;
-}
+// Standardized ticket name function (moved to bottom of file)
 
 // Get team name by ID
 function getTeamName(teamId) {

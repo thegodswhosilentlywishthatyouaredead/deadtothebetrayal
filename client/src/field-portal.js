@@ -233,47 +233,31 @@ async function getCurrentUserId(currentUser) {
     }
 }
 
-// Load my assigned tickets
+// Load my assigned tickets - Standardized with main dashboard
 async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
     
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
-        const data = await response.json();
-        
-        console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
+        // Use standardized ticket fetching
+        const allTickets = await fetchTickets(API_BASE, 1000);
+        console.log('✅ Received tickets:', allTickets.length);
         
         // Get current user from localStorage or use default
-        const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+        const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Current user:', currentUser);
-        
-        // Filter tickets assigned to current user only
-        const allTickets = data.tickets || [];
         
         // Get current user ID from team data
         const currentUserId = await getCurrentUserId(currentUser);
         console.log('👤 Current user ID:', currentUserId);
         
-        const myAssignedTickets = allTickets.filter(ticket => {
-            // Check multiple assignment fields
-            const assignedUserId = ticket.assigned_user_id;
-            const assignedTeamId = ticket.assigned_team_id;
-            const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            
-            // Match by user ID or team ID
-            const matchesUser = assignedUserId === currentUserId;
-            const matchesTeam = assignedTeamId === currentUserId;
-            const matchesName = assignedTo === currentUser;
-            
-            return matchesUser || matchesTeam || matchesName;
-        });
-        
+        // Use standardized filtering logic
+        const myAssignedTickets = filterTicketsByUser(allTickets, currentUser, currentUserId);
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
         
-        // Get tickets by status for current user
-        const openTickets = myAssignedTickets.filter(t => t.status === 'open' || t.status === 'assigned');
-        const inProgressTickets = myAssignedTickets.filter(t => t.status === 'in_progress');
-        const resolvedTickets = myAssignedTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed');
+        // Use standardized status filtering
+        const openTickets = filterTicketsByStatus(myAssignedTickets, 'open');
+        const inProgressTickets = filterTicketsByStatus(myAssignedTickets, 'in_progress');
+        const resolvedTickets = filterTicketsByStatus(myAssignedTickets, 'resolved');
         
         myTickets = [...openTickets, ...inProgressTickets, ...resolvedTickets];
         
@@ -477,76 +461,13 @@ function filterTickets(status) {
     displayMyTickets(status);
 }
 
-// Create ticket card
+// Create ticket card - Use standardized function
 function createTicketCard(ticket) {
-    const card = document.createElement('div');
-    card.className = 'ticket-card';
-    
-    // Handle different data structures from backend
-    const ticketNumber = getTicketName(ticket); // Use CTT format
-    const estimatedDuration = ticket.estimatedDuration || 90;
-    
-    // Get team name for display - use current logged-in user
-    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
-    let assignedTeam = currentUser; // Default to current user
-    
-    // Since we're filtering tickets to only show current user's tickets,
-    // the assigned team should always be the current user
-    assignedTeam = currentUser;
-    
-    // Generate team-specific customer and location data
-    const teamSpecificData = generateTeamSpecificData(assignedTeam, ticket);
-    
-    const priorityClass = `priority-${ticket.priority}`;
-    const statusClass = `status-${ticket.status.replace('_', '-')}`;
-    
-    // Determine traffic light color
-    const trafficLight = getTrafficLightColor(ticket.status);
-    
-    card.innerHTML = `
-        <div class="ticket-header">
-            <div>
-                <div class="ticket-title">${ticket.title}</div>
-                <div class="ticket-number">${ticketNumber}</div>
-            </div>
-            <div class="ticket-priority ${priorityClass}">${ticket.priority}</div>
-        </div>
-        
-        <div class="ticket-details">
-            <div class="ticket-detail">
-                <i class="fas fa-user"></i>
-                <span>${teamSpecificData.customerName}</span>
-            </div>
-            <div class="ticket-detail">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>${teamSpecificData.locationAddress}</span>
-            </div>
-            <div class="ticket-detail">
-                <i class="fas fa-clock"></i>
-                <span>${estimatedDuration} min</span>
-            </div>
-            <div class="ticket-detail">
-                <i class="fas fa-tag"></i>
-                <span>${ticket.category}</span>
-            </div>
-            <div class="ticket-detail">
-                <i class="fas fa-users"></i>
-                <span>${assignedTeam}</span>
-            </div>
-        </div>
-        
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <div class="status-indicator ${statusClass}">
-                <span class="traffic-light ${trafficLight}"></span>
-                <span>${formatStatus(ticket.status)}</span>
-            </div>
-            <div class="ticket-actions">
-                ${getTicketActionButtons(ticket)}
-            </div>
-        </div>
-    `;
-    
-    return card;
+    return createStandardizedTicketCard(ticket, {
+        showActions: true,
+        showDetails: true,
+        compact: false
+    });
 }
 
 // Generate team-specific data for ticket details
