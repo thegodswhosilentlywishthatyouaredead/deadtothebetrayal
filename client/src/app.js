@@ -3120,7 +3120,7 @@ function createRatingDistributionChart(teams) {
     });
     
     chartRegistry.ratingDistributionChart = new Chart(ctx, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
             labels: Object.keys(ratingRanges),
             datasets: [{
@@ -3132,20 +3132,82 @@ function createRatingDistributionChart(teams) {
                     'rgba(251, 191, 36, 0.8)',
                     'rgba(239, 68, 68, 0.8)'
                 ],
-                borderWidth: 2,
-                borderColor: '#fff'
+                borderWidth: 3,
+                borderColor: '#ffffff',
+                hoverBorderWidth: 4,
+                hoverBorderColor: '#ffffff'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '60%',
+            animation: {
+                animateRotate: true,
+                animateScale: true,
+                duration: 1000,
+                easing: 'easeInOutQuart'
+            },
             plugins: {
                 title: {
                     display: true,
-                    text: 'Team Rating Distribution'
+                    text: 'Customer Rating Distribution',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    },
+                    color: '#1f2937',
+                    padding: 20
                 },
                 legend: {
-                    position: 'bottom'
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        generateLabels: function(chart) {
+                            const data = chart.data;
+                            if (data.labels.length && data.datasets.length) {
+                                return data.labels.map((label, i) => {
+                                    const dataset = data.datasets[0];
+                                    const value = dataset.data[i];
+                                    const total = dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    
+                                    return {
+                                        text: `${label}: ${value} (${percentage}%)`,
+                                        fillStyle: dataset.backgroundColor[i],
+                                        strokeStyle: dataset.borderColor,
+                                        lineWidth: dataset.borderWidth,
+                                        pointStyle: 'circle',
+                                        hidden: false,
+                                        index: i
+                                    };
+                                });
+                            }
+                            return [];
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: '#e5e7eb',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} teams (${percentage}%)`;
+                        }
+                    }
                 }
             }
         }
