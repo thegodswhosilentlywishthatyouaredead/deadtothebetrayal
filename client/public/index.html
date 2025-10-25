@@ -3914,59 +3914,131 @@
         }
 
         .kpi-card {
-            background: linear-gradient(135deg, #ffffff, #f8fafc);
-            border-radius: 12px;
-            padding: 1.25rem;
-            box-shadow: var(--card-shadow);
-            border: 1px solid #f1f5f9;
-            transition: all 0.3s ease;
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(226, 232, 240, 0.6);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             text-align: center;
             min-height: 180px;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-color), #8b5cf6);
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .kpi-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
         }
 
         .kpi-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             color: white;
-            margin: 0 auto 0.75rem auto;
+            margin: 0 auto 1rem auto;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .kpi-icon.blue { background: linear-gradient(135deg, #3b82f6, #2563eb); }
-        .kpi-icon.green { background: linear-gradient(135deg, #10b981, #059669); }
-        .kpi-icon.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
-        .kpi-icon.red { background: linear-gradient(135deg, #ef4444, #dc2626); }
+        .kpi-icon::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .kpi-card:hover .kpi-icon::before {
+            opacity: 1;
+        }
+
+        .kpi-icon.blue { 
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        .kpi-icon.green { 
+            background: linear-gradient(135deg, #10b981, #047857);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .kpi-icon.orange { 
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        }
+        .kpi-icon.red { 
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
 
         .kpi-value {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            font-weight: 800;
             color: var(--text-primary);
             margin-bottom: 0.5rem;
-            line-height: 1;
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-value {
+            transform: scale(1.05);
+            color: var(--primary-color);
         }
 
         .kpi-label {
-            font-size: 0.95rem;
+            font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
             margin-bottom: 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-label {
+            color: var(--primary-color);
         }
 
         .kpi-sublabel {
-            font-size: 0.8rem;
+            font-size: 0.875rem;
             color: var(--text-secondary);
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .kpi-card:hover .kpi-sublabel {
+            color: var(--text-primary);
         }
 
         .analysis-card {
@@ -6063,7 +6135,7 @@
                                     <div class="row g-2 mb-3">
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="kpi-card h-100">
-                                                <div class="kpi-icon">
+                                                <div class="kpi-icon blue">
                                                     <i class="fas fa-chart-line"></i>
                                                 </div>
                                                 <div class="kpi-content">
@@ -6075,7 +6147,7 @@
                                         </div>
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="kpi-card h-100">
-                                                <div class="kpi-icon">
+                                                <div class="kpi-icon green">
                                                     <i class="fas fa-check-double"></i>
                                                 </div>
                                                 <div class="kpi-content">
@@ -6087,7 +6159,7 @@
                                         </div>
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="kpi-card h-100">
-                                                <div class="kpi-icon">
+                                                <div class="kpi-icon orange">
                                                     <i class="fas fa-clock"></i>
                                                 </div>
                                                 <div class="kpi-content">
@@ -6099,7 +6171,7 @@
                                         </div>
                                         <div class="col-lg-3 col-md-6 col-sm-6">
                                             <div class="kpi-card h-100">
-                                                <div class="kpi-icon">
+                                                <div class="kpi-icon red">
                                                     <i class="fas fa-dollar-sign"></i>
                                                 </div>
                                                 <div class="kpi-content">
