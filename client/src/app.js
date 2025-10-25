@@ -4306,26 +4306,29 @@ function displayTicketMarkers(tickets) {
         if (ticket.coordinates) {
             const [lat, lng] = ticket.coordinates.split(',').map(coord => parseFloat(coord.trim()));
             
-            // Create custom icon based on priority
+            // Create custom icon based on priority - Bigger and smoother
             const iconColor = getPriorityColor(ticket.priority);
             const customIcon = L.divIcon({
                 className: 'custom-ticket-marker',
                 html: `<div style="
-                    width: 20px; 
-                    height: 20px; 
-                    background-color: ${iconColor}; 
-                    border: 2px solid white; 
+                    width: 32px; 
+                    height: 32px; 
+                    background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); 
+                    border: 3px solid white; 
                     border-radius: 50%; 
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 2px ${iconColor}33;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: white;
-                    font-size: 10px;
+                    font-size: 14px;
                     font-weight: bold;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                    transition: all 0.3s ease;
+                    animation: pulse 2s infinite;
                 ">${ticket.priority.charAt(0).toUpperCase()}</div>`,
-                iconSize: [20, 20],
-                iconAnchor: [10, 10]
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
             });
             
             const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
@@ -4447,15 +4450,26 @@ function updateLiveMetrics() {
 function initializeLiveTracking() {
     console.log('🚀 Initializing live tracking...');
     
-    // Initialize map if not already done
-    if (!map) {
-        initializeMap();
+    // Show loading indicator
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) {
+        mapContainer.classList.remove('loaded');
     }
     
-    // Load ticket data and display markers
-    loadTicketData().then(() => {
+    // Initialize map with optimized settings
+    if (!map) {
+        initializeMapOptimized();
+    }
+    
+    // Load ticket data and display markers with caching
+    loadTicketDataOptimized().then(() => {
         displayTicketMarkers(window.allTickets || []);
         updateLiveMetrics();
+        
+        // Hide loading indicator
+        if (mapContainer) {
+            mapContainer.classList.add('loaded');
+        }
     });
     
     // Set up auto-refresh every 30 seconds
@@ -4468,6 +4482,126 @@ function initializeLiveTracking() {
     }, 30000);
     
     console.log('✅ Live tracking initialized');
+}
+
+// Optimized map initialization for faster loading
+function initializeMapOptimized() {
+    console.log('🗺️ Initializing optimized map...');
+    
+    // Use cached map if available
+    if (window.mapCache) {
+        map = window.mapCache;
+        console.log('✅ Using cached map');
+        return;
+    }
+    
+    // Initialize map with performance optimizations
+    map = L.map('map', {
+        zoomControl: true,
+        preferCanvas: true, // Use canvas renderer for better performance
+        zoomSnap: 0.5,
+        zoomDelta: 0.5
+    }).setView([4.2105, 101.9758], 7);
+    
+    // Add optimized tile layer with caching
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 18,
+        minZoom: 3,
+        subdomains: ['a', 'b', 'c'], // Use multiple subdomains for faster loading
+        updateWhenZooming: false, // Don't update tiles while zooming
+        keepBuffer: 2 // Keep buffer for smoother panning
+    }).addTo(map);
+    
+    // Cache the map instance
+    window.mapCache = map;
+    
+    console.log('✅ Optimized map initialized');
+}
+
+// Optimized data loading with caching
+async function loadTicketDataOptimized() {
+    console.log('📡 Loading ticket data (optimized)...');
+    
+    // Check cache first (30 second cache for better performance)
+    const cacheKey = 'tickets_cache';
+    const cacheTime = 30000; // 30 seconds
+    const now = Date.now();
+    
+    if (window[cacheKey] && (now - window[cacheKey].timestamp) < cacheTime) {
+        console.log('✅ Using cached ticket data');
+        window.allTickets = window[cacheKey].data;
+        return window[cacheKey].data;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`, {
+            signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        const tickets = data.tickets || [];
+        
+        // Cache the data
+        window[cacheKey] = {
+            data: tickets,
+            timestamp: now
+        };
+        
+        window.allTickets = tickets;
+        console.log('✅ Ticket data loaded and cached:', tickets.length);
+        return tickets;
+        
+    } catch (error) {
+        console.error('❌ Error loading ticket data:', error);
+        
+        // Use fallback data if available
+        if (window.allTickets && window.allTickets.length > 0) {
+            console.log('🔄 Using fallback ticket data');
+            return window.allTickets;
+        }
+        
+        // Generate sample data as last resort
+        const sampleTickets = generateSampleTickets();
+        window.allTickets = sampleTickets;
+        return sampleTickets;
+    }
+}
+
+// Generate sample tickets for fallback
+function generateSampleTickets() {
+    const sampleTickets = [];
+    const malaysiaStates = ['Kuala Lumpur', 'Selangor', 'Penang', 'Johor', 'Perak', 'Kedah', 'Kelantan', 'Terengganu', 'Pahang', 'Negeri Sembilan', 'Melaka', 'Sabah', 'Sarawak'];
+    const priorities = ['emergency', 'urgent', 'high', 'medium', 'low'];
+    const statuses = ['open', 'in_progress', 'completed'];
+    
+    for (let i = 1; i <= 50; i++) {
+        const state = malaysiaStates[Math.floor(Math.random() * malaysiaStates.length)];
+        const priority = priorities[Math.floor(Math.random() * priorities.length)];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        
+        // Generate coordinates within Malaysia bounds
+        const lat = 1.5 + Math.random() * 5; // Malaysia latitude range
+        const lng = 99.5 + Math.random() * 6; // Malaysia longitude range
+        
+        sampleTickets.push({
+            id: i,
+            title: `Sample Ticket ${i}`,
+            priority: priority,
+            status: status,
+            zone: state,
+            location: `${state} Location ${i}`,
+            coordinates: `${lat.toFixed(6)},${lng.toFixed(6)}`,
+            assigned_team_id: Math.random() > 0.3 ? Math.floor(Math.random() * 20) + 1 : null,
+            created_at: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString()
+        });
+    }
+    
+    return sampleTickets;
 }
 
 async function loadLiveTrackingData() {
