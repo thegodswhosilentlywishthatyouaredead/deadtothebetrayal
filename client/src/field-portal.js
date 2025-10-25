@@ -182,6 +182,32 @@ function updateUserDisplay() {
     }
 }
 
+// Get current user ID from team data
+async function getCurrentUserId(currentUser) {
+    try {
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        const teams = data.teams || [];
+        
+        const userTeam = teams.find(team => team.name === currentUser);
+        if (userTeam) {
+            console.log('👤 Found user team:', userTeam);
+            return userTeam.id;
+        }
+        
+        // Fallback to user ID based on name hash
+        const userId = currentUser.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        
+        return Math.abs(userId) % 10 + 1; // Return ID between 1-10
+    } catch (error) {
+        console.error('Error getting user ID:', error);
+        return 1; // Default fallback
+    }
+}
+
 // Load my assigned tickets
 async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
@@ -198,9 +224,23 @@ async function loadMyTickets() {
         
         // Filter tickets assigned to current user only
         const allTickets = data.tickets || [];
+        
+        // Get current user ID from team data
+        const currentUserId = await getCurrentUserId(currentUser);
+        console.log('👤 Current user ID:', currentUserId);
+        
         const myAssignedTickets = allTickets.filter(ticket => {
+            // Check multiple assignment fields
+            const assignedUserId = ticket.assigned_user_id;
+            const assignedTeamId = ticket.assigned_team_id;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            return assignedTo === currentUser;
+            
+            // Match by user ID or team ID
+            const matchesUser = assignedUserId === currentUserId;
+            const matchesTeam = assignedTeamId === currentUserId;
+            const matchesName = assignedTo === currentUser;
+            
+            return matchesUser || matchesTeam || matchesName;
         });
         
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
@@ -417,23 +457,12 @@ function createTicketCard(ticket) {
     const estimatedDuration = ticket.estimatedDuration || 90;
     
     // Get team name for display - use current logged-in user
-    const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
     let assignedTeam = currentUser; // Default to current user
     
-    // Check if ticket has assigned team data
-    if (ticket.assigned_team_id) {
-        const teamName = getTeamName(ticket.assigned_team_id);
-        assignedTeam = teamName;
-    } else if (ticket.assignedTeam) {
-        assignedTeam = ticket.assignedTeam;
-    } else if (ticket.assignedTo) {
-        assignedTeam = ticket.assignedTo;
-    }
-    
-    // Ensure we show the current user as the assigned team
-    if (assignedTeam === 'Unassigned' || !assignedTeam) {
-        assignedTeam = currentUser;
-    }
+    // Since we're filtering tickets to only show current user's tickets,
+    // the assigned team should always be the current user
+    assignedTeam = currentUser;
     
     // Generate team-specific customer and location data
     const teamSpecificData = generateTeamSpecificData(assignedTeam, ticket);
