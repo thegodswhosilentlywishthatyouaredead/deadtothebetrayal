@@ -4361,13 +4361,48 @@ function getPriorityColor(priority) {
     return colors[priority] || colors['medium'];
 }
 
+// Get ticket name in CTT format
+function getTicketName(ticket) {
+    // Extract zone number from zone field
+    let zoneNumber = '01'; // Default zone number
+    
+    if (ticket.zone) {
+        // Try to extract number from zone name
+        const zoneMatch = ticket.zone.match(/(\d+)/);
+        if (zoneMatch) {
+            zoneNumber = zoneMatch[1].padStart(2, '0');
+        } else {
+            // Map zone names to numbers
+            const zoneMap = {
+                'Kuala Lumpur': '01',
+                'Selangor': '02', 
+                'Penang': '03',
+                'Johor': '04',
+                'Perak': '05',
+                'Kedah': '06',
+                'Kelantan': '07',
+                'Terengganu': '08',
+                'Pahang': '09',
+                'Negeri Sembilan': '10',
+                'Melaka': '11',
+                'Sabah': '12',
+                'Sarawak': '13'
+            };
+            zoneNumber = zoneMap[ticket.zone] || '01';
+        }
+    }
+    
+    return `CTT-${zoneNumber}`;
+}
+
 // Create simple tooltip for hover
 function createSimpleTooltip(ticket) {
     const assignedTeam = ticket.assigned_team_id ? `Team ${ticket.assigned_team_id}` : 'Unassigned';
+    const ticketName = getTicketName(ticket);
     
     return `
         <div style="font-size: 12px; line-height: 1.3;">
-            <strong>${ticket.ticket_number || 'TKT-' + ticket.id}</strong><br>
+            <strong>${ticketName}</strong><br>
             Status: ${ticket.status.toUpperCase()}<br>
             Priority: ${ticket.priority.toUpperCase()}<br>
             Team: ${assignedTeam}
@@ -4379,11 +4414,12 @@ function createSimpleTooltip(ticket) {
 function createTicketPopupContent(ticket) {
     const assignedTeam = ticket.assigned_team_id ? `Team ${ticket.assigned_team_id}` : 'Unassigned';
     const statusColor = getStatusColor(ticket.status);
+    const ticketName = getTicketName(ticket);
     
     return `
         <div class="live-tracking-popup">
             <div class="popup-header">
-                <h6>${ticket.title || 'Ticket ' + ticket.id}</h6>
+                <h6>${ticketName} - ${ticket.title || 'Ticket ' + ticket.id}</h6>
                 <div class="live-indicator">
                     <i class="fas fa-circle" style="color: #10b981;"></i>
                     <span>Live</span>
