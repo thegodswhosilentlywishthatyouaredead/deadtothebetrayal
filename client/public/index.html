@@ -5260,6 +5260,169 @@
         .table-wrapper::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+
+        /* Top Performers Card Styles */
+        .performer-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .performer-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .performer-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .performer-rank-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .performer-rank-badge:first-child .rank-number {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b);
+            color: #ffffff;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .performer-rank-badge:nth-child(2) .rank-number {
+            background: linear-gradient(135deg, #9ca3af, #6b7280);
+            color: #ffffff;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .performer-rank-badge:nth-child(3) .rank-number {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            color: #ffffff;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .performer-title {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .performer-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+            line-height: 1.2;
+        }
+
+        .performer-location {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.15rem;
+            line-height: 1.2;
+        }
+
+        .performer-members {
+            font-size: 0.7rem;
+            color: #9ca3af;
+            line-height: 1.1;
+        }
+
+        .performer-stats {
+            display: flex;
+            justify-content: space-between;
+            gap: 0.5rem;
+        }
+
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #1f2937;
+            margin-bottom: 0.15rem;
+            line-height: 1.1;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            line-height: 1;
+        }
+
+        /* Responsive Design for Top Performers */
+        @media (max-width: 768px) {
+            .performer-card {
+                padding: 0.75rem;
+            }
+            
+            .performer-header {
+                gap: 0.5rem;
+            }
+            
+            .performer-rank-badge {
+                width: 28px;
+                height: 28px;
+                font-size: 0.7rem;
+            }
+            
+            .performer-name {
+                font-size: 0.8rem;
+            }
+            
+            .performer-location {
+                font-size: 0.7rem;
+            }
+            
+            .performer-members {
+                font-size: 0.65rem;
+            }
+            
+            .stat-value {
+                font-size: 0.9rem;
+            }
+            
+            .stat-label {
+                font-size: 0.6rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -7751,7 +7914,7 @@
             }
         }
     </script>
-    <script src="/src/app.js?v=54"></script>
+    <script src="/src/app.js?v=55"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
