@@ -10,6 +10,7 @@ A comprehensive field team management system designed specifically for Malaysian
 - **Malaysian Localization**: All data, coordinates, and currency in Malaysian context
 - **Real-time Metrics**: Live updates for tickets, teams, and performance
 - **Zone-based Analytics**: Performance tracking by Malaysian states and zones
+- **CTT_Num_Zone Format**: Standardized ticket naming system (CTT_1_JOHOR, CTT_2_KEDAH, etc.)
 
 ### 🗺️ Interactive Map System
 - **Malaysian Map View**: Centered on Malaysia with state boundaries
@@ -118,22 +119,37 @@ A comprehensive field team management system designed specifically for Malaysian
 - Internet connection for external libraries
 
 ### Running the System
-1. **Backend**: `python3 backend_server.py` (runs on port 5001)
-2. **Frontend**: `python3 -m http.server 3004 --directory client` (runs on port 3004)
-3. **Access**: Open http://localhost:3004/public/ in browser
+1. **Backend Services**: `docker compose up -d` (runs microservices on ports 8085, 8000-8003)
+2. **Frontend**: `cd client/public && python3 -m http.server 8080` (runs on port 8080)
+3. **Access**: Open http://localhost:8080/ in browser
 
 ### Key URLs
-- **Main Dashboard**: http://localhost:3004/public/
-- **Field Portal**: http://localhost:3004/public/field-portal.html
-- **API Base**: http://localhost:5001/api/
+- **Main Dashboard**: http://localhost:8080/index.html
+- **Field Portal**: http://localhost:8080/field-portal.html
+- **Login Page**: http://localhost:8080/login.html
+- **API Base**: http://localhost:8085/api/
+
+## 📈 Current System Status
+
+### ✅ Completed Features
+- [x] **Frontend Dashboard**: Fully functional with real-time data
+- [x] **Field Portal**: Complete ticket management interface
+- [x] **Backend APIs**: All microservices operational
+- [x] **Database**: Populated with Malaysian data
+- [x] **Authentication**: Login system for HQ and Field teams
+- [x] **Map Integration**: Interactive Malaysian map with live tracking
+- [x] **Analytics**: Performance metrics and reporting
+- [x] **Mobile Responsive**: Optimized for all devices
+- [x] **CTT_Num_Zone Format**: Standardized ticket naming system
+- [x] **JavaScript Access**: Fixed after revert to ensure proper functionality
 
 ## 📊 System Metrics
 
 ### Current Data
-- **Total Tickets**: 127 network-related tickets
-- **Field Teams**: 8 teams across 4 Malaysian zones
-- **Active Locations**: 24+ locations across Malaysia
-- **Network Infrastructure**: 5 major hubs and nodes
+- **Total Tickets**: 1000+ tickets with CTT_Num_Zone format
+- **Field Teams**: 150 teams across 15 Malaysian states
+- **Active Locations**: 1000+ locations across Malaysia
+- **Network Infrastructure**: Comprehensive coverage across Malaysia
 
 ### Performance Features
 - **Real-time Updates**: Live data refresh every 30 seconds
