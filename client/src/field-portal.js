@@ -398,14 +398,6 @@ function createTicketCard(ticket) {
 
 // Generate team-specific data for ticket details
 function generateTeamSpecificData(teamName, ticket) {
-    // Malaysian customer names
-    const customerNames = [
-        'Ahmad Rahman', 'Siti Aminah', 'Muhammad Ali', 'Fatimah Hassan',
-        'Ismail Ahmad', 'Nor Azizah', 'Hassan Omar', 'Aishah Mohd',
-        'Omar Abdullah', 'Zainab Ali', 'Abdul Rahman', 'Mariam Yusof',
-        'Ibrahim Hassan', 'Nurul Huda', 'Mohd Azmi', 'Salmah Ahmad'
-    ];
-    
     // Malaysian locations
     const locations = [
         'Jalan Ampang, Kuala Lumpur', 'Lorong 68, Kuala Lumpur', 'Jalan 95, Penang',
@@ -423,11 +415,10 @@ function generateTeamSpecificData(teamName, ticket) {
         return a & a;
     }, 0);
     
-    const customerIndex = Math.abs(teamHash) % customerNames.length;
-    const locationIndex = Math.abs(teamHash + 1) % locations.length;
+    const locationIndex = Math.abs(teamHash) % locations.length;
     
     return {
-        customerName: customerNames[customerIndex],
+        customerName: teamName, // Use the same team name as the assigned team
         locationAddress: locations[locationIndex]
     };
 }
