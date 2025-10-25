@@ -4306,29 +4306,26 @@ function displayTicketMarkers(tickets) {
         if (ticket.coordinates) {
             const [lat, lng] = ticket.coordinates.split(',').map(coord => parseFloat(coord.trim()));
             
-            // Create custom icon based on priority - Bigger and smoother
+            // Create simple icon based on priority
             const iconColor = getPriorityColor(ticket.priority);
             const customIcon = L.divIcon({
                 className: 'custom-ticket-marker',
                 html: `<div style="
-                    width: 32px; 
-                    height: 32px; 
-                    background: linear-gradient(135deg, ${iconColor}, ${iconColor}dd); 
-                    border: 3px solid white; 
+                    width: 24px; 
+                    height: 24px; 
+                    background-color: ${iconColor}; 
+                    border: 2px solid white; 
                     border-radius: 50%; 
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 0 2px ${iconColor}33;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     color: white;
-                    font-size: 14px;
+                    font-size: 12px;
                     font-weight: bold;
-                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-                    transition: all 0.3s ease;
-                    animation: pulse 2s infinite;
                 ">${ticket.priority.charAt(0).toUpperCase()}</div>`,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
             });
             
             const marker = L.marker([lat, lng], { icon: customIcon }).addTo(map);
@@ -4484,9 +4481,9 @@ function initializeLiveTracking() {
     console.log('✅ Live tracking initialized');
 }
 
-// Optimized map initialization for faster loading
+// Simple map initialization for reliable loading
 function initializeMapOptimized() {
-    console.log('🗺️ Initializing optimized map...');
+    console.log('🗺️ Initializing map...');
     
     // Use cached map if available
     if (window.mapCache) {
@@ -4495,49 +4492,28 @@ function initializeMapOptimized() {
         return;
     }
     
-    // Initialize map with performance optimizations
-    map = L.map('map', {
-        zoomControl: true,
-        preferCanvas: true, // Use canvas renderer for better performance
-        zoomSnap: 0.5,
-        zoomDelta: 0.5
-    }).setView([4.2105, 101.9758], 7);
+    // Initialize map with simple settings
+    map = L.map('map').setView([4.2105, 101.9758], 7);
     
-    // Add optimized tile layer with caching
+    // Add simple tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors',
         maxZoom: 18,
-        minZoom: 3,
-        subdomains: ['a', 'b', 'c'], // Use multiple subdomains for faster loading
-        updateWhenZooming: false, // Don't update tiles while zooming
-        keepBuffer: 2 // Keep buffer for smoother panning
+        minZoom: 3
     }).addTo(map);
     
     // Cache the map instance
     window.mapCache = map;
     
-    console.log('✅ Optimized map initialized');
+    console.log('✅ Map initialized');
 }
 
-// Optimized data loading with caching
+// Simple data loading
 async function loadTicketDataOptimized() {
-    console.log('📡 Loading ticket data (optimized)...');
-    
-    // Check cache first (30 second cache for better performance)
-    const cacheKey = 'tickets_cache';
-    const cacheTime = 30000; // 30 seconds
-    const now = Date.now();
-    
-    if (window[cacheKey] && (now - window[cacheKey].timestamp) < cacheTime) {
-        console.log('✅ Using cached ticket data');
-        window.allTickets = window[cacheKey].data;
-        return window[cacheKey].data;
-    }
+    console.log('📡 Loading ticket data...');
     
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`, {
-            signal: AbortSignal.timeout(10000) // 10 second timeout
-        });
+        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -4546,28 +4522,17 @@ async function loadTicketDataOptimized() {
         const data = await response.json();
         const tickets = data.tickets || [];
         
-        // Cache the data
-        window[cacheKey] = {
-            data: tickets,
-            timestamp: now
-        };
-        
         window.allTickets = tickets;
-        console.log('✅ Ticket data loaded and cached:', tickets.length);
+        console.log('✅ Ticket data loaded:', tickets.length);
         return tickets;
         
     } catch (error) {
         console.error('❌ Error loading ticket data:', error);
         
-        // Use fallback data if available
-        if (window.allTickets && window.allTickets.length > 0) {
-            console.log('🔄 Using fallback ticket data');
-            return window.allTickets;
-        }
-        
-        // Generate sample data as last resort
+        // Generate sample data as fallback
         const sampleTickets = generateSampleTickets();
         window.allTickets = sampleTickets;
+        console.log('🔄 Using sample data:', sampleTickets.length);
         return sampleTickets;
     }
 }
