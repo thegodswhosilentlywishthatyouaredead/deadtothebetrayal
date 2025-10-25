@@ -2649,7 +2649,7 @@ function createZonePerformanceChart(zones) {
     });
 }
 
-// Create States Ticket Breakdown Chart - Shows Total, Open, and Closed Tickets by State
+// Create Zone Performance Analysis Chart - Shows Productivity vs Efficiency (Right Chart)
 function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
     if (!canvas) {
@@ -2668,88 +2668,77 @@ function createZonePerformanceAnalysisChart(zones) {
         return;
     }
     
-    console.log('📊 Creating states ticket breakdown chart with zones:', zones.length);
+    console.log('📊 Creating zone performance chart (right chart) with zones:', zones.length);
     
-    // Process zones data for ticket breakdown analysis
-    const statesData = zones.map(zone => {
-        const stateName = zone.zoneName || zone.zone || 'Unknown State';
-        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
-        const openTickets = zone.openTickets || 0;
-        const closedTickets = zone.closedTickets || 0;
+    // Process zones data for productivity vs efficiency analysis
+    const zonesData = zones.map(zone => {
+        const zoneName = zone.zoneName || zone.zone || 'Unknown Zone';
+        const productivity = zone.productivity || 0;
+        const efficiency = zone.efficiency || 0;
         
-        console.log('📊 Processing state:', {
-            name: stateName,
-            totalTickets,
-            openTickets,
-            closedTickets
+        console.log('📊 Processing zone:', {
+            name: zoneName,
+            productivity,
+            efficiency
         });
         
         return {
-            name: stateName,
-            totalTickets,
-            openTickets,
-            closedTickets
+            name: zoneName,
+            productivity,
+            efficiency
         };
     });
     
-    // Sort by total tickets (highest to lowest)
-    statesData.sort((a, b) => b.totalTickets - a.totalTickets);
+    // Sort by productivity (highest to lowest)
+    zonesData.sort((a, b) => b.productivity - a.productivity);
     
     // Extract data for chart
-    const stateNames = statesData.map(s => s.name);
-    const totalTickets = statesData.map(s => s.totalTickets);
-    const openTickets = statesData.map(s => s.openTickets);
-    const closedTickets = statesData.map(s => s.closedTickets);
+    const zoneNames = zonesData.map(z => z.name);
+    const productivityScores = zonesData.map(z => z.productivity);
+    const efficiencyScores = zonesData.map(z => z.efficiency);
     
-    console.log('📊 States ticket breakdown chart data:', {
-        states: stateNames.slice(0, 3),
-        totals: totalTickets.slice(0, 3),
-        open: openTickets.slice(0, 3),
-        closed: closedTickets.slice(0, 3)
+    console.log('📊 Zone performance chart data:', {
+        zones: zoneNames.slice(0, 3),
+        productivity: productivityScores.slice(0, 3),
+        efficiency: efficiencyScores.slice(0, 3)
     });
     
     try {
         chartRegistry.statePerformanceChart = new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: stateNames,
+                labels: zoneNames,
                 datasets: [{
-                    label: 'Total Tickets',
-                    data: totalTickets,
+                    label: 'Productivity Score',
+                    data: productivityScores,
                     backgroundColor: 'rgba(59, 130, 246, 0.8)',
                     borderColor: 'rgba(59, 130, 246, 1)',
                     borderWidth: 2,
                     borderRadius: 4,
-                    borderSkipped: false
+                    borderSkipped: false,
+                    yAxisID: 'y'
                 }, {
-                    label: 'Open Tickets',
-                    data: openTickets,
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 2,
-                    borderRadius: 4,
-                    borderSkipped: false
-                }, {
-                    label: 'Closed Tickets',
-                    data: closedTickets,
+                    label: 'Efficiency Rate (%)',
+                    data: efficiencyScores,
                     backgroundColor: 'rgba(16, 185, 129, 0.8)',
                     borderColor: 'rgba(16, 185, 129, 1)',
                     borderWidth: 2,
                     borderRadius: 4,
-                    borderSkipped: false
+                    borderSkipped: false,
+                    yAxisID: 'y1'
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: {
-                    duration: 1200,
+                    duration: 1000,
                     easing: 'easeInOutQuart'
                 },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'States Ticket Breakdown',
+                        text: 'Productivity vs Efficiency by Zones',
                         font: {
                             size: 16,
                             weight: 'bold'
@@ -2778,39 +2767,74 @@ function createZonePerformanceAnalysisChart(zones) {
                             label: function(context) {
                                 const label = context.dataset.label || '';
                                 const value = context.parsed.y || 0;
-                                const stateName = context.label || '';
-                                return `${stateName}: ${value} ${label.toLowerCase()}`;
+                                const zoneName = context.label || '';
+                                if (label === 'Productivity Score') {
+                                    return `${zoneName}: ${value} productivity score`;
+                                } else if (label === 'Efficiency Rate (%)') {
+                                    return `${zoneName}: ${value}% efficiency`;
+                                }
+                                return `${zoneName}: ${value}`;
                             }
                         }
                     }
                 },
                 scales: {
                     y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Number of Tickets',
+                            text: 'Productivity Score',
                             font: {
                                 size: 12,
                                 weight: 'bold'
                             },
-                            color: '#374151'
+                            color: '#3b82f6'
                         },
                         ticks: {
-                            color: '#6b7280',
+                            color: '#3b82f6',
                             font: {
                                 size: 11
                             }
                         },
                         grid: {
-                            color: 'rgba(0, 0, 0, 0.1)',
-                            drawBorder: false
+                            color: 'rgba(59, 130, 246, 0.1)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efficiency Rate (%)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            color: '#10b981'
+                        },
+                        ticks: {
+                            color: '#10b981',
+                            font: {
+                                size: 11
+                            },
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        },
+                        grid: {
+                            drawOnChartArea: false
                         }
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'States (Sorted by Total Tickets)',
+                            text: 'Zones (Sorted by Productivity)',
                             font: {
                                 size: 12,
                                 weight: 'bold'
@@ -2831,9 +2855,9 @@ function createZonePerformanceAnalysisChart(zones) {
             }
         });
         
-        console.log('✅ States Ticket Breakdown Chart created successfully');
+        console.log('✅ Zone Performance Chart (Productivity vs Efficiency) created successfully');
     } catch (error) {
-        console.error('❌ Error creating states ticket breakdown chart:', error);
+        console.error('❌ Error creating zone performance chart:', error);
     }
 }
 
@@ -8695,46 +8719,44 @@ function createTeamsZonePerformanceChart(zones) {
         return;
     }
     
-    console.log('📊 Original zones data:', zones.slice(0, 3));
+    console.log('📊 Creating states ticket breakdown chart (left chart) with zones:', zones.length);
     
-    // Handle both array and object formats for zones and sort by productivity
-    let zoneLabels, zoneData;
-    
-    if (Array.isArray(zones)) {
-        // Analytics service returns array format - sort by productivity
-        const zonesWithProductivity = zones.map(z => ({
-            name: z.zone || z.zoneName || 'Unknown Zone',
-            productivity: z.productivity || 0,
-            tickets: z.totalTickets || z.total_tickets || z.activeTeams || 0
-        }));
+    // Process zones data for states ticket breakdown
+    const statesData = zones.map(zone => {
+        const stateName = zone.zoneName || zone.zone || 'Unknown State';
+        const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+        const openTickets = zone.openTickets || 0;
+        const closedTickets = zone.closedTickets || 0;
         
-        // Sort by productivity (highest to lowest)
-        zonesWithProductivity.sort((a, b) => b.productivity - a.productivity);
+        console.log('📊 Processing state:', {
+            name: stateName,
+            totalTickets,
+            openTickets,
+            closedTickets
+        });
         
-        zoneLabels = zonesWithProductivity.map(z => z.name);
-        zoneData = zonesWithProductivity.map(z => z.tickets);
-        console.log('📊 Using array format zones sorted by productivity:', { zoneLabels, zoneData });
-    } else if (typeof zones === 'object' && zones !== null) {
-        // Auth service returns object format
-        zoneLabels = Object.keys(zones);
-        zoneData = Object.values(zones);
-        console.log('📊 Using object format zones:', { zoneLabels, zoneData });
-    } else {
-        console.warn('⚠️ No zone data available, using sample data');
-        zoneLabels = ['Kuala Lumpur Central', 'Selangor Central', 'Penang Central', 'Johor Central', 'Perak Central'];
-        zoneData = [15, 12, 8, 6, 4];
-    }
+        return {
+            name: stateName,
+            totalTickets,
+            openTickets,
+            closedTickets
+        };
+    });
     
-    // Ensure we have data
-    if (zoneLabels.length === 0) {
-        console.warn('⚠️ No zone data available, using sample data');
-        zoneLabels = ['Kuala Lumpur Central', 'Selangor Central', 'Penang Central', 'Johor Central', 'Perak Central'];
-        zoneData = [15, 12, 8, 6, 4];
-    }
+    // Sort by total tickets (highest to lowest)
+    statesData.sort((a, b) => b.totalTickets - a.totalTickets);
     
-    console.log('📊 Zone Performance Chart Data:', {
-        zoneLabels,
-        zoneData
+    // Extract data for chart
+    const stateNames = statesData.map(s => s.name);
+    const totalTickets = statesData.map(s => s.totalTickets);
+    const openTickets = statesData.map(s => s.openTickets);
+    const closedTickets = statesData.map(s => s.closedTickets);
+    
+    console.log('📊 States ticket breakdown chart data:', {
+        states: stateNames.slice(0, 3),
+        totals: totalTickets.slice(0, 3),
+        open: openTickets.slice(0, 3),
+        closed: closedTickets.slice(0, 3)
     });
     
     // Destroy existing chart instance if it exists
@@ -8744,46 +8766,128 @@ function createTeamsZonePerformanceChart(zones) {
         chartInstances.teamsZonePerformanceChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: zoneLabels,
+                labels: stateNames,
                 datasets: [{
-                    label: 'Tickets by Zone',
-                    data: zoneData,
-                    backgroundColor: '#3b82f6',
-                    borderColor: '#2563eb',
-                    borderWidth: 1
+                    label: 'Total Tickets',
+                    data: totalTickets,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }, {
+                    label: 'Open Tickets',
+                    data: openTickets,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
+                }, {
+                    label: 'Closed Tickets',
+                    data: closedTickets,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    borderRadius: 4,
+                    borderSkipped: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                indexAxis: 'y',
+                animation: {
+                    duration: 1200,
+                    easing: 'easeInOutQuart'
+                },
                 plugins: {
-                    legend: { display: false },
                     title: {
                         display: true,
-                        text: 'Zone Performance Analysis'
+                        text: 'States Ticket Breakdown',
+                        font: {
+                            size: 16,
+                            weight: 'bold'
+                        },
+                        color: '#1f2937'
+                    },
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: {
+                                size: 12,
+                                weight: '500'
+                            }
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        titleColor: '#ffffff',
+                        bodyColor: '#ffffff',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.dataset.label || '';
+                                const value = context.parsed.y || 0;
+                                const stateName = context.label || '';
+                                return `${stateName}: ${value} ${label.toLowerCase()}`;
+                            }
+                        }
                     }
                 },
                 scales: {
-                    x: {
+                    y: {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Number of Tickets'
+                            text: 'Number of Tickets',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            color: '#374151'
+                        },
+                        ticks: {
+                            color: '#6b7280',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)',
+                            drawBorder: false
                         }
                     },
-                    y: {
+                    x: {
                         title: {
                             display: true,
-                            text: 'Zones'
+                            text: 'States (Sorted by Total Tickets)',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            color: '#374151'
+                        },
+                        ticks: {
+                            color: '#6b7280',
+                            font: {
+                                size: 11
+                            }
+                        },
+                        grid: {
+                            display: false
                         }
                     }
                 }
             }
         });
-        console.log('✅ Zone Performance Chart created successfully');
+        
+        console.log('✅ States Ticket Breakdown Chart (Left Chart) created successfully');
     } catch (error) {
-        console.error('❌ Error creating zone performance chart:', error);
+        console.error('❌ Error creating states ticket breakdown chart:', error);
     }
 }
 
