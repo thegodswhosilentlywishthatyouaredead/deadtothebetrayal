@@ -3652,6 +3652,9 @@ async function loadFieldTeams() {
         // Populate top performers with team data - use the basic teams data which has the correct structure
         console.log('🏆 Calling populateTopPerformersMain with basicTeams:', basicTeams.length, 'teams');
         console.log('🏆 First basic team:', basicTeams[0]);
+        console.log('🏆 Team name field:', basicTeams[0]?.name);
+        console.log('🏆 Team zone field:', basicTeams[0]?.zone);
+        console.log('🏆 Team productivity:', basicTeams[0]?.productivity);
         populateTopPerformersMain(basicTeams);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
@@ -9966,6 +9969,9 @@ function populateTopPerformersMain(teams) {
     
     console.log('🔍 Processing teams:', teams.length, 'teams');
     console.log('🔍 First team sample:', teams[0]);
+    console.log('🔍 First team name:', teams[0]?.name);
+    console.log('🔍 First team zone:', teams[0]?.zone);
+    console.log('🔍 First team productivity:', teams[0]?.productivity);
     
     // Enrich teams with proper data and sort by performance
     const enrichedTeams = teams.map((team, index) => {
