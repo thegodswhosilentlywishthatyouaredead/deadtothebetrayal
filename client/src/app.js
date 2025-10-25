@@ -4469,17 +4469,6 @@ function initializeLiveTracking() {
     
     console.log('✅ Live tracking initialized');
 }
-        teams: [],
-        tickets: [],
-        routes: [],
-        lastUpdate: new Date()
-    };
-    
-    // Set up live tracking controls
-    setupLiveTrackingControls();
-    
-    console.log('✅ Live tracking system initialized');
-}
 
 async function loadLiveTrackingData() {
     console.log('📡 Loading live tracking data from backend...');
