@@ -8,7 +8,7 @@ let routeMap = null;
 let routeMarkers = [];
 let charts = {};
 
-// Get ticket name in CTT format with team association
+// Get ticket name in CTT format with team name association
 function getTicketName(ticket) {
     // Extract zone number from zone field
     let zoneNumber = '01'; // Default zone number
@@ -29,12 +29,19 @@ function getTicketName(ticket) {
         }
     }
     
-    // Get team information
+    // Get team name information from cache
     let teamInfo = '';
     if (ticket.assigned_team_id) {
-        // Format team ID to 2 digits
-        const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
-        teamInfo = `-T${teamId}`;
+        const teamName = teamNameCache[ticket.assigned_team_id];
+        if (teamName) {
+            // Use first name only for brevity
+            const firstName = teamName.split(' ')[0];
+            teamInfo = `-${firstName}`;
+        } else {
+            // Fallback to team ID if name not found
+            const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
+            teamInfo = `-T${teamId}`;
+        }
     } else {
         teamInfo = '-UN'; // Unassigned
     }
@@ -44,12 +51,37 @@ function getTicketName(ticket) {
     return ticketName;
 }
 
+// Cache for team names to avoid repeated API calls
+let teamNameCache = {};
+
+// Preload team names on page load
+async function preloadTeamNames() {
+    try {
+        console.log('🔄 Preloading team names...');
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        
+        if (data.teams && Array.isArray(data.teams)) {
+            // Cache all team names
+            data.teams.forEach(team => {
+                teamNameCache[team.id] = team.name;
+            });
+            console.log('✅ Team names cached:', Object.keys(teamNameCache).length, 'teams');
+        }
+    } catch (error) {
+        console.warn('Failed to preload team names:', error);
+    }
+}
+
 // API Base URL
 // API_BASE is now set by config.js
 
 // Initialize the field portal
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Field Team Portal Initializing...');
+    
+    // Preload team names for ticket naming
+    preloadTeamNames();
     
     // Get current user (in real app, this would come from authentication)
     currentUser = {

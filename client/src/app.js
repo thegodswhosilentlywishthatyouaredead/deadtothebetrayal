@@ -277,6 +277,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Tab panes found:', document.querySelectorAll('.tab-pane').length);
     console.log('🚀 Nav links found:', document.querySelectorAll('.nav-link').length);
     
+    // Preload team names for ticket naming
+    preloadTeamNames();
+    
     initializeSocket();
     loadDashboardData();
     initializeMap();
@@ -4371,7 +4374,7 @@ function getPriorityColor(priority) {
     return colors[priority] || colors['medium'];
 }
 
-// Get ticket name in CTT format with team association
+// Get ticket name in CTT format with team name association
 function getTicketName(ticket) {
     // Extract zone number from zone field
     let zoneNumber = '01'; // Default zone number
@@ -4404,12 +4407,19 @@ function getTicketName(ticket) {
         }
     }
     
-    // Get team information
+    // Get team name information from cache
     let teamInfo = '';
     if (ticket.assigned_team_id) {
-        // Format team ID to 2 digits
-        const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
-        teamInfo = `-T${teamId}`;
+        const teamName = teamNameCache[ticket.assigned_team_id];
+        if (teamName) {
+            // Use first name only for brevity
+            const firstName = teamName.split(' ')[0];
+            teamInfo = `-${firstName}`;
+        } else {
+            // Fallback to team ID if name not found
+            const teamId = ticket.assigned_team_id.toString().padStart(2, '0');
+            teamInfo = `-T${teamId}`;
+        }
     } else {
         teamInfo = '-UN'; // Unassigned
     }
@@ -4417,6 +4427,28 @@ function getTicketName(ticket) {
     const ticketName = `CTT-${zoneNumber}${teamInfo}`;
     console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone, 'team:', ticket.assigned_team_id);
     return ticketName;
+}
+
+// Cache for team names to avoid repeated API calls
+let teamNameCache = {};
+
+// Preload team names on page load
+async function preloadTeamNames() {
+    try {
+        console.log('🔄 Preloading team names...');
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        
+        if (data.teams && Array.isArray(data.teams)) {
+            // Cache all team names
+            data.teams.forEach(team => {
+                teamNameCache[team.id] = team.name;
+            });
+            console.log('✅ Team names cached:', Object.keys(teamNameCache).length, 'teams');
+        }
+    } catch (error) {
+        console.warn('Failed to preload team names:', error);
+    }
 }
 
 // Create simple tooltip for hover
