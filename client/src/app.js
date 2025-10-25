@@ -2370,7 +2370,7 @@ function loadSamplePerformanceAnalytics() {
     
     // Create charts with sample data
     createZonePerformanceChart(sampleZones);
-    createStatePerformanceChart(sampleTeams);
+    // createStatePerformanceChart(sampleTeams); // DISABLED - conflicts with createZonePerformanceAnalysisChart
     // Only create chart if canvas exists
     if (document.getElementById('teamsProductivityChart')) {
         createTeamProductivityChart(sampleTeams);
