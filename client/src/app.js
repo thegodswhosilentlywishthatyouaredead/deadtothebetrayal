@@ -9943,11 +9943,20 @@ function populateTopPerformersForAnalysis(teams) {
 // Populate Top Performers for Main Dashboard
 function populateTopPerformersMain(teams) {
     console.log('🏆 populateTopPerformersMain called with teams:', teams);
-    const container = document.getElementById('top-performers-list');
+    
+    // Try both possible container IDs
+    let container = document.getElementById('top-performers-list');
     if (!container) {
-        console.error('❌ top-performers-list container not found');
+        container = document.getElementById('teams-top-performers');
+    }
+    
+    if (!container) {
+        console.error('❌ Neither top-performers-list nor teams-top-performers container found');
+        console.log('Available elements with "performers" in ID:', document.querySelectorAll('[id*="performers"]'));
         return;
     }
+    
+    console.log('✅ Found container:', container.id);
     
     if (!teams || teams.length === 0) {
         console.warn('⚠️ No teams data provided');
@@ -9959,7 +9968,9 @@ function populateTopPerformersMain(teams) {
     console.log('🔍 First team sample:', teams[0]);
     
     // Enrich teams with proper data and sort by performance
-    const enrichedTeams = teams.map(team => {
+    const enrichedTeams = teams.map((team, index) => {
+        console.log(`🔍 Processing team ${index + 1}:`, team);
+        
         // Use the actual backend data structure
         const name = team.name || 'Unknown Team';
         const zone = team.zone || 'Malaysia';
@@ -9969,8 +9980,9 @@ function populateTopPerformersMain(teams) {
         const efficiency = team.productivity?.efficiency || 85.0;
         const status = team.status || 'available';
         
-        console.log('🔍 Team data:', {
-            name,
+        console.log('🔍 Team data processed:', {
+            originalName: team.name,
+            processedName: name,
             zone,
             ticketsCompleted,
             rating,
@@ -9995,7 +10007,18 @@ function populateTopPerformersMain(teams) {
         .sort((a, b) => b.ticketsCompleted - a.ticketsCompleted)
         .slice(0, 5);
     
-    container.innerHTML = sortedTeams.map((team, index) => `
+    console.log('🔍 Sorted teams for rendering:', sortedTeams);
+    
+    const html = sortedTeams.map((team, index) => {
+        console.log(`🔍 Rendering team ${index + 1}:`, {
+            name: team.name,
+            zone: team.zone,
+            rating: team.rating,
+            ticketsCompleted: team.ticketsCompleted,
+            efficiency: team.efficiency
+        });
+        
+        return `
         <div class="performer-card">
             <div class="performer-header">
                 <div class="performer-rank-badge">
@@ -10022,7 +10045,11 @@ function populateTopPerformersMain(teams) {
                 </div>
             </div>
         </div>
-    `).join('');
+    `;
+    }).join('');
+    
+    console.log('🔍 Generated HTML:', html.substring(0, 200) + '...');
+    container.innerHTML = html;
 }
 
 // Populate AI Insights
