@@ -9749,21 +9749,32 @@ function createProductivityMetricsChart(tickets, teams) {
                 label: 'Productivity',
                 data: weeklyData,
                 borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                borderWidth: 3,
-                pointBackgroundColor: '#3b82f6',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8,
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                borderWidth: 4,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#3b82f6',
+                pointBorderWidth: 3,
+                pointRadius: 8,
+                pointHoverRadius: 12,
+                pointHoverBackgroundColor: '#3b82f6',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
                 fill: true,
-                tension: 0.6,
-                smooth: true
+                tension: 0.4,
+                smooth: true,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 8,
+                shadowColor: 'rgba(59, 130, 246, 0.3)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -9771,19 +9782,28 @@ function createProductivityMetricsChart(tickets, teams) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: '#3b82f6',
-                    borderWidth: 1,
-                    cornerRadius: 8,
+                    borderWidth: 2,
+                    cornerRadius: 12,
                     displayColors: false,
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13,
+                        weight: '500'
+                    },
                     callbacks: {
                         title: function(context) {
                             return context[0].label;
                         },
                         label: function(context) {
-                            return `Productivity: ${context.parsed.y}`;
+                            return `Productivity: ${context.parsed.y} tickets`;
                         }
                     }
                 }
@@ -9795,24 +9815,27 @@ function createProductivityMetricsChart(tickets, teams) {
                     },
                     ticks: {
                         font: {
-                            size: 12,
-                            weight: '500'
+                            size: 13,
+                            weight: '600'
                         },
-                        color: '#6b7280'
+                        color: '#475569',
+                        padding: 8
                     }
                 },
                 y: {
                     beginAtZero: true,
                     grid: {
-                        color: 'rgba(107, 114, 128, 0.1)',
-                        drawBorder: false
+                        color: 'rgba(148, 163, 184, 0.15)',
+                        drawBorder: false,
+                        lineWidth: 1
                     },
                     ticks: {
                         font: {
-                            size: 11,
-                            weight: '500'
+                            size: 12,
+                            weight: '600'
                         },
-                        color: '#6b7280',
+                        color: '#64748b',
+                        padding: 8,
                         callback: function(value) {
                             return value;
                         }
@@ -9821,7 +9844,12 @@ function createProductivityMetricsChart(tickets, teams) {
             },
             elements: {
                 line: {
-                    tension: 0.6
+                    tension: 0.4,
+                    borderCapStyle: 'round',
+                    borderJoinStyle: 'round'
+                },
+                point: {
+                    hoverBackgroundColor: '#3b82f6'
                 }
             }
         }
@@ -9891,21 +9919,32 @@ function createEfficiencyTrendsChart(tickets) {
                 label: 'Efficiency Rate (%)',
                 data: weeklyEfficiency,
                 borderColor: '#10b981',
-                backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                borderWidth: 3,
-                pointBackgroundColor: '#10b981',
-                pointBorderColor: '#ffffff',
-                pointBorderWidth: 2,
-                pointRadius: 6,
-                pointHoverRadius: 8,
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                borderWidth: 4,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#10b981',
+                pointBorderWidth: 3,
+                pointRadius: 8,
+                pointHoverRadius: 12,
+                pointHoverBackgroundColor: '#10b981',
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3,
                 fill: true,
-                tension: 0.6,
-                smooth: true
+                tension: 0.4,
+                smooth: true,
+                shadowOffsetX: 0,
+                shadowOffsetY: 4,
+                shadowBlur: 8,
+                shadowColor: 'rgba(16, 185, 129, 0.3)'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 2000,
+                easing: 'easeInOutQuart'
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -9913,13 +9952,22 @@ function createEfficiencyTrendsChart(tickets) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
                     titleColor: '#ffffff',
                     bodyColor: '#ffffff',
                     borderColor: '#10b981',
-                    borderWidth: 1,
-                    cornerRadius: 8,
+                    borderWidth: 2,
+                    cornerRadius: 12,
                     displayColors: false,
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: '600'
+                    },
+                    bodyFont: {
+                        size: 13,
+                        weight: '500'
+                    },
                     callbacks: {
                         title: function(context) {
                             return context[0].label;
@@ -9937,25 +9985,28 @@ function createEfficiencyTrendsChart(tickets) {
                     },
                     ticks: {
                         font: {
-                            size: 12,
-                            weight: '500'
+                            size: 13,
+                            weight: '600'
                         },
-                        color: '#6b7280'
+                        color: '#475569',
+                        padding: 8
                     }
                 },
                 y: {
                     beginAtZero: true,
                     max: 100,
                     grid: {
-                        color: 'rgba(107, 114, 128, 0.1)',
-                        drawBorder: false
+                        color: 'rgba(148, 163, 184, 0.15)',
+                        drawBorder: false,
+                        lineWidth: 1
                     },
                     ticks: {
                         font: {
-                            size: 11,
-                            weight: '500'
+                            size: 12,
+                            weight: '600'
                         },
-                        color: '#6b7280',
+                        color: '#64748b',
+                        padding: 8,
                         callback: function(value) {
                             return value + '%';
                         }
@@ -9964,8 +10015,8 @@ function createEfficiencyTrendsChart(tickets) {
                         display: true,
                         text: 'Efficiency (%)',
                         font: {
-                            size: 12,
-                            weight: '600'
+                            size: 13,
+                            weight: '700'
                         },
                         color: '#374151'
                     }
@@ -9973,7 +10024,12 @@ function createEfficiencyTrendsChart(tickets) {
             },
             elements: {
                 line: {
-                    tension: 0.6
+                    tension: 0.4,
+                    borderCapStyle: 'round',
+                    borderJoinStyle: 'round'
+                },
+                point: {
+                    hoverBackgroundColor: '#10b981'
                 }
             }
         }
