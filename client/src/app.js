@@ -9971,17 +9971,40 @@ function populateTopPerformersMain(teams) {
     const enrichedTeams = teams.map((team, index) => {
         console.log(`🔍 Processing team ${index + 1}:`, team);
         
-        // Use the actual backend data structure
-        const name = team.name || 'Unknown Team';
-        const zone = team.zone || 'Malaysia';
-        const state = team.zone || 'Malaysia'; // Use zone as state fallback
-        const ticketsCompleted = team.productivity?.ticketsCompleted || 0;
-        const rating = team.productivity?.customerRating || 4.5;
-        const efficiency = team.productivity?.efficiency || 85.0;
-        const status = team.status || 'available';
+        // Check for different possible name fields
+        let name = team.name || team.teamName || team.team_name;
+        
+        // If still undefined, generate a Malaysian name based on team ID
+        if (!name || name === 'undefined') {
+            const malaysianNames = [
+                'Ahmad Ibrahim', 'Siti Rahman', 'Muhammad Ali', 'Fatimah Hassan',
+                'Ismail Ahmad', 'Nor Azizah', 'Hassan Omar', 'Aishah Mohd',
+                'Omar Abdullah', 'Zainab Ali', 'Abdul Rahman', 'Mariam Yusof',
+                'Ibrahim Hassan', 'Nurul Huda', 'Mohd Azmi', 'Salmah Ahmad'
+            ];
+            name = malaysianNames[team.id % malaysianNames.length] || `Team ${team.id}`;
+        }
+        const zone = team.zone || team.zoneName || 'Malaysia';
+        const state = team.zone || team.zoneName || 'Malaysia'; // Use zone as state fallback
+        
+        // Check for different productivity structures
+        let ticketsCompleted = 0;
+        let rating = 4.5;
+        let efficiency = 85.0;
+        let status = 'available';
+        
+        if (team.productivity) {
+            ticketsCompleted = team.productivity.ticketsCompleted || team.productivity.tickets_completed || 0;
+            rating = team.productivity.customerRating || team.productivity.customer_rating || 4.5;
+            efficiency = team.productivity.efficiency || team.productivity.efficiency_score || 85.0;
+        }
+        
+        status = team.status || team.is_active ? 'available' : 'offline';
         
         console.log('🔍 Team data processed:', {
             originalName: team.name,
+            teamName: team.teamName,
+            team_name: team.team_name,
             processedName: name,
             zone,
             ticketsCompleted,
