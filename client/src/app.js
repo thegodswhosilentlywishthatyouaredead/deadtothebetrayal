@@ -4392,7 +4392,9 @@ function getTicketName(ticket) {
         }
     }
     
-    return `CTT-${zoneNumber}`;
+    const ticketName = `CTT-${zoneNumber}`;
+    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
+    return ticketName;
 }
 
 // Create simple tooltip for hover
