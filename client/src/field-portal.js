@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadFieldPortalData() {
     try {
         // Set current user for field portal
-        setCurrentUser();
+        await setCurrentUser();
         
         await Promise.all([
             loadMyTickets(),
@@ -114,24 +114,52 @@ async function loadFieldPortalData() {
 }
 
 // Set current user for field portal
-function setCurrentUser() {
+async function setCurrentUser() {
     // Get user type from login
     const userType = localStorage.getItem('aiff_user_type');
     
     if (userType === 'field_team') {
-        // Set a default field team member for demo
-        const fieldTeamMembers = [
-            'Hajiji Noor', 'Muhammad Sanusi 2', 'Azalina Othman', 'Anwar Ibrahim',
-            'Najib Razak', 'Rosmah Mansor', 'Ismail Sabri', 'Muhyiddin Yassin'
-        ];
-        
-        // Use a consistent field team member based on some identifier
-        const userId = localStorage.getItem('user_id') || '1';
-        const memberIndex = parseInt(userId) % fieldTeamMembers.length;
-        const currentUser = fieldTeamMembers[memberIndex];
-        
-        localStorage.setItem('currentUser', currentUser);
-        console.log('👤 Set current field team member:', currentUser);
+        try {
+            // Get actual team names from backend
+            const response = await fetch(`${API_BASE}/teams`);
+            const data = await response.json();
+            const teams = data.teams || [];
+            
+            if (teams.length > 0) {
+                // Use a consistent field team member based on some identifier
+                const userId = localStorage.getItem('user_id') || '1';
+                const memberIndex = parseInt(userId) % teams.length;
+                const currentUser = teams[memberIndex].name;
+                
+                localStorage.setItem('currentUser', currentUser);
+                console.log('👤 Set current field team member from backend:', currentUser);
+            } else {
+                // Fallback to default names
+                const fieldTeamMembers = [
+                    'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
+                ];
+                
+                const userId = localStorage.getItem('user_id') || '1';
+                const memberIndex = parseInt(userId) % fieldTeamMembers.length;
+                const currentUser = fieldTeamMembers[memberIndex];
+                
+                localStorage.setItem('currentUser', currentUser);
+                console.log('👤 Set current field team member (fallback):', currentUser);
+            }
+        } catch (error) {
+            console.error('Error fetching team names:', error);
+            // Fallback to default names
+            const fieldTeamMembers = [
+                'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
+            ];
+            
+            const userId = localStorage.getItem('user_id') || '1';
+            const memberIndex = parseInt(userId) % fieldTeamMembers.length;
+            const currentUser = fieldTeamMembers[memberIndex];
+            
+            localStorage.setItem('currentUser', currentUser);
+            console.log('👤 Set current field team member (error fallback):', currentUser);
+        }
     }
 }
 
@@ -369,13 +397,23 @@ function createTicketCard(ticket) {
     const ticketNumber = getTicketName(ticket); // Use CTT format
     const estimatedDuration = ticket.estimatedDuration || 90;
     
-    // Get team name for display
-    let assignedTeam = 'Unassigned';
+    // Get team name for display - use current logged-in user
+    const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+    let assignedTeam = currentUser; // Default to current user
+    
+    // Check if ticket has assigned team data
     if (ticket.assigned_team_id) {
         const teamName = getTeamName(ticket.assigned_team_id);
         assignedTeam = teamName;
     } else if (ticket.assignedTeam) {
         assignedTeam = ticket.assignedTeam;
+    } else if (ticket.assignedTo) {
+        assignedTeam = ticket.assignedTo;
+    }
+    
+    // Ensure we show the current user as the assigned team
+    if (assignedTeam === 'Unassigned' || !assignedTeam) {
+        assignedTeam = currentUser;
     }
     
     // Generate team-specific customer and location data
@@ -458,7 +496,7 @@ function generateTeamSpecificData(teamName, ticket) {
     const locationIndex = Math.abs(teamHash) % locations.length;
     
     return {
-        customerName: currentUser, // Show the assigned field team member as the contact
+        customerName: teamName, // Show the assigned team member name
         locationAddress: locations[locationIndex]
     };
 }
