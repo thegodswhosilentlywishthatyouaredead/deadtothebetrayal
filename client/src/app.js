@@ -3650,6 +3650,8 @@ async function loadFieldTeams() {
         await updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
         
         // Populate top performers with team data - use the basic teams data which has the correct structure
+        console.log('🏆 Calling populateTopPerformersMain with basicTeams:', basicTeams.length, 'teams');
+        console.log('🏆 First basic team:', basicTeams[0]);
         populateTopPerformersMain(basicTeams);
         
         console.log('👥 Loaded field teams:', fieldTeams.length);
@@ -9940,13 +9942,21 @@ function populateTopPerformersForAnalysis(teams) {
 
 // Populate Top Performers for Main Dashboard
 function populateTopPerformersMain(teams) {
+    console.log('🏆 populateTopPerformersMain called with teams:', teams);
     const container = document.getElementById('top-performers-list');
-    if (!container) return;
+    if (!container) {
+        console.error('❌ top-performers-list container not found');
+        return;
+    }
     
     if (!teams || teams.length === 0) {
+        console.warn('⚠️ No teams data provided');
         container.innerHTML = '<div class="text-muted text-center py-3">No team data available</div>';
         return;
     }
+    
+    console.log('🔍 Processing teams:', teams.length, 'teams');
+    console.log('🔍 First team sample:', teams[0]);
     
     // Enrich teams with proper data and sort by performance
     const enrichedTeams = teams.map(team => {
