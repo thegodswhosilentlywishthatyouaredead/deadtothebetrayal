@@ -70,11 +70,13 @@ function filterTicketsByUser(tickets, currentUser, currentUserId) {
 function filterTicketsByStatus(tickets, status) {
     switch (status) {
         case 'open':
-            return tickets.filter(t => t.status === 'open' || t.status === 'assigned');
+            return tickets.filter(t => t.status === 'open' || t.status === 'OPEN' || t.status === 'assigned');
         case 'in_progress':
-            return tickets.filter(t => t.status === 'in_progress');
+            return tickets.filter(t => t.status === 'in_progress' || t.status === 'IN_PROGRESS');
+        case 'completed':
+            return tickets.filter(t => t.status === 'completed' || t.status === 'COMPLETED' || t.status === 'resolved' || t.status === 'closed');
         case 'resolved':
-            return tickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed');
+            return tickets.filter(t => t.status === 'resolved' || t.status === 'RESOLVED' || t.status === 'completed' || t.status === 'COMPLETED' || t.status === 'closed');
         default:
             return tickets;
     }
