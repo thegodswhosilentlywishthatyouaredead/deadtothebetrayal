@@ -160,10 +160,10 @@ intelligent-field-assignment/
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+```bash
    git clone https://github.com/your-org/intelligent-field-assignment.git
-   cd intelligent-field-assignment
-   ```
+cd intelligent-field-assignment
+```
 
 2. **Start the system**
    ```bash
@@ -194,7 +194,7 @@ intelligent-field-assignment/
    ```
 
 2. **Start individual services**
-   ```bash
+```bash
    # Start database
    docker-compose up -d postgres redis
    

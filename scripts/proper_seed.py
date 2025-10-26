@@ -66,19 +66,114 @@ def seed_database():
         conn.commit()
         print("✅ Teams committed to database")
         
-        # Insert 1000 sample tickets (lowercase fields to match analytics queries)
+        # Insert 1000 sample tickets with realistic telco network causals
         print("🎫 Creating 1000 sample tickets...")
-        ticket_categories = ["FIBER_INSTALLATION", "MAINTENANCE", "REPAIR", "INSPECTION"]
-        ticket_priorities = ["LOW", "MEDIUM", "HIGH", "URGENT"]
+        
+        # Telco network issue causals with codes
+        telco_causals = [
+            {
+                "code": "DF001",
+                "title": "Drop Fiber Cut",
+                "description": "Customer drop fiber cable severed due to construction work or accidental damage",
+                "category": "REPAIR",
+                "priority": "HIGH"
+            },
+            {
+                "code": "CPE002", 
+                "title": "Customer CPE Failure",
+                "description": "Customer Premises Equipment (router/modem) hardware malfunction or configuration issue",
+                "category": "REPAIR",
+                "priority": "MEDIUM"
+            },
+            {
+                "code": "LS003",
+                "title": "Long Span Cable Damage",
+                "description": "Long span fiber cable damaged by weather, rodents, or environmental factors",
+                "category": "REPAIR", 
+                "priority": "HIGH"
+            },
+            {
+                "code": "RD004",
+                "title": "Rodent Damage",
+                "description": "Fiber cable chewed by rodents causing service interruption",
+                "category": "REPAIR",
+                "priority": "MEDIUM"
+            },
+            {
+                "code": "FD005",
+                "title": "Fiber Distribution Point Failure",
+                "description": "FDP cabinet or splitter equipment malfunction affecting multiple customers",
+                "category": "REPAIR",
+                "priority": "URGENT"
+            },
+            {
+                "code": "SP006",
+                "title": "Splice Point Degradation",
+                "description": "Fiber splice point degraded due to moisture ingress or poor installation",
+                "category": "REPAIR",
+                "priority": "MEDIUM"
+            },
+            {
+                "code": "MT007",
+                "title": "Manhole Theft",
+                "description": "Fiber cables stolen from manhole or underground infrastructure",
+                "category": "REPAIR",
+                "priority": "HIGH"
+            },
+            {
+                "code": "PW008",
+                "title": "Power Supply Failure",
+                "description": "Network equipment power supply failure causing service outage",
+                "category": "REPAIR",
+                "priority": "URGENT"
+            },
+            {
+                "code": "FI009",
+                "title": "Fiber Installation New Customer",
+                "description": "New fiber installation for residential or business customer",
+                "category": "FIBER_INSTALLATION",
+                "priority": "MEDIUM"
+            },
+            {
+                "code": "PM010",
+                "title": "Preventive Maintenance",
+                "description": "Scheduled preventive maintenance of network infrastructure",
+                "category": "MAINTENANCE",
+                "priority": "LOW"
+            },
+            {
+                "code": "IN011",
+                "title": "Network Inspection",
+                "description": "Routine inspection of network infrastructure and equipment",
+                "category": "INSPECTION",
+                "priority": "LOW"
+            },
+            {
+                "code": "OV012",
+                "title": "Overhead Cable Damage",
+                "description": "Overhead fiber cable damaged by tree branches or vehicle collision",
+                "category": "REPAIR",
+                "priority": "HIGH"
+            }
+        ]
+        
         ticket_statuses = ["OPEN", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
 
         now = datetime.utcnow()
         for i in range(1, 1001):
             ticket_number = f"CTT_{i:03d}"
-            title = f"Sample Ticket {i}"
-            description = f"This is a sample ticket description for ticket {i}"
-            category = random.choice(ticket_categories)
-            priority = random.choice(ticket_priorities)
+            
+            # Select random telco causal
+            causal = random.choice(telco_causals)
+            title = causal["title"]
+            description = causal["description"]
+            category = causal["category"]
+            priority = causal["priority"]
+            
+            # Adjust priority based on status
+            if random.random() < 0.1:  # 10% chance of emergency
+                priority = "URGENT"
+            
             status = random.choices(ticket_statuses, weights=[40, 30, 25, 5], k=1)[0]
 
             # Random creation time within last 90 days

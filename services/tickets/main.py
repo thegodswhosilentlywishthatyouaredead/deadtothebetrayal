@@ -40,6 +40,179 @@ def generate_ticket_number(db: Session, zone: str = None) -> str:
     count = db.query(Ticket).count()
     return f"CTT_{count + 1:03d}"
 
+# Telco Network Issue Causals
+TELCO_CAUSALS = {
+    "DROP_FIBRE": {
+        "code": "DF001",
+        "description": "Drop Fiber Cut",
+        "title_templates": [
+            "Drop Fiber Cut - {location}",
+            "Fiber Drop Cable Damaged - {location}",
+            "Customer Drop Fiber Failure - {location}",
+            "Fiber Optic Drop Cable Issue - {location}"
+        ],
+        "description_templates": [
+            "Drop fiber cable cut or damaged affecting customer connection. Fiber optic cable from distribution point to customer premises requires repair or replacement.",
+            "Customer drop fiber cable cut affecting internet/phone services. Fiber optic drop cable needs splicing or replacement.",
+            "Drop fiber cable damaged due to construction work. Fiber optic connection from FDP to customer premises requires restoration.",
+            "Drop fiber cable severed affecting customer services. Fiber optic drop cable needs immediate repair to restore connectivity."
+        ]
+    },
+    "CUSTOMER_CPE": {
+        "code": "CPE002",
+        "description": "Customer CPE Failure",
+        "title_templates": [
+            "CPE Router Issue - {location}",
+            "Customer Router Malfunction - {location}",
+            "CPE Equipment Failure - {location}",
+            "Customer Modem Problem - {location}"
+        ],
+        "description_templates": [
+            "Customer Premises Equipment (CPE) router/modem malfunction. Equipment requires replacement or configuration reset.",
+            "CPE router not responding or showing connectivity issues. Customer equipment needs troubleshooting or replacement.",
+            "Customer router/modem hardware failure. CPE equipment requires replacement to restore services.",
+            "CPE configuration issue causing service disruption. Customer equipment needs reconfiguration or firmware update."
+        ]
+    },
+    "LONGSPAN": {
+        "code": "LS003",
+        "description": "Long Span Cable Damage",
+        "title_templates": [
+            "Long Span Cable Cut - {location}",
+            "Backbone Fiber Cut - {location}",
+            "Long Span Fiber Damage - {location}",
+            "Backbone Cable Failure - {location}"
+        ],
+        "description_templates": [
+            "Long span backbone fiber cable cut affecting multiple customers. Backbone infrastructure requires immediate repair.",
+            "Backbone fiber cable severed due to external damage. Long span cable needs splicing to restore services.",
+            "Long span cable damaged affecting network backbone. Backbone infrastructure requires restoration work.",
+            "Backbone fiber cut causing widespread service outage. Long span cable needs emergency repair."
+        ]
+    },
+    "RODENT": {
+        "code": "RD004",
+        "description": "Rodent Damage",
+        "title_templates": [
+            "Rodent Damage to Cable - {location}",
+            "Cable Chewed by Rodents - {location}",
+            "Rodent Infestation Cable Damage - {location}",
+            "Animal Damage to Fiber - {location}"
+        ],
+        "description_templates": [
+            "Fiber cable damaged by rodent chewing. Cable requires replacement and rodent-proofing measures.",
+            "Rodent damage to fiber cable causing service disruption. Cable needs replacement and pest control measures.",
+            "Animal damage to fiber infrastructure. Cable requires repair and protective measures against future damage.",
+            "Rodent infestation causing cable damage. Fiber cable needs replacement and environmental protection."
+        ]
+    },
+    "FDP_BREAKDOWN": {
+        "code": "FDP",
+        "description": "Fiber Distribution Point Breakdown",
+        "title_templates": [
+            "FDP Equipment Failure - {location}",
+            "Distribution Point Breakdown - {location}",
+            "FDP Cabinet Malfunction - {location}",
+            "Distribution Cabinet Issue - {location}"
+        ],
+        "description_templates": [
+            "Fiber Distribution Point (FDP) equipment failure affecting multiple customers. Distribution cabinet requires repair or replacement.",
+            "FDP cabinet malfunction causing service outage. Distribution point equipment needs troubleshooting and repair.",
+            "Fiber distribution point breakdown affecting customer services. FDP equipment requires immediate attention.",
+            "Distribution cabinet failure impacting multiple connections. FDP infrastructure needs restoration work."
+        ]
+    },
+    "POWER_SUPPLY": {
+        "code": "PS",
+        "description": "Power Supply Issue",
+        "title_templates": [
+            "Power Supply Failure - {location}",
+            "Equipment Power Issue - {location}",
+            "Power Supply Malfunction - {location}",
+            "Electrical Power Problem - {location}"
+        ],
+        "description_templates": [
+            "Network equipment power supply failure causing service disruption. Power supply unit requires replacement.",
+            "Electrical power issue affecting network equipment. Power supply needs repair or replacement.",
+            "Power supply malfunction in network infrastructure. Electrical equipment requires immediate attention.",
+            "Power supply failure affecting network services. Electrical infrastructure needs restoration."
+        ]
+    },
+    "WEATHER_DAMAGE": {
+        "code": "WD",
+        "description": "Weather Damage",
+        "title_templates": [
+            "Storm Damage to Infrastructure - {location}",
+            "Weather-Related Cable Damage - {location}",
+            "Storm Impact on Network - {location}",
+            "Weather Damage to Equipment - {location}"
+        ],
+        "description_templates": [
+            "Severe weather conditions causing network infrastructure damage. Equipment and cables require assessment and repair.",
+            "Storm damage to fiber infrastructure affecting services. Weather-related damage needs immediate restoration.",
+            "Heavy rain/flooding causing network equipment damage. Weather impact requires infrastructure repair.",
+            "Extreme weather conditions damaging network services. Weather-related damage needs restoration work."
+        ]
+    },
+    "CONSTRUCTION_DAMAGE": {
+        "code": "CD",
+        "description": "Construction Damage",
+        "title_templates": [
+            "Construction Work Cable Cut - {location}",
+            "Excavation Damage to Fiber - {location}",
+            "Construction Impact on Network - {location}",
+            "Digging Damage to Infrastructure - {location}"
+        ],
+        "description_templates": [
+            "Construction work accidentally cutting fiber cables. Infrastructure damage requires immediate repair and coordination with contractors.",
+            "Excavation work damaging underground fiber infrastructure. Construction impact needs restoration and better coordination.",
+            "Construction activities causing network infrastructure damage. Cable damage requires repair and protective measures.",
+            "Digging work severing fiber cables. Construction damage needs immediate restoration and future protection."
+        ]
+    }
+}
+
+def generate_telco_ticket_data(zone: str = None) -> dict:
+    """Generate realistic telco ticket data with proper causals"""
+    import random
+    
+    # Select random causal
+    causal_key = random.choice(list(TELCO_CAUSALS.keys()))
+    causal = TELCO_CAUSALS[causal_key]
+    
+    # Generate location-based data
+    location = zone or "Kuala Lumpur"
+    
+    # Select random template
+    title_template = random.choice(causal["title_templates"])
+    description_template = random.choice(causal["description_templates"])
+    
+    # Generate title and description
+    title = title_template.format(location=location)
+    description = description_template
+    
+    # Generate priority based on causal
+    priority_map = {
+        "DROP_FIBRE": ["MEDIUM", "HIGH"],
+        "CUSTOMER_CPE": ["LOW", "MEDIUM"],
+        "LONGSPAN": ["HIGH", "URGENT"],
+        "RODENT": ["MEDIUM", "HIGH"],
+        "FDP_BREAKDOWN": ["HIGH", "URGENT"],
+        "POWER_SUPPLY": ["HIGH", "URGENT"],
+        "WEATHER_DAMAGE": ["HIGH", "URGENT"],
+        "CONSTRUCTION_DAMAGE": ["MEDIUM", "HIGH"]
+    }
+    
+    priority = random.choice(priority_map.get(causal_key, ["MEDIUM"]))
+    
+    return {
+        "title": title,
+        "description": description,
+        "priority": priority,
+        "causal_code": causal["code"],
+        "causal_description": causal["description"]
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "service": "tickets"}
