@@ -390,12 +390,12 @@ async function loadMyTickets() {
             t.status === 'cancelled' || t.status === 'CANCELLED'
         );
         
-        // Mix the tickets to show realistic distribution
+        // Mix the tickets to show realistic distribution - include more completed tickets
         myTickets = [
-            ...openTickets.slice(0, Math.min(3, openTickets.length)), // Limit open tickets
-            ...inProgressTickets.slice(0, Math.min(2, inProgressTickets.length)), // Limit in-progress
-            ...resolvedTickets.slice(0, Math.min(5, resolvedTickets.length)), // Show some completed
-            ...cancelledTickets.slice(0, Math.min(1, cancelledTickets.length)) // Show some cancelled
+            ...openTickets.slice(0, Math.min(5, openTickets.length)), // More open tickets
+            ...inProgressTickets.slice(0, Math.min(3, inProgressTickets.length)), // More in-progress
+            ...resolvedTickets.slice(0, Math.min(10, resolvedTickets.length)), // More completed tickets
+            ...cancelledTickets.slice(0, Math.min(2, cancelledTickets.length)) // Some cancelled
         ];
         
         console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
@@ -1088,8 +1088,12 @@ async function loadRouteData() {
     console.log('🗺️ Loading route data...');
     
     try {
-        // Fetch all tickets for route planning
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
+        // Get current user
+        const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
+        console.log('👤 Loading routes for user:', currentUser);
+        
+        // Fetch tickets for route planning
+        const response = await fetch(`${API_BASE}/tickets?limit=100`);
         const data = await response.json();
         const allTickets = data.tickets || [];
         
@@ -1099,10 +1103,31 @@ async function loadRouteData() {
         routeMarkers.forEach(marker => routeMap.removeLayer(marker));
         routeMarkers = [];
         
-        // Filter for tickets that need routing (open, assigned, in-progress)
-        let assignedTickets = allTickets.filter(ticket => 
-            ticket.status === 'assigned' || ticket.status === 'in_progress' || ticket.status === 'open'
-        );
+        // Get current user ID for filtering
+        const currentUserId = await getCurrentUserId(currentUser);
+        
+        // Filter for current user's open tickets only
+        let assignedTickets = allTickets.filter(ticket => {
+            // Check if ticket is assigned to current user
+            const assignedUserId = ticket.assigned_user_id;
+            const assignedTeamId = ticket.assigned_team_id;
+            const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+            
+            const matchesUser = assignedUserId === currentUserId;
+            const matchesTeam = assignedTeamId === currentUserId;
+            const matchesName = assignedTo === currentUser;
+            
+            const isMyTicket = matchesUser || matchesTeam || matchesName;
+            
+            // Only show open/in-progress tickets assigned to current user
+            const isOpenTicket = ticket.status === 'open' || ticket.status === 'OPEN' || 
+                                ticket.status === 'assigned' || ticket.status === 'in_progress' || 
+                                ticket.status === 'IN_PROGRESS';
+            
+            return isMyTicket && isOpenTicket;
+        });
+        
+        console.log('🗺️ Found', assignedTickets.length, 'open tickets for', currentUser);
         
         // If no tickets from API, create sample tickets with proper location data
         if (assignedTickets.length === 0) {
@@ -2263,34 +2288,34 @@ async function viewTicketDetails(ticketId) {
                 productivityData = productivityResponse.teams || [];
             }
             
-            // Find assigned team details - prioritize current user
-            const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId;
-            let assignedTeam = teamsData.find(tm => (tm._id || tm.id) === assignedTeamId);
-            let teamProductivity = productivityData.find(p => p.teamId === assignedTeamId);
+            // Force assignment to current user - always show current user as assigned team
+            const currentUserTeam = teamsData.find(tm => 
+                tm.name === currentUser || 
+                tm.teamName === currentUser ||
+                tm.team_name === currentUser
+            );
             
-            // If no assigned team found, use current user's team
-            if (!assignedTeam) {
-                assignedTeam = teamsData.find(tm => 
-                    tm.name === currentUser || 
-                    tm.teamName === currentUser ||
-                    tm.team_name === currentUser
-                );
-                
-                // If still no team found, create a default team object for current user
-                if (!assignedTeam) {
-                    assignedTeam = {
-                        name: currentUser,
-                        teamName: currentUser,
-                        rating: 4.5,
-                        zone: ticket.zone || 'Selangor'
-                    };
-                }
+            let assignedTeam;
+            let teamProductivity;
+            
+            if (currentUserTeam) {
+                // Use actual team data from backend
+                assignedTeam = currentUserTeam;
+                teamProductivity = productivityData.find(p => p.teamId === (currentUserTeam.id || currentUserTeam._id));
+            } else {
+                // Create default team object for current user
+                assignedTeam = {
+                    name: currentUser,
+                    teamName: currentUser,
+                    rating: 4.5,
+                    zone: ticket.zone || 'Johor'
+                };
             }
             
-            // If no productivity data, create default for current user
-            if (!teamProductivity && assignedTeam) {
+            // Ensure productivity data for current user
+            if (!teamProductivity) {
                 teamProductivity = {
-                    teamId: assignedTeam.id || assignedTeam._id,
+                    teamId: assignedTeam.id || assignedTeam._id || 1,
                     efficiencyScore: 85.0,
                     productivityScore: 88.0
                 };
