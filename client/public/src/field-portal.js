@@ -265,27 +265,25 @@ async function loadMyTickets() {
             const matchesTeam = assignedTeamId === currentUserId;
             const matchesName = assignedTo === currentUser;
             
-            // Debug logging for first few tickets
-            if (myAssignedTickets.length < 3) {
-                console.log('🎫 Ticket assignment check:', {
-                    ticketId: ticket._id || ticket.id,
-                    title: ticket.title,
-                    assignedUserId: assignedUserId,
-                    assignedTeamId: assignedTeamId,
-                    assignedTo: assignedTo,
-                    currentUserId: currentUserId,
-                    currentUser: currentUser,
-                    matchesUser: matchesUser,
-                    matchesTeam: matchesTeam,
-                    matchesName: matchesName,
-                    willInclude: matchesUser || matchesTeam || matchesName
-                });
-            }
+            // Debug logging for first few tickets (moved after myAssignedTickets is defined)
+            // This will be handled after the filter is complete
             
             return matchesUser || matchesTeam || matchesName;
         });
         
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
+        
+        // Debug logging for first few tickets
+        if (myAssignedTickets.length > 0) {
+            console.log('🎫 First few assigned tickets:', myAssignedTickets.slice(0, 3).map(ticket => ({
+                ticketId: ticket._id || ticket.id,
+                title: ticket.title,
+                status: ticket.status,
+                assignedUserId: ticket.assigned_user_id,
+                assignedTeamId: ticket.assigned_team_id,
+                assignedTo: ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam
+            })));
+        }
         
         // Get tickets by status for current user with mixed statuses (handle both cases)
         const openTickets = myAssignedTickets.filter(t => 
