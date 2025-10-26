@@ -200,6 +200,10 @@ def seed_database():
             category = causal["category"]
             priority = causal["priority"]
             
+            # Debug output for first few tickets
+            if i <= 5:
+                print(f"🎫 Ticket {i}: {title} - {description[:50]}...")
+            
             # Adjust priority based on status
             if random.random() < 0.1:  # 10% chance of emergency
                 priority = "URGENT"
@@ -264,8 +268,14 @@ def seed_database():
         # Insert sample assignments
         print("📋 Creating sample assignments...")
         for i in range(1, 31):  # Create 30 assignments
-            ticket_id = random.randint(1, 50)
-            team_id = random.randint(1, 5)
+            # Get actual ticket IDs from the database
+            ticket_result = conn.execute(text("SELECT id FROM tickets ORDER BY RANDOM() LIMIT 1"))
+            ticket_row = ticket_result.fetchone()
+            if not ticket_row:
+                continue
+            ticket_id = ticket_row[0]
+            
+            team_id = random.randint(1, 150)
             assigned_by = random.randint(1, 5)
             status = random.choice(["assigned", "in_progress", "completed"])
             
@@ -283,7 +293,12 @@ def seed_database():
         # Insert sample comments
         print("💬 Creating sample comments...")
         for i in range(1, 21):  # Create 20 comments
-            ticket_id = random.randint(1, 50)
+            # Get actual ticket IDs from the database
+            ticket_result = conn.execute(text("SELECT id FROM tickets ORDER BY RANDOM() LIMIT 1"))
+            ticket_row = ticket_result.fetchone()
+            if not ticket_row:
+                continue
+            ticket_id = ticket_row[0]
             user_id = random.randint(1, 5)
             comment_text = f"This is a sample comment {i} for ticket {ticket_id}"
             
