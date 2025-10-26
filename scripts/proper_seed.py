@@ -38,17 +38,47 @@ def seed_database():
                 "is_active": True
             })
         
-        # Insert 150 sample teams across Malaysian states
-        print("🏢 Creating 150 sample teams...")
-        malaysian_states = [
-            "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
-            "Pahang", "Penang", "Perak", "Perlis", "Sabah", "Sarawak", 
-            "Selangor", "Terengganu", "Kuala Lumpur", "Putrajaya"
+        # Insert 150 sample teams with Malaysian cabinet members
+        print("🏢 Creating 150 sample teams with Malaysian cabinet members...")
+        
+        # Malaysian cabinet members and their states
+        malaysian_cabinet = [
+            {"name": "Anwar Ibrahim", "state": "Kuala Lumpur", "district": "Kuala Lumpur"},
+            {"name": "Ahmad Zahid Hamidi", "state": "Perak", "district": "Bagan Datuk"},
+            {"name": "Fadillah Yusof", "state": "Sarawak", "district": "Petra Jaya"},
+            {"name": "Mohamed Azmin Ali", "state": "Selangor", "district": "Gombak"},
+            {"name": "Rafizi Ramli", "state": "Selangor", "district": "Pandan"},
+            {"name": "Nga Kor Ming", "state": "Perak", "district": "Teluk Intan"},
+            {"name": "Zulkifli Aziz", "state": "Kedah", "district": "Kubang Pasu"},
+            {"name": "Steven Sim", "state": "Penang", "district": "Bukit Mertajam"},
+            {"name": "Shahidan Kassim", "state": "Perlis", "district": "Arau"},
+            {"name": "Saarani Mohamad", "state": "Perak", "district": "Kinta"},
+            {"name": "Muhammad Sanusi", "state": "Kedah", "district": "Jerlun"},
+            {"name": "Wan Saiful Wan Jan", "state": "Kedah", "district": "Tumpat"},
+            {"name": "Ahmad Faizal Azumu", "state": "Perak", "district": "Tambun"},
+            {"name": "Ismail Sabri Yaakob", "state": "Pahang", "district": "Bera"},
+            {"name": "Hishammuddin Hussein", "state": "Johor", "district": "Sembrong"},
+            {"name": "Khairy Jamaluddin", "state": "Selangor", "district": "Rembau"},
+            {"name": "Muhyiddin Yassin", "state": "Johor", "district": "Pagoh"},
+            {"name": "Azalina Othman", "state": "Johor", "district": "Pengerang"},
+            {"name": "Tengku Zafrul Aziz", "state": "Selangor", "district": "Kuala Selangor"},
+            {"name": "Wan Junaidi Tuanku Jaafar", "state": "Sarawak", "district": "Santubong"},
+            {"name": "Rosmah Mansor", "state": "Selangor", "district": "Kuala Selangor"},
+            {"name": "Najib Razak", "state": "Pahang", "district": "Pekan"},
+            {"name": "Mahathir Mohamad", "state": "Kedah", "district": "Kubang Pasu"},
+            {"name": "Lim Guan Eng", "state": "Penang", "district": "Bagan"},
+            {"name": "Gobind Singh Deo", "state": "Selangor", "district": "Puchong"},
+            {"name": "Teresa Kok", "state": "Selangor", "district": "Seputeh"},
+            {"name": "Tony Pua", "state": "Selangor", "district": "Petaling Jaya"},
+            {"name": "Hannah Yeoh", "state": "Selangor", "district": "Segambut"},
+            {"name": "Charles Santiago", "state": "Selangor", "district": "Klang"},
+            {"name": "Wong Chen", "state": "Selangor", "district": "Kelana Jaya"}
         ]
+        
         teams_data = []
         for i in range(1, 151):
-            state = malaysian_states[(i - 1) % len(malaysian_states)]
-            teams_data.append((f"Team {i:03d}", state))
+            cabinet_member = malaysian_cabinet[(i - 1) % len(malaysian_cabinet)]
+            teams_data.append((cabinet_member["name"], cabinet_member["state"]))
 
         for name, zone in teams_data:
             try:
@@ -188,7 +218,9 @@ def seed_database():
 
             # Random location data (Malaysia coordinates)
             location = f"Sample Address {i}"
-            zone = random.choice(malaysian_states)
+            # Get zone from the cabinet member's state
+            cabinet_member = malaysian_cabinet[(i - 1) % len(malaysian_cabinet)]
+            zone = cabinet_member["state"]
             # Malaysia coordinates: roughly 1.0-7.0 N, 99.0-120.0 E
             lat = round(random.uniform(1.0, 7.0), 6)
             lng = round(random.uniform(99.0, 120.0), 6)

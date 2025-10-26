@@ -158,7 +158,7 @@ async function setCurrentUser() {
 
 // Update user display in header
 function updateUserDisplay() {
-    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
+    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim'; // Malaysian PM
     const userNameElement = document.getElementById('user-name');
     const userRoleElement = document.getElementById('user-role');
     
@@ -342,7 +342,7 @@ async function loadMyTickets() {
             container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading your tickets...</p></div>';
         }
         
-        // Get current user from localStorage or use default
+        // Get current user from localStorage or use default (Anwar Ibrahim)
         const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Current user:', currentUser);
         
