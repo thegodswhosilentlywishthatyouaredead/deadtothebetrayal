@@ -265,17 +265,50 @@ async function loadMyTickets() {
             const matchesTeam = assignedTeamId === currentUserId;
             const matchesName = assignedTo === currentUser;
             
+            // Debug logging for first few tickets
+            if (myAssignedTickets.length < 3) {
+                console.log('🎫 Ticket assignment check:', {
+                    ticketId: ticket._id || ticket.id,
+                    title: ticket.title,
+                    assignedUserId: assignedUserId,
+                    assignedTeamId: assignedTeamId,
+                    assignedTo: assignedTo,
+                    currentUserId: currentUserId,
+                    currentUser: currentUser,
+                    matchesUser: matchesUser,
+                    matchesTeam: matchesTeam,
+                    matchesName: matchesName,
+                    willInclude: matchesUser || matchesTeam || matchesName
+                });
+            }
+            
             return matchesUser || matchesTeam || matchesName;
         });
         
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
         
-        // Get tickets by status for current user
-        const openTickets = myAssignedTickets.filter(t => t.status === 'open' || t.status === 'assigned');
-        const inProgressTickets = myAssignedTickets.filter(t => t.status === 'in_progress');
-        const resolvedTickets = myAssignedTickets.filter(t => t.status === 'resolved' || t.status === 'closed' || t.status === 'completed');
+        // Get tickets by status for current user with mixed statuses (handle both cases)
+        const openTickets = myAssignedTickets.filter(t => 
+            t.status === 'open' || t.status === 'OPEN' || t.status === 'assigned'
+        );
+        const inProgressTickets = myAssignedTickets.filter(t => 
+            t.status === 'in_progress' || t.status === 'IN_PROGRESS'
+        );
+        const resolvedTickets = myAssignedTickets.filter(t => 
+            t.status === 'resolved' || t.status === 'closed' || 
+            t.status === 'completed' || t.status === 'COMPLETED'
+        );
+        const cancelledTickets = myAssignedTickets.filter(t => 
+            t.status === 'cancelled' || t.status === 'CANCELLED'
+        );
         
-        myTickets = [...openTickets, ...inProgressTickets, ...resolvedTickets];
+        // Mix the tickets to show realistic distribution
+        myTickets = [
+            ...openTickets.slice(0, Math.min(3, openTickets.length)), // Limit open tickets
+            ...inProgressTickets.slice(0, Math.min(2, inProgressTickets.length)), // Limit in-progress
+            ...resolvedTickets.slice(0, Math.min(5, resolvedTickets.length)), // Show some completed
+            ...cancelledTickets.slice(0, Math.min(1, cancelledTickets.length)) // Show some cancelled
+        ];
         
         console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
             open: openTickets.length,
