@@ -233,19 +233,50 @@ async function getCurrentUserId(currentUser) {
     }
 }
 
+// Get current user zone from team data
+function getCurrentUserZone(currentUser) {
+    // Cache user zone to avoid repeated API calls
+    if (window.userZoneCache && window.userZoneCache[currentUser]) {
+        return window.userZoneCache[currentUser];
+    }
+    
+    // Initialize cache if not exists
+    if (!window.userZoneCache) {
+        window.userZoneCache = {};
+    }
+    
+    // This will be populated when teams are loaded
+    return null;
+}
+
+// Cache user zone when teams are loaded
+function cacheUserZone(currentUser, zone) {
+    if (!window.userZoneCache) {
+        window.userZoneCache = {};
+    }
+    window.userZoneCache[currentUser] = zone;
+}
+
 // Load my assigned tickets
 async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
     
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=1000`);
-        const data = await response.json();
-        
-        console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
+        // Show loading indicator
+        const container = document.getElementById('my-tickets-list');
+        if (container) {
+            container.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><p class="mt-2">Loading your tickets...</p></div>';
+        }
         
         // Get current user from localStorage or use default
         const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
         console.log('👤 Current user:', currentUser);
+        
+        // Optimize API call - reduce limit for faster loading
+        const response = await fetch(`${API_BASE}/tickets?limit=100`);
+        const data = await response.json();
+        
+        console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
         
         // Filter tickets assigned to current user only
         const allTickets = data.tickets || [];
@@ -265,10 +296,19 @@ async function loadMyTickets() {
             const matchesTeam = assignedTeamId === currentUserId;
             const matchesName = assignedTo === currentUser;
             
-            // Debug logging for first few tickets (moved after myAssignedTickets is defined)
-            // This will be handled after the filter is complete
+            // More specific matching for logged user
+            const isMyTicket = matchesUser || matchesTeam || matchesName;
             
-            return matchesUser || matchesTeam || matchesName;
+            // Additional check: if no specific assignment, check if ticket is in user's zone
+            if (!isMyTicket && ticket.zone) {
+                // Get user's zone from team data
+                const userZone = getCurrentUserZone(currentUser);
+                if (userZone && ticket.zone === userZone) {
+                    return true; // Assign tickets in user's zone if no specific assignment
+                }
+            }
+            
+            return isMyTicket;
         });
         
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
@@ -452,18 +492,46 @@ function displayMyTickets(filter = 'all') {
     
     container.innerHTML = '';
     
-    // Filter tickets based on status
+    // Filter tickets based on status with improved matching
     let filteredTickets = myTickets;
     if (filter !== 'all') {
         filteredTickets = myTickets.filter(ticket => {
-            const status = ticket.status.replace('_', '-');
+            const status = ticket.status;
+            
+            // Handle different status formats (uppercase/lowercase)
+            const normalizedStatus = status.toLowerCase().replace('_', '-');
+            const normalizedFilter = filter.toLowerCase();
             
             // Handle 'resolved' filter to include both resolved and closed
-            if (filter === 'resolved') {
-                return status === 'resolved' || status === 'closed' || status === 'completed';
+            if (normalizedFilter === 'resolved') {
+                return normalizedStatus === 'resolved' || 
+                       normalizedStatus === 'closed' || 
+                       normalizedStatus === 'completed' ||
+                       status === 'COMPLETED';
             }
             
-            return status === filter;
+            // Handle 'in-progress' filter
+            if (normalizedFilter === 'in-progress') {
+                return normalizedStatus === 'in-progress' || 
+                       normalizedStatus === 'in_progress' ||
+                       status === 'IN_PROGRESS';
+            }
+            
+            // Handle 'open' filter
+            if (normalizedFilter === 'open') {
+                return normalizedStatus === 'open' || 
+                       normalizedStatus === 'assigned' ||
+                       status === 'OPEN';
+            }
+            
+            // Handle 'cancelled' filter
+            if (normalizedFilter === 'cancelled') {
+                return normalizedStatus === 'cancelled' ||
+                       status === 'CANCELLED';
+            }
+            
+            // Default matching
+            return normalizedStatus === normalizedFilter || status === filter.toUpperCase();
         });
     }
     
@@ -505,6 +573,7 @@ function filterTickets(status) {
         activeBtn.classList.add('active');
     }
     
+    // Use displayMyTickets with the filter
     displayMyTickets(status);
 }
 
@@ -1801,32 +1870,7 @@ function submitExpense() {
     loadExpenseData();
 }
 
-// Filter tickets
-function filterTickets(status) {
-    const container = document.getElementById('my-tickets-list');
-    container.innerHTML = '';
-    
-    let filteredTickets = myTickets;
-    if (status !== 'all') {
-        filteredTickets = myTickets.filter(ticket => ticket.status === status);
-    }
-    
-    if (filteredTickets.length === 0) {
-        container.innerHTML = `
-            <div class="text-center py-5">
-                <i class="fas fa-filter fa-3x text-muted mb-3"></i>
-                <h5 class="text-muted">No tickets found</h5>
-                <p class="text-muted">No tickets match the selected filter.</p>
-            </div>
-        `;
-        return;
-    }
-    
-    filteredTickets.forEach(ticket => {
-        const ticketElement = createTicketCard(ticket);
-        container.appendChild(ticketElement);
-    });
-}
+// Filter tickets (removed duplicate - using displayMyTickets instead)
 
 // Utility functions
 function showNotification(message, type = 'info') {
