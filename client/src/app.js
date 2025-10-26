@@ -5949,23 +5949,6 @@ async function loadZoneDetails() {
     }
 }
 
-// Standardized ticket name function
-function getTicketName(ticket) {
-    // Use consistent ticket naming format (CTT_Num)
-    if (ticket.ticket_number) {
-        return ticket.ticket_number;
-    }
-    if (ticket.ticketNumber) {
-        return ticket.ticketNumber;
-    }
-    if (ticket.id) {
-        // Generate CTT_Num format based on ticket ID
-        const ticketId = typeof ticket.id === 'string' ? parseInt(ticket.id) : ticket.id;
-        return `CTT_${String(ticketId).padStart(3, '0')}`;
-    }
-    // Fallback with random number
-    return `CTT_${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
-}
 
 // Standardized ticket display function
 function createTicketDisplay(ticket) {
