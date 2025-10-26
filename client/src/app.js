@@ -829,7 +829,7 @@ async function loadRecentTickets() {
             const sampleTickets = [
                 {
                     _id: '1',
-                    ticketNumber: 'CTT_01_KUALA_LUMPUR',
+                    ticketNumber: 'CTT_001',
                     zone: 'Kuala Lumpur',
                     title: 'Network Breakdown - NTT Class 1 (Major)',
                     description: 'Complete network infrastructure failure - NTT Class 1 major breakdown affecting all customer services and network connectivity',
@@ -841,7 +841,7 @@ async function loadRecentTickets() {
                 },
                 {
                     _id: '2',
-                    ticketNumber: 'CTT_02_SELANGOR',
+                    ticketNumber: 'CTT_002',
                     zone: 'Selangor',
                     title: 'Network Breakdown - NTT Class 2 (Intermediate)',
                     description: 'Intermediate network infrastructure issues - NTT Class 2 breakdown affecting multiple customer services and network segments',
@@ -4618,40 +4618,20 @@ function getPriorityColor(priority) {
 
 // Get ticket name in CTT format
 function getTicketName(ticket) {
-    // Extract zone number from zone field
-    let zoneNumber = '01'; // Default zone number
-    
-    if (ticket.zone) {
-        // Try to extract number from zone name
-        const zoneMatch = ticket.zone.match(/(\d+)/);
-        if (zoneMatch) {
-            zoneNumber = zoneMatch[1].padStart(2, '0');
-        } else {
-            // Map zone names to numbers
-            const zoneMap = {
-                'Kuala Lumpur': '01',
-                'Selangor': '02', 
-                'Penang': '03',
-                'Johor': '04',
-                'Perak': '05',
-                'Kedah': '06',
-                'Kelantan': '07',
-                'Terengganu': '08',
-                'Pahang': '09',
-                'Negeri Sembilan': '10',
-                'Melaka': '11',
-                'Sabah': '12',
-                'Sarawak': '13',
-                'Putrajaya': '14',
-                'Perlis': '15'
-            };
-            zoneNumber = zoneMap[ticket.zone] || '01';
-        }
+    // Use consistent ticket naming format (CTT_Num)
+    if (ticket.ticket_number) {
+        return ticket.ticket_number;
     }
-    
-    const ticketName = `CTT-${zoneNumber}`;
-    console.log('🎫 Generated ticket name:', ticketName, 'for zone:', ticket.zone);
-    return ticketName;
+    if (ticket.ticketNumber) {
+        return ticket.ticketNumber;
+    }
+    if (ticket.id) {
+        // Generate CTT_Num format based on ticket ID
+        const ticketId = typeof ticket.id === 'string' ? parseInt(ticket.id) : ticket.id;
+        return `CTT_${String(ticketId).padStart(3, '0')}`;
+    }
+    // Fallback with random number
+    return `CTT_${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
 }
 
 // Get team name by ID
@@ -5971,7 +5951,7 @@ async function loadZoneDetails() {
 
 // Standardized ticket name function
 function getTicketName(ticket) {
-    // Use consistent ticket naming format (CTT_Num_Zone)
+    // Use consistent ticket naming format (CTT_Num)
     if (ticket.ticket_number) {
         return ticket.ticket_number;
     }
@@ -5979,16 +5959,12 @@ function getTicketName(ticket) {
         return ticket.ticketNumber;
     }
     if (ticket.id) {
-        // Generate CTT_Num_Zone format based on ticket ID and zone
+        // Generate CTT_Num format based on ticket ID
         const ticketId = typeof ticket.id === 'string' ? parseInt(ticket.id) : ticket.id;
-        const zone = ticket.zone || 'GEN';
-        const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
-        return `CTT_${String(ticketId).padStart(2, '0')}_${zoneSuffix}`;
+        return `CTT_${String(ticketId).padStart(3, '0')}`;
     }
-    // Fallback with random number and zone
-    const zone = ticket.zone || 'GEN';
-    const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
-    return `CTT_${String(Math.floor(Math.random() * 99) + 1).padStart(2, '0')}_${zoneSuffix}`;
+    // Fallback with random number
+    return `CTT_${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
 }
 
 // Standardized ticket display function

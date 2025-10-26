@@ -38,13 +38,17 @@ def seed_database():
                 "is_active": True
             })
         
-        # Insert 150 sample teams across zones
+        # Insert 150 sample teams across Malaysian states
         print("🏢 Creating 150 sample teams...")
-        zones = ["North Zone", "South Zone", "East Zone", "West Zone", "Central Zone"]
+        malaysian_states = [
+            "Johor", "Kedah", "Kelantan", "Melaka", "Negeri Sembilan", 
+            "Pahang", "Penang", "Perak", "Perlis", "Sabah", "Sarawak", 
+            "Selangor", "Terengganu", "Kuala Lumpur", "Putrajaya"
+        ]
         teams_data = []
         for i in range(1, 151):
-            zone = zones[(i - 1) % len(zones)]
-            teams_data.append((f"Team {i:03d}", zone))
+            state = malaysian_states[(i - 1) % len(malaysian_states)]
+            teams_data.append((f"Team {i:03d}", state))
 
         for name, zone in teams_data:
             try:
@@ -70,7 +74,7 @@ def seed_database():
 
         now = datetime.utcnow()
         for i in range(1, 1001):
-            ticket_number = f"TKT-{i:04d}"
+            ticket_number = f"CTT_{i:03d}"
             title = f"Sample Ticket {i}"
             description = f"This is a sample ticket description for ticket {i}"
             category = random.choice(ticket_categories)
@@ -87,12 +91,13 @@ def seed_database():
                 hours_to_complete = random.randint(1, 12)
                 completed_at = created_at + timedelta(hours=hours_to_complete)
 
-            # Random location data (NYC-ish bbox as placeholder)
+            # Random location data (Malaysia coordinates)
             location = f"Sample Address {i}"
-            zone = random.choice(zones)
-            lat = round(random.uniform(40.50, 40.90), 6)
-            lng = round(random.uniform(-74.25, -73.70), 6)
-            coordinates = f"{lat},{lng}"
+            zone = random.choice(malaysian_states)
+            # Malaysia coordinates: roughly 1.0-7.0 N, 99.0-120.0 E
+            lat = round(random.uniform(1.0, 7.0), 6)
+            lng = round(random.uniform(99.0, 120.0), 6)
+            coordinates = f"{lng},{lat}"
 
             # Random assignment to one of the 150 teams
             assigned_team_id = random.randint(1, 150) if status in ("OPEN", "IN_PROGRESS", "COMPLETED") else None

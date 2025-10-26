@@ -8,9 +8,9 @@ let routeMap = null;
 let routeMarkers = [];
 let charts = {};
 
-// Get ticket name in CTT_Num_Zone format
+// Get ticket name in CTT_Num format
 function getTicketName(ticket) {
-    // Use consistent ticket naming format (CTT_Num_Zone)
+    // Use consistent ticket naming format (CTT_Num)
     if (ticket.ticket_number) {
         return ticket.ticket_number;
     }
@@ -18,16 +18,12 @@ function getTicketName(ticket) {
         return ticket.ticketNumber;
     }
     if (ticket.id) {
-        // Generate CTT_Num_Zone format based on ticket ID and zone
+        // Generate CTT_Num format based on ticket ID
         const ticketId = typeof ticket.id === 'string' ? parseInt(ticket.id) : ticket.id;
-        const zone = ticket.zone || 'GEN';
-        const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
-        return `CTT_${String(ticketId).padStart(2, '0')}_${zoneSuffix}`;
+        return `CTT_${String(ticketId).padStart(3, '0')}`;
     }
-    // Fallback with random number and zone
-    const zone = ticket.zone || 'GEN';
-    const zoneSuffix = zone.replace(' ', '_').replace(',', '').toUpperCase();
-    return `CTT_${String(Math.floor(Math.random() * 99) + 1).padStart(2, '0')}_${zoneSuffix}`;
+    // Fallback with random number
+    return `CTT_${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
 }
 
 // Get team name by ID
@@ -319,7 +315,7 @@ function generateSampleCompletedTickets(currentUser, userZone) {
         completedTickets.push({
             _id: `completed_${i}`,
             id: `completed_${i}`,
-            ticketNumber: `CTT_${i}_${userZone?.toUpperCase() || 'KL'}`,
+            ticketNumber: `CTT_${String(i).padStart(3, '0')}`,
             title: `Completed Ticket ${i} - Network Repair`,
             description: `Successfully completed network repair task in ${userZone || 'Kuala Lumpur'}`,
             status: 'completed',
@@ -459,7 +455,7 @@ async function loadMyTickets() {
             myTickets = [
                 {
                     _id: '1',
-                    ticketNumber: 'CTT_01_KUALA_LUMPUR',
+                    ticketNumber: 'CTT_001',
                     zone: 'Kuala Lumpur',
                     title: 'Network Breakdown - NTT Class 1 (Major)',
                     description: 'Complete network infrastructure failure - NTT Class 1 major breakdown affecting all customer services and network connectivity',
@@ -482,7 +478,7 @@ async function loadMyTickets() {
                 },
                 {
                     _id: '2',
-                    ticketNumber: 'CTT_02_SELANGOR',
+                    ticketNumber: 'CTT_002',
                     zone: 'Selangor',
                     title: 'Network Breakdown - NTT Class 2 (Intermediate)',
                     description: 'Intermediate network infrastructure issues - NTT Class 2 breakdown affecting multiple customer services and network segments',
@@ -505,7 +501,7 @@ async function loadMyTickets() {
                 },
                 {
                     _id: '3',
-                    ticketNumber: 'CTT_03_PENANG',
+                    ticketNumber: 'CTT_003',
                     zone: 'Penang',
                     title: 'Customer - Drop Fiber',
                     description: 'Customer drop fiber connection failure - fiber optic cable damage or termination issues requiring immediate field repair',
@@ -529,7 +525,7 @@ async function loadMyTickets() {
                 },
                 {
                     _id: '4',
-                    ticketNumber: 'CTT_04_JOHOR',
+                    ticketNumber: 'CTT_004',
                     zone: 'Johor',
                     title: 'Customer - CPE',
                     description: 'Customer Premises Equipment (CPE) troubleshooting - router, modem, or network equipment configuration and connectivity issues',
@@ -552,7 +548,7 @@ async function loadMyTickets() {
                 },
                 {
                     _id: '5',
-                    ticketNumber: 'CTT_05_PERAK',
+                    ticketNumber: 'CTT_005',
                     zone: 'Perak',
                     title: 'Customer - FDP Breakdown',
                     description: 'Fiber Distribution Point (FDP) equipment failure - distribution cabinet or fiber optic splitter issues affecting multiple customer connections',

@@ -36,10 +36,9 @@ def get_db():
         db.close()
 
 def generate_ticket_number(db: Session, zone: str = None) -> str:
-    """Generate unique ticket number in CTT_Num_Zone format"""
+    """Generate unique ticket number in CTT_Num format"""
     count = db.query(Ticket).count()
-    zone_suffix = zone.replace(' ', '_').replace(',', '').upper() if zone else 'GEN'
-    return f"CTT_{count + 1:02d}_{zone_suffix}"
+    return f"CTT_{count + 1:03d}"
 
 @app.get("/health")
 async def health_check():
