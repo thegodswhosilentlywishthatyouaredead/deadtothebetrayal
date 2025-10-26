@@ -482,6 +482,13 @@ function createTicketCard(ticket) {
     const card = document.createElement('div');
     card.className = 'ticket-card';
     
+    // Debug ticket ID
+    console.log('🎫 Creating ticket card for:', {
+        id: ticket._id || ticket.id,
+        title: ticket.title,
+        status: ticket.status
+    });
+    
     // Handle different data structures from backend
     const ticketNumber = getTicketName(ticket); // Use CTT format
     const estimatedDuration = ticket.estimatedDuration || 90;
@@ -607,7 +614,12 @@ function formatStatus(status) {
 // Get ticket action buttons based on status
 function getTicketActionButtons(ticket) {
     const status = ticket.status.replace('_', '-');
-    const ticketId = ticket._id;
+    const ticketId = ticket._id || ticket.id;
+    
+    if (!ticketId) {
+        console.error('❌ No ticket ID found for ticket:', ticket);
+        return '<span class="text-muted">No ID</span>';
+    }
     
     switch (status) {
         case 'open':
@@ -1709,12 +1721,7 @@ function pauseTicket(ticketId) {
     }
 }
 
-function viewTicketDetails(ticketId) {
-    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
-    if (ticket) {
-        alert(`Ticket Details:\n\nTitle: ${ticket.title}\nDescription: ${ticket.description}\nCustomer: ${ticket.customer.name}\nPhone: ${ticket.customer.phone}\nAddress: ${ticket.location.address}`);
-    }
-}
+// Old viewTicketDetails function removed - using the comprehensive one below
 
 function addExpenseForTicket(ticketId) {
     showAddExpenseModal();
@@ -2086,9 +2093,21 @@ let currentReportTicket = null;
 async function viewTicketDetails(ticketId) {
     console.log('📄 Opening ticket details for:', ticketId);
     
-    const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
+    // Handle undefined or invalid ticket ID
+    if (!ticketId || ticketId === 'undefined' || ticketId === 'null') {
+        console.error('❌ Invalid ticket ID:', ticketId);
+        showNotification('Invalid ticket ID', 'error');
+        return;
+    }
+    
+    const ticket = myTickets.find(t => {
+        const tId = t._id || t.id;
+        return tId == ticketId || tId === ticketId || tId === parseInt(ticketId);
+    });
+    
     if (!ticket) {
         console.error('❌ Ticket not found:', ticketId);
+        console.log('Available tickets:', myTickets.map(t => ({ id: t._id || t.id, title: t.title })));
         showNotification('Ticket not found', 'error');
         return;
     }
