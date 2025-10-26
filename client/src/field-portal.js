@@ -125,10 +125,23 @@ async function setCurrentUser() {
             const teams = data.teams || [];
             
             if (teams.length > 0) {
-                // Use a consistent field team member based on some identifier
-                const userId = localStorage.getItem('user_id') || '1';
-                const memberIndex = parseInt(userId) % teams.length;
-                const currentUser = teams[memberIndex].name;
+                // Use the team ID from authentication if available
+                const teamId = localStorage.getItem('aiff_team_id');
+                let currentUser = 'Anwar Ibrahim'; // Default fallback
+                
+                if (teamId) {
+                    // Find the team by ID
+                    const team = teams.find(t => (t.id || t._id) == teamId);
+                    if (team) {
+                        currentUser = team.name || team.teamName || team.team_name;
+                        console.log('👤 Found authenticated team:', currentUser, 'from team ID:', teamId);
+                    }
+                } else {
+                    // If no team ID, use a consistent selection based on user preference
+                    const userId = localStorage.getItem('user_id') || '1';
+                    const memberIndex = parseInt(userId) % teams.length;
+                    currentUser = teams[memberIndex].name || teams[memberIndex].teamName;
+                }
                 
                 localStorage.setItem('currentUser', currentUser);
                 console.log('👤 Set current field team member from backend:', currentUser);
@@ -257,6 +270,43 @@ function cacheUserZone(currentUser, zone) {
     window.userZoneCache[currentUser] = zone;
 }
 
+// Get current user's zone from backend
+async function getCurrentUserZoneFromBackend(currentUser) {
+    try {
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        const teams = data.teams || [];
+        
+        // Find the current user's team
+        const userTeam = teams.find(team => 
+            team.name === currentUser || 
+            team.teamName === currentUser ||
+            team.team_name === currentUser
+        );
+        
+        if (userTeam && userTeam.zone) {
+            console.log('🌍 Found user zone:', userTeam.zone, 'for user:', currentUser);
+            return userTeam.zone;
+        }
+        
+        // Fallback: determine zone based on user name
+        const zoneMap = {
+            'Anwar Ibrahim': 'Kuala Lumpur',
+            'Najib Razak': 'Selangor', 
+            'Rosmah Mansor': 'Penang',
+            'Azalina Othman': 'Johor'
+        };
+        
+        const fallbackZone = zoneMap[currentUser] || 'Kuala Lumpur';
+        console.log('🌍 Using fallback zone:', fallbackZone, 'for user:', currentUser);
+        return fallbackZone;
+        
+    } catch (error) {
+        console.error('Error getting user zone:', error);
+        return 'Kuala Lumpur'; // Default fallback
+    }
+}
+
 // Load my assigned tickets
 async function loadMyTickets() {
     console.log('🎫 Loading field portal tickets from', API_BASE);
@@ -269,7 +319,7 @@ async function loadMyTickets() {
         }
         
         // Get current user from localStorage or use default
-        const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+        const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Current user:', currentUser);
         
         // Optimize API call - reduce limit for faster loading
@@ -285,6 +335,10 @@ async function loadMyTickets() {
         const currentUserId = await getCurrentUserId(currentUser);
         console.log('👤 Current user ID:', currentUserId);
         
+        // Get current user's zone for zone-based filtering
+        const userZone = await getCurrentUserZoneFromBackend(currentUser);
+        console.log('🌍 Current user zone:', userZone);
+        
         const myAssignedTickets = allTickets.filter(ticket => {
             // Check multiple assignment fields
             const assignedUserId = ticket.assigned_user_id;
@@ -299,16 +353,12 @@ async function loadMyTickets() {
             // More specific matching for logged user
             const isMyTicket = matchesUser || matchesTeam || matchesName;
             
-            // Additional check: if no specific assignment, check if ticket is in user's zone
-            if (!isMyTicket && ticket.zone) {
-                // Get user's zone from team data
-                const userZone = getCurrentUserZone(currentUser);
-                if (userZone && ticket.zone === userZone) {
-                    return true; // Assign tickets in user's zone if no specific assignment
-                }
-            }
+            // Zone-based filtering: only show tickets from user's zone
+            const ticketZone = ticket.zone;
+            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
             
-            return isMyTicket;
+            // Ticket must be either assigned to user OR in user's zone
+            return (isMyTicket || isInUserZone) && isInUserZone;
         });
         
         console.log('🎫 Tickets assigned to', currentUser, ':', myAssignedTickets.length);
@@ -2192,7 +2242,7 @@ async function viewTicketDetails(ticketId) {
             showNotification('Loading ticket details...', 'info');
             
             // Get current user from localStorage
-            const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+            const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
             
             // Fetch additional data for comprehensive details
             const [teamsRes, productivityRes] = await Promise.all([
@@ -2451,7 +2501,7 @@ function populateTicketDetailsContent(ticket, assignedTeam, teamProductivity) {
     const statusClass = statusColors[ticket.status] || 'status-open';
     
     // Team information - use current logged-in user if no assigned team
-    const currentUser = localStorage.getItem('currentUser') || 'Hajiji Noor';
+    const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
     const teamName = assignedTeam ? (assignedTeam.name || assignedTeam.teamName || 'Unknown Team') : currentUser;
     const teamRating = assignedTeam ? (assignedTeam.rating || 4.5).toFixed(1) : '4.5';
     const teamEfficiency = teamProductivity ? (teamProductivity.efficiencyScore || 85).toFixed(1) : '85.0';
