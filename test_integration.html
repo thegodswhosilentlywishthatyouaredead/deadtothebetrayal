@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIFF Ticketv2 Integration Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>AIFF Ticketv2 Integration Test</h1>
+    
+    <div class="test-section info">
+        <h3>Testing API Endpoints</h3>
+        <p>This page tests the integration of ticketv2 data into the main dashboard.</p>
+    </div>
+    
+    <div id="results"></div>
+    
+    <script>
+        const API_BASE = 'http://localhost:8085/api';
+        
+        async function testTicketv2Integration() {
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                // Test ticketv2 API
+                console.log('Testing ticketv2 API...');
+                const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=5`);
+                const ticketv2Data = await ticketv2Response.json();
+                
+                resultsDiv.innerHTML += `
+                    <div class="test-section success">
+                        <h3>✅ Ticketv2 API Test</h3>
+                        <p><strong>API Version:</strong> ${ticketv2Data.api_version}</p>
+                        <p><strong>Total Tickets:</strong> ${ticketv2Data.total_tickets}</p>
+                        <p><strong>Total Teams:</strong> ${ticketv2Data.total_teams}</p>
+                        <p><strong>Total Assignments:</strong> ${ticketv2Data.total_assignments}</p>
+                        <p><strong>Features:</strong> ${ticketv2Data.features.length} features available</p>
+                    </div>
+                `;
+                
+                // Test recent tickets
+                if (ticketv2Data.tickets && ticketv2Data.tickets.tickets && ticketv2Data.tickets.tickets.length > 0) {
+                    const recentTickets = ticketv2Data.tickets.tickets.slice(0, 3);
+                    resultsDiv.innerHTML += `
+                        <div class="test-section success">
+                            <h3>✅ Recent Tickets Test</h3>
+                            <p><strong>Sample Tickets:</strong></p>
+                            <pre>${JSON.stringify(recentTickets.map(t => ({
+                                ticket_number: t.ticket_number,
+                                title: t.title,
+                                status: t.status,
+                                priority: t.priority,
+                                zone: t.zone
+                            })), null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="test-section error">
+                            <h3>❌ Recent Tickets Test</h3>
+                            <p>No tickets found in ticketv2 data</p>
+                        </div>
+                    `;
+                }
+                
+                // Test teams data
+                if (ticketv2Data.teams && ticketv2Data.teams.teams && ticketv2Data.teams.teams.length > 0) {
+                    const sampleTeams = ticketv2Data.teams.teams.slice(0, 3);
+                    resultsDiv.innerHTML += `
+                        <div class="test-section success">
+                            <h3>✅ Teams Data Test</h3>
+                            <p><strong>Sample Teams:</strong></p>
+                            <pre>${JSON.stringify(sampleTeams.map(t => ({
+                                name: t.name,
+                                zone: t.zone,
+                                status: t.status,
+                                productivity_score: t.productivity_score,
+                                efficiency_score: t.efficiency_score
+                            })), null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="test-section error">
+                            <h3>❌ Teams Data Test</h3>
+                            <p>No teams found in ticketv2 data</p>
+                        </div>
+                    `;
+                }
+                
+                // Test analytics data
+                if (ticketv2Data.analytics) {
+                    resultsDiv.innerHTML += `
+                        <div class="test-section success">
+                            <h3>✅ Analytics Data Test</h3>
+                            <p><strong>Status Distribution:</strong></p>
+                            <pre>${JSON.stringify(ticketv2Data.analytics.ticket_status_distribution, null, 2)}</pre>
+                            <p><strong>SLA Compliance:</strong> ${ticketv2Data.analytics.sla_compliance}</p>
+                            <p><strong>Team Capacity:</strong> ${ticketv2Data.analytics.team_capacity}</p>
+                        </div>
+                    `;
+                }
+                
+                // Test regular tickets API fallback
+                const regularResponse = await fetch(`${API_BASE}/tickets?limit=3`);
+                const regularData = await regularResponse.json();
+                
+                if (regularData.tickets && regularData.tickets.length > 0) {
+                    resultsDiv.innerHTML += `
+                        <div class="test-section success">
+                            <h3>✅ Regular Tickets API Fallback</h3>
+                            <p><strong>Fallback API Working:</strong> ${regularData.tickets.length} tickets available</p>
+                            <p><strong>Sample Ticket:</strong> ${regularData.tickets[0].ticket_number} - ${regularData.tickets[0].title}</p>
+                        </div>
+                    `;
+                }
+                
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="test-section error">
+                        <h3>❌ API Test Failed</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Run tests when page loads
+        testTicketv2Integration();
+    </script>
+</body>
+</html>
