@@ -267,7 +267,13 @@ async def get_tickets(
             "sla_hours": ticket.sla_hours,
             "estimated_duration": ticket.estimated_duration,
             "customer_name": ticket.customer_name,
-            "customer_contact": ticket.customer_contact
+            "customer_contact": ticket.customer_contact,
+            # Additional fields for KPI calculations
+            "resolved_at": ticket.completed_at,  # Alias for frontend compatibility
+            "resolvedAt": ticket.completed_at,  # Alias for frontend compatibility
+            "in_progress_at": ticket.updated_at if ticket.status == "IN_PROGRESS" else None,
+            "age_days": (datetime.now(ticket.created_at.tzinfo) - ticket.created_at).days if ticket.created_at else 0,
+            "sla_status": "ON_TIME" if ticket.completed_at and ticket.due_date and ticket.completed_at <= ticket.due_date else "OVERDUE" if ticket.due_date and datetime.now(ticket.due_date.tzinfo) > ticket.due_date else "PENDING"
         }
         
         # Try to get team name if assigned
@@ -280,7 +286,7 @@ async def get_tickets(
         if ticket.assigned_user_id:
             user = db.query(User).filter(User.id == ticket.assigned_user_id).first()
             if user:
-                ticket_dict["assigned_user"] = user.name
+                ticket_dict["assigned_user"] = user.full_name
         
         enhanced_tickets.append(ticket_dict)
     

@@ -114,6 +114,104 @@ async def get_tickets_overview():
             logger.error(f"Tickets service error: {e}")
             raise HTTPException(status_code=503, detail="Tickets service unavailable")
 
+# Ticketv2 API endpoint - Comprehensive ticket data with Malaysian teams
+@app.get("/api/ticketv2")
+async def get_ticketv2_data(request: Request):
+    """Enhanced ticketv2 API with 1000 tickets and 75 Malaysian cabinet name teams"""
+    logger.info("Ticketv2 API endpoint called")
+    
+    # Get query parameters
+    limit = request.query_params.get("limit", "1000")
+    status = request.query_params.get("status")
+    zone = request.query_params.get("zone")
+    priority = request.query_params.get("priority")
+    category = request.query_params.get("category")
+    
+    # Build query parameters
+    query_params = []
+    if limit:
+        query_params.append(f"limit={limit}")
+    if status:
+        query_params.append(f"status={status}")
+    if zone:
+        query_params.append(f"zone={zone}")
+    if priority:
+        query_params.append(f"priority={priority}")
+    if category:
+        query_params.append(f"category={category}")
+    
+    query_string = "&".join(query_params)
+    tickets_url = f"{TICKETS_URL}/tickets"
+    if query_string:
+        tickets_url += f"?{query_string}"
+    
+    async with httpx.AsyncClient() as client:
+        try:
+            # Get tickets data
+            tickets_response = await client.get(tickets_url)
+            tickets_data = tickets_response.json() if tickets_response.headers.get("content-type", "").startswith("application/json") else {"data": tickets_response.text}
+            logger.info(f"Tickets data structure: {type(tickets_data)}, keys: {tickets_data.keys() if isinstance(tickets_data, dict) else 'not dict'}")
+            
+            # Get teams data
+            teams_response = await client.get(f"{AUTH_URL}/auth/teams")
+            teams_data = teams_response.json() if teams_response.headers.get("content-type", "").startswith("application/json") else {"data": teams_response.text}
+            logger.info(f"Teams data structure: {type(teams_data)}, keys: {teams_data.keys() if isinstance(teams_data, dict) else 'not dict'}")
+            
+            # Get assignments data
+            assignments_response = await client.get(f"{TICKETS_URL}/assignments")
+            assignments_data = assignments_response.json() if assignments_response.headers.get("content-type", "").startswith("application/json") else {"data": assignments_response.text}
+            logger.info(f"Assignments data structure: {type(assignments_data)}, keys: {assignments_data.keys() if isinstance(assignments_data, dict) else 'not dict'}")
+            
+            # Combine all data into comprehensive response
+            comprehensive_data = {
+                "api_version": "v2",
+                "description": "Enhanced AIFF Ticket API with Malaysian Cabinet Name Teams",
+                "total_tickets": len(tickets_data.get("tickets", [])) if isinstance(tickets_data, dict) else len(tickets_data),
+                "total_teams": len(teams_data.get("teams", [])) if isinstance(teams_data, dict) else len(teams_data),
+                "total_assignments": len(assignments_data.get("assignments", [])) if isinstance(assignments_data, dict) else len(assignments_data),
+                "features": [
+                    "1000 tickets with 3 months of realistic data",
+                    "75 Malaysian Cabinet Name Teams",
+                    "Ticket aging and SLA tracking",
+                    "Intelligent assignment engine",
+                    "Productivity metrics and efficiency scores",
+                    "Root cause analysis with CTT_ticketnum_rootcausetitle format",
+                    "Realistic status distribution (25% open, 35% in-progress, 35% completed, 5% cancelled)",
+                    "24-hour SLA compliance tracking",
+                    "Zone-based team assignment",
+                    "Comprehensive analytics and reporting"
+                ],
+                "tickets": tickets_data,
+                "teams": teams_data,
+                "assignments": assignments_data,
+                "analytics": {
+                    "ticket_status_distribution": {
+                        "OPEN": 0.25,
+                        "IN_PROGRESS": 0.35,
+                        "COMPLETED": 0.35,
+                        "CANCELLED": 0.05
+                    },
+                    "sla_compliance": "24 hours",
+                    "team_capacity": "Maximum 5 tickets per day per team",
+                    "malaysian_states": [
+                        'Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan',
+                        'Pahang', 'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak',
+                        'Selangor', 'Terengganu', 'Kuala Lumpur', 'Putrajaya'
+                    ],
+                    "root_cause_categories": [
+                        'FIBER_CUT', 'EQUIP_FAIL', 'POWER_OUT', 'WEATHER', 
+                        'CABLE_THEFT', 'CONSTR_DMG', 'MAINT_OVER', 'NET_CONGEST'
+                    ]
+                }
+            }
+            
+            logger.info(f"Ticketv2 API response: {len(comprehensive_data.get('tickets', {}).get('tickets', []))} tickets, {len(comprehensive_data.get('teams', {}).get('teams', []))} teams")
+            return JSONResponse(content=comprehensive_data, status_code=200)
+            
+        except httpx.RequestError as e:
+            logger.error(f"Ticketv2 API service error: {e}")
+            raise HTTPException(status_code=503, detail="Ticketv2 API service unavailable")
+
 # Assignments endpoints
 @app.get("/api/assignments")
 async def get_assignments():

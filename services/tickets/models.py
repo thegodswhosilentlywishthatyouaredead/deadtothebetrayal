@@ -8,23 +8,23 @@ import enum
 Base = declarative_base()
 
 class TicketStatus(str, enum.Enum):
-    OPEN = "open"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
+    OPEN = "OPEN"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    CANCELLED = "CANCELLED"
 
 class TicketPriority(str, enum.Enum):
-    LOW = "low"
-    MEDIUM = "medium"
-    HIGH = "high"
-    URGENT = "urgent"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    URGENT = "URGENT"
 
 class TicketCategory(str, enum.Enum):
-    FIBER_INSTALLATION = "fiber_installation"
-    MAINTENANCE = "maintenance"
-    REPAIR = "repair"
-    INSPECTION = "inspection"
-    EMERGENCY = "emergency"
+    FIBER_INSTALLATION = "FIBER_INSTALLATION"
+    MAINTENANCE = "MAINTENANCE"
+    REPAIR = "REPAIR"
+    INSPECTION = "INSPECTION"
+    EMERGENCY = "EMERGENCY"
 
 class Ticket(Base):
     __tablename__ = "tickets"
