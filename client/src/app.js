@@ -841,7 +841,7 @@ async function loadRecentTickets() {
                     container.appendChild(ticketElement);
                 });
             } else {
-            // Show sample data if no real data available
+                // Show sample data if no real data available
             const sampleTickets = [
                 {
                     _id: '1',
@@ -922,6 +922,7 @@ async function loadRecentTickets() {
                 container.appendChild(ticketElement);
             });
         }
+        }
     } catch (error) {
         console.error('Error loading recent tickets:', error);
         // Show sample data on error
@@ -985,10 +986,31 @@ async function loadTeamStatus() {
 
 async function loadTeamStatusOverview() {
     try {
-        const response = await fetch(`${API_BASE}/teams/analytics/zones`);
-        const data = await response.json();
+        console.log('👥 Loading zone performance with ticketv2 data...');
         
-        console.log('👥 Loaded zones:', data.zones ? Object.keys(data.zones).length : 0);
+        // Try to get data from ticketv2 API first
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await ticketv2Response.json();
+        
+        let zonesData = [];
+        
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const tickets = ticketv2Data.tickets.tickets || [];
+            const teams = ticketv2Data.teams.teams || [];
+            
+            console.log('👥 Using ticketv2 data for zone performance:', {
+                tickets: tickets.length,
+                teams: teams.length
+            });
+            
+            // Calculate zone performance from ticketv2 data
+            zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+        } else {
+            // Fallback to regular API
+            const response = await fetch(`${API_BASE}/teams/analytics/zones`);
+            const data = await response.json();
+            zonesData = data.zones || [];
+        }
         
         const container = document.getElementById('team-status-overview');
         if (!container) {
@@ -998,11 +1020,17 @@ async function loadTeamStatusOverview() {
         
         container.innerHTML = '';
         
-        if (data.zones && data.zones.length > 0) {
-            // Zones is already an array, sort by productivity score (descending)
-            const sortedZones = data.zones.sort((a, b) => (b.productivity || 0) - (a.productivity || 0));
+        if (zonesData && zonesData.length > 0) {
+            // Sort by productivity percentage (descending) and take top 5
+            const sortedZones = zonesData
+                .sort((a, b) => (b.productivityPercentage || b.productivityScore || b.productivity || 0) - (a.productivityPercentage || a.productivityScore || a.productivity || 0))
+                .slice(0, 5); // Top 5 zones only
             
-            console.log('👥 Displaying', sortedZones.length, 'zones');
+            console.log('👥 Displaying top 5 zones sorted by productivity %:', sortedZones.map(z => ({
+                zone: z.zone,
+                productivityPercentage: z.productivityPercentage,
+                rank: sortedZones.indexOf(z) + 1
+            })));
             
             sortedZones.forEach((zone, index) => {
                 const zoneElement = createZonePerformanceElement(zone, index + 1);
@@ -1019,27 +1047,88 @@ async function loadTeamStatusOverview() {
     }
 }
 
+function calculateZonePerformanceFromTicketv2(tickets, teams) {
+    const zoneStats = {};
+    
+    // Calculate zone statistics from tickets
+    tickets.forEach(ticket => {
+        const zone = ticket.zone || 'Unknown';
+        if (!zoneStats[zone]) {
+            zoneStats[zone] = {
+                zone: zone,
+                totalTickets: 0,
+                openTickets: 0,
+                closedTickets: 0,
+                activeTeams: 0,
+                productivityScore: 0,
+                efficiencyScore: 0,
+                avgResponseTime: 0,
+                productivityPercentage: 0
+            };
+        }
+        
+        zoneStats[zone].totalTickets++;
+        
+        if (ticket.status === 'COMPLETED' || ticket.status === 'completed') {
+            zoneStats[zone].closedTickets++;
+        } else {
+            zoneStats[zone].openTickets++;
+        }
+    });
+    
+    // Calculate team statistics per zone
+    teams.forEach(team => {
+        const zone = team.zone || 'Unknown';
+        if (zoneStats[zone]) {
+            zoneStats[zone].activeTeams++;
+            
+            // Use team productivity data if available
+            if (team.productivity) {
+                zoneStats[zone].efficiencyScore = team.productivity.efficiency || 0;
+                zoneStats[zone].avgResponseTime = team.productivity.responseTime || 0;
+            }
+        }
+    });
+    
+    // Calculate productivity percentage for all zones based on completion rate
+    Object.values(zoneStats).forEach(zone => {
+        // Calculate productivity percentage based on completion rate
+        const completionRate = zone.totalTickets > 0 ? (zone.closedTickets / zone.totalTickets) * 100 : 0;
+        zone.productivityPercentage = Math.round(completionRate * 10) / 10; // Round to 1 decimal place
+        zone.productivityScore = zone.productivityPercentage; // For backward compatibility
+        
+        // If we have team efficiency data, blend it with completion rate
+        if (zone.efficiencyScore > 0) {
+            // Weight: 70% completion rate + 30% team efficiency
+            zone.productivityPercentage = Math.round((completionRate * 0.7 + zone.efficiencyScore * 0.3) * 10) / 10;
+            zone.productivityScore = zone.productivityPercentage;
+        }
+    });
+    
+    console.log('📊 Zone performance calculated:', Object.values(zoneStats).map(z => ({
+        zone: z.zone,
+        productivityPercentage: z.productivityPercentage,
+        totalTickets: z.totalTickets,
+        closedTickets: z.closedTickets,
+        activeTeams: z.activeTeams
+    })));
+    
+    return Object.values(zoneStats);
+}
+
 function createZonePerformanceElement(zone, rank) {
     const zoneCard = document.createElement('div');
     zoneCard.className = `zone-performance-card rank-${rank}`;
     
     // Calculate metrics with proper formatting
-    // Handle productivity score - could be 0-5 scale or 0-100 percentage
-    const productivityScore = parseFloat(zone.productivity || 0);
-    let productivityPercentage;
-    if (productivityScore <= 5) {
-        // Convert from 0-5 scale to percentage
-        productivityPercentage = (productivityScore / 5.0 * 100).toFixed(1);
-    } else {
-        // Already a percentage, just format
-        productivityPercentage = Math.min(100, Math.max(0, productivityScore)).toFixed(1);
-    }
+    // Use the calculated productivity percentage from ticketv2 data
+    const productivityPercentage = parseFloat(zone.productivityPercentage || zone.productivityScore || zone.productivity || 0).toFixed(1);
     const activeTeams = zone.activeTeams || 0;
     const totalTeams = zone.totalTeams || 0;
-    const totalTickets = (zone.openTickets || 0) + (zone.closedTickets || 0);
+    const totalTickets = zone.totalTickets || (zone.openTickets || 0) + (zone.closedTickets || 0);
     const avgRating = parseFloat(zone.averageRating || 4.5).toFixed(2);
     
-    // Determine productivity color
+    // Determine productivity color based on percentage
     let productivityColor = '#28a745'; // green
     if (productivityPercentage < 50) productivityColor = '#dc3545'; // red
     else if (productivityPercentage < 70) productivityColor = '#ffc107'; // yellow
@@ -2226,58 +2315,61 @@ async function populateTopPerformersFromZones(zonesData) {
 // Load comprehensive teams performance analytics
 async function loadTeamsPerformanceAnalytics() {
     try {
-        console.log('📊 Loading teams performance analytics...');
+        console.log('📊 Loading teams performance analytics with ticketv2 API...');
         
         // Hide any existing error messages
         hideErrorMessage();
         
-        // Fetch all required data
-        console.log('📊 Fetching data from API_BASE:', API_BASE);
-        const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
-            fetch(`${API_BASE}/teams/analytics/zones`),
-            fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/tickets?limit=1000`)
-        ]);
+        // Fetch data from ticketv2 API
+        console.log('📊 Fetching data from ticketv2 API:', API_BASE);
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
         
-        console.log('📊 API Responses received:', {
-            zones: zonesResponse.status,
-            teams: teamsResponse.status,
-            tickets: ticketsResponse.status
-        });
+        console.log('📊 Ticketv2 API Response received:', ticketv2Response.status);
         
-        // Check if responses are ok
-        if (!zonesResponse.ok || !teamsResponse.ok || !ticketsResponse.ok) {
-            console.error('❌ API Response errors:');
-            console.error('Zones:', zonesResponse.status, zonesResponse.statusText);
-            console.error('Teams:', teamsResponse.status, teamsResponse.statusText);
-            console.error('Tickets:', ticketsResponse.status, ticketsResponse.statusText);
-            throw new Error(`API Error: Zones(${zonesResponse.status}) Teams(${teamsResponse.status}) Tickets(${ticketsResponse.status})`);
+        // Check if response is ok
+        if (!ticketv2Response.ok) {
+            console.error('❌ Ticketv2 API Response error:', ticketv2Response.status, ticketv2Response.statusText);
+            throw new Error(`Ticketv2 API Error: ${ticketv2Response.status}`);
         }
         
-        const zonesData = await zonesResponse.json();
-        const teamsData = await teamsResponse.json();
-        const ticketsData = await ticketsResponse.json();
+        const ticketv2Data = await ticketv2Response.json();
         
-        console.log('📊 Received data:');
-        console.log('Zones:', zonesData);
-        console.log('Teams:', teamsData);
-        console.log('Tickets:', ticketsData);
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const tickets = ticketv2Data.tickets.tickets || [];
+            const teams = ticketv2Data.teams.teams || [];
+            
+            console.log('📊 Using ticketv2 data for performance analytics:', {
+                tickets: tickets.length,
+                teams: teams.length
+            });
+            
+            // Calculate zones data from ticketv2
+            const zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            // Process the data
+            await processPerformanceAnalyticsData(zonesData, teams, tickets);
+        } else {
+            console.error('❌ Invalid ticketv2 data structure');
+            throw new Error('Invalid ticketv2 data structure');
+        }
         
-        const zones = zonesData.zones || [];
-        const teams = teamsData.teams || [];
-        const tickets = ticketsData.tickets || [];
-        
-        console.log('📊 Data loaded:', { 
-            zones: Array.isArray(zones) ? zones.length : Object.keys(zones).length, 
-            teams: teams.length, 
-            tickets: tickets.length 
+    } catch (error) {
+        console.error('❌ Error loading performance analytics:', error);
+        showErrorMessage('Error loading analytics data. Please check your connection and try again.');
+    }
+}
+
+// Process performance analytics data from ticketv2
+async function processPerformanceAnalyticsData(zonesData, teams, tickets) {
+    try {
+        console.log('📊 Processing performance analytics data:', {
+            zones: zonesData.length,
+            teams: teams.length,
+            tickets: tickets.length
         });
-        console.log('📊 Zones structure:', zones);
-        console.log('📊 Teams structure:', teams.slice(0, 2));
-        console.log('📊 Tickets structure:', tickets.slice(0, 2));
         
         // Update KPI cards
-        updateAnalyticsKPIs(teams, zones, tickets);
+        updateAnalyticsKPIs(teams, zonesData, tickets);
         
         // Destroy all existing chart instances first
         console.log('🗑️ Destroying existing chart instances...');
@@ -2304,12 +2396,18 @@ async function loadTeamsPerformanceAnalytics() {
             console.log('📊 Teams data for charts:', teams.length, 'teams');
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
-            createTeamsZonePerformanceChart(zones); // Pass zones array for zone analysis
-            console.log('📊 About to create zone performance chart with zones:', zones.length);
-            console.log('📊 First few zones data:', zones.slice(0, 2));
-            createZonePerformanceAnalysisChart(zones); // Pass zones array for zone performance analysis
-            createTeamProductivityChart(teams); // Pass teams array for productivity analysis
-            createRatingDistributionChart(teams); // Pass teams array for rating analysis
+            // Create zone performance chart (left chart)
+            createZonePerformanceChart(zonesData, teams);
+            
+            // Create state performance chart (right chart)
+            createStatePerformanceChart(zonesData, teams);
+            
+            // Create teams performance chart
+            createTeamsPerformanceChart(teams);
+            
+            // Create tickets breakdown chart
+            createTicketsBreakdownChart(tickets);
+            
             console.log('✅ All charts created successfully');
         } catch (chartError) {
             console.error('❌ Error creating charts:', chartError);
@@ -2318,17 +2416,14 @@ async function loadTeamsPerformanceAnalytics() {
         }
         
         // Populate tables
-        populateZoneRankingTable(zones);
+        populateZoneRankingTable(zonesData);
         populateTopTeamsTable(teams);
         
         console.log('✅ Performance analytics loaded successfully');
         
     } catch (error) {
-        console.error('❌ Error loading performance analytics:', error);
-        showErrorMessage('Error loading analytics data. Please check your connection and try again.');
-        
-        // Load sample data as fallback
-        loadSamplePerformanceAnalytics();
+        console.error('❌ Error processing performance analytics:', error);
+        showErrorMessage('Error processing analytics data. Please refresh the page.');
     }
 }
 
@@ -2343,6 +2438,395 @@ function showErrorMessage(message) {
     errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;';
     errorDiv.innerHTML = `
         ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(errorDiv);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        hideErrorMessage();
+    }, 5000);
+}
+
+// Hide error message
+function hideErrorMessage() {
+    const existingError = document.getElementById('analytics-error');
+    if (existingError) {
+        existingError.remove();
+    }
+}
+
+// Load sample data as fallback
+function loadSamplePerformanceAnalytics() {
+    console.log('📊 Loading sample performance analytics data...');
+    
+    // Create sample zones data
+    const sampleZones = [
+        { zone: 'Kuala Lumpur', productivityPercentage: 87.5, totalTickets: 45, closedTickets: 40, activeTeams: 3 },
+        { zone: 'Selangor', productivityPercentage: 82.3, totalTickets: 38, closedTickets: 32, activeTeams: 2 },
+        { zone: 'Johor', productivityPercentage: 79.1, totalTickets: 42, closedTickets: 34, activeTeams: 3 },
+        { zone: 'Penang', productivityPercentage: 75.8, totalTickets: 35, closedTickets: 28, activeTeams: 2 },
+        { zone: 'Perak', productivityPercentage: 73.2, totalTickets: 28, closedTickets: 22, activeTeams: 2 }
+    ];
+    
+    // Create sample teams data
+    const sampleTeams = [
+        { name: 'Team Alpha', zone: 'Kuala Lumpur', productivity: { efficiency: 87.5 } },
+        { name: 'Team Beta', zone: 'Selangor', productivity: { efficiency: 82.3 } },
+        { name: 'Team Gamma', zone: 'Johor', productivity: { efficiency: 79.1 } }
+    ];
+    
+    // Create sample tickets data
+    const sampleTickets = [
+        { zone: 'Kuala Lumpur', status: 'COMPLETED' },
+        { zone: 'Selangor', status: 'COMPLETED' },
+        { zone: 'Johor', status: 'OPEN' }
+    ];
+    
+    // Process sample data
+    processPerformanceAnalyticsData(sampleZones, sampleTeams, sampleTickets);
+}
+
+// Update Analytics KPIs with ticketv2 data
+function updateAnalyticsKPIs(teams, zones, tickets) {
+    try {
+        console.log('📊 Updating Analytics KPIs with ticketv2 data:', {
+            teams: teams.length,
+            zones: zones.length,
+            tickets: tickets.length
+        });
+        
+        // Calculate total tickets
+        const totalTickets = tickets.length;
+        updateElement('total-tickets-count', totalTickets);
+        
+        // Calculate completed tickets
+        const completedTickets = tickets.filter(t => t.status === 'COMPLETED' || t.status === 'completed').length;
+        const completionRate = totalTickets > 0 ? ((completedTickets / totalTickets) * 100).toFixed(1) : 0;
+        
+        // Calculate active teams
+        const activeTeams = teams.filter(t => t.is_active || t.status === 'available' || t.status === 'busy').length;
+        
+        // Update KPI elements
+        updateElement('total-teams', teams.length);
+        updateElement('active-teams', activeTeams);
+        updateElement('completion-rate', `${completionRate}%`);
+        
+        // Update zone performance
+        if (zones && zones.length > 0) {
+            const avgProductivity = zones.reduce((sum, zone) => sum + (zone.productivityPercentage || 0), 0) / zones.length;
+            updateElement('zone-efficiency', `${avgProductivity.toFixed(1)}%`);
+        }
+        
+        console.log('✅ Analytics KPIs updated successfully');
+        
+    } catch (error) {
+        console.error('❌ Error updating Analytics KPIs:', error);
+    }
+}
+
+// Chart creation functions
+function createZonePerformanceChart(zones, teams) {
+    try {
+        console.log('📊 Creating zone performance chart with zones:', zones.length);
+        
+        const canvas = document.getElementById('zonePerformanceChart');
+        if (!canvas) {
+            console.warn('⚠️ Zone performance chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('zonePerformanceChart');
+        
+        // Prepare data
+        const labels = zones.slice(0, 5).map(zone => zone.zone);
+        const productivityData = zones.slice(0, 5).map(zone => zone.productivityPercentage || 0);
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Productivity %',
+                    data: productivityData,
+                    backgroundColor: getStandardColorPalette(labels.length),
+                    borderColor: '#0066cc',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Productivity Percentage (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top 5 Zone Performance'
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['zonePerformanceChart'] = chart;
+        
+        console.log('✅ Zone Performance Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating zone performance chart:', error);
+    }
+}
+
+function createStatePerformanceChart(zones, teams) {
+    try {
+        console.log('📊 Creating state performance chart with zones:', zones.length);
+        
+        const canvas = document.getElementById('statePerformanceChart');
+        if (!canvas) {
+            console.warn('⚠️ State performance chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('statePerformanceChart');
+        
+        // Prepare data
+        const labels = zones.slice(0, 5).map(zone => zone.zone);
+        const teamData = zones.slice(0, 5).map(zone => zone.activeTeams || 0);
+        
+        const chartConfig = {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Active Teams',
+                    data: teamData,
+                    backgroundColor: getStandardColorPalette(labels.length),
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Active Teams by Zone'
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['statePerformanceChart'] = chart;
+        
+        console.log('✅ State Performance Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating state performance chart:', error);
+    }
+}
+
+function createTeamsPerformanceChart(teams) {
+    try {
+        console.log('📊 Creating teams performance chart with teams:', teams.length);
+        
+        const canvas = document.getElementById('teamsPerformanceChart');
+        if (!canvas) {
+            console.warn('⚠️ Teams performance chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('teamsPerformanceChart');
+        
+        // Prepare data - top 10 teams by efficiency
+        const sortedTeams = teams
+            .filter(team => team.productivity && team.productivity.efficiency)
+            .sort((a, b) => b.productivity.efficiency - a.productivity.efficiency)
+            .slice(0, 10);
+        
+        const labels = sortedTeams.map(team => team.name);
+        const efficiencyData = sortedTeams.map(team => team.productivity.efficiency);
+        
+        const chartConfig = {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Efficiency %',
+                    data: efficiencyData,
+                    borderColor: '#0066cc',
+                    backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                    borderWidth: 2,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efficiency Percentage (%)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Top 10 Teams Performance'
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['teamsPerformanceChart'] = chart;
+        
+        console.log('✅ Teams Performance Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating teams performance chart:', error);
+    }
+}
+
+function createTicketsBreakdownChart(tickets) {
+    try {
+        console.log('📊 Creating tickets breakdown chart with tickets:', tickets.length);
+        
+        const canvas = document.getElementById('ticketsBreakdownChart');
+        if (!canvas) {
+            console.warn('⚠️ Tickets breakdown chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('ticketsBreakdownChart');
+        
+        // Calculate status distribution
+        const statusCounts = {
+            'OPEN': tickets.filter(t => t.status === 'OPEN').length,
+            'IN_PROGRESS': tickets.filter(t => t.status === 'IN_PROGRESS').length,
+            'COMPLETED': tickets.filter(t => t.status === 'COMPLETED').length,
+            'CANCELLED': tickets.filter(t => t.status === 'CANCELLED').length
+        };
+        
+        const labels = Object.keys(statusCounts);
+        const data = Object.values(statusCounts);
+        
+        const chartConfig = {
+            type: 'pie',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Tickets',
+                    data: data,
+                    backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545'],
+                    borderColor: '#ffffff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Ticket Status Distribution'
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['ticketsBreakdownChart'] = chart;
+        
+        console.log('✅ Tickets Breakdown Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating tickets breakdown chart:', error);
+    }
+}
+
+// Table population functions
+function populateZoneRankingTable(zones) {
+    try {
+        const container = document.getElementById('zone-ranking-table');
+        if (!container) return;
+        
+        // Sort zones by productivity percentage
+        const sortedZones = zones
+            .sort((a, b) => (b.productivityPercentage || 0) - (a.productivityPercentage || 0))
+            .slice(0, 10);
+        
+        let html = '<table class="table table-striped"><thead><tr><th>Rank</th><th>Zone</th><th>Productivity</th><th>Tickets</th><th>Teams</th></tr></thead><tbody>';
+        
+        sortedZones.forEach((zone, index) => {
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${zone.zone}</td>
+                    <td><span class="badge bg-success">${zone.productivityPercentage || 0}%</span></td>
+                    <td>${zone.totalTickets || 0}</td>
+                    <td>${zone.activeTeams || 0}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+        console.log('✅ Zone ranking table populated');
+    } catch (error) {
+        console.error('❌ Error populating zone ranking table:', error);
+    }
+}
+
+function populateTopTeamsTable(teams) {
+    try {
+        const container = document.getElementById('top-teams-table');
+        if (!container) return;
+        
+        // Sort teams by efficiency
+        const sortedTeams = teams
+            .filter(team => team.productivity && team.productivity.efficiency)
+            .sort((a, b) => b.productivity.efficiency - a.productivity.efficiency)
+            .slice(0, 10);
+        
+        let html = '<table class="table table-striped"><thead><tr><th>Rank</th><th>Team</th><th>Zone</th><th>Efficiency</th><th>Rating</th></tr></thead><tbody>';
+        
+        sortedTeams.forEach((team, index) => {
+            html += `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${team.name}</td>
+                    <td>${team.zone}</td>
+                    <td><span class="badge bg-primary">${team.productivity.efficiency}%</span></td>
+                    <td>${team.productivity.customerRating || 'N/A'}</td>
+                </tr>
+            `;
+        });
+        
+        html += '</tbody></table>';
+        container.innerHTML = html;
+        
+        console.log('✅ Top teams table populated');
+    } catch (error) {
+        console.error('❌ Error populating top teams table:', error);
+    }
+}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
     
@@ -2437,32 +2921,39 @@ function loadSamplePerformanceAnalytics() {
     console.log('✅ Sample performance analytics loaded');
 }
 
-// Update analytics KPI cards with ticketv2 data
-async function updateAnalyticsKPIs(teams, zones, tickets) {
+// Field Team functions
+async function loadFieldTeams() {
     try {
-        // Try to get enhanced data from ticketv2 API
-        const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
-        const ticketv2Data = await response.json();
+        console.log('👥 Loading field teams with ticketv2 data...');
         
-        if (ticketv2Data && ticketv2Data.teams && ticketv2Data.tickets) {
-            // Use ticketv2 data for enhanced analytics
-            const ticketv2Teams = ticketv2Data.teams.teams || [];
-            const ticketv2Tickets = ticketv2Data.tickets.tickets || [];
-            
-            console.log('📊 Using ticketv2 data for analytics:', {
-                teams: ticketv2Teams.length,
-                tickets: ticketv2Tickets.length
-            });
-            
-            updateAnalyticsKPIsWithData(ticketv2Teams, zones, ticketv2Tickets);
-            return;
+        // Try to get data from ticketv2 API first
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await ticketv2Response.json();
+        
+        let teamsData = [];
+        
+        if (ticketv2Data && ticketv2Data.teams && ticketv2Data.teams.teams) {
+            teamsData = ticketv2Data.teams.teams;
+            console.log('👥 Using ticketv2 data for field teams:', teamsData.length);
+        } else {
+            // Fallback to regular API
+            const response = await fetch(`${API_BASE}/teams`);
+            const data = await response.json();
+            teamsData = data.teams || [];
         }
+        
+        displayFieldTeams(teamsData);
+        
     } catch (error) {
-        console.log('📊 Ticketv2 API not available, using fallback data');
+        console.error('Error loading field teams:', error);
+        // Show sample data on error
+        const sampleTeams = [
+            { name: 'Team Alpha', zone: 'Kuala Lumpur', is_active: true, productivity: { efficiency: 87.5 } },
+            { name: 'Team Beta', zone: 'Selangor', is_active: true, productivity: { efficiency: 82.3 } },
+            { name: 'Team Gamma', zone: 'Johor', is_active: false, productivity: { efficiency: 79.1 } }
+        ];
+        displayFieldTeams(sampleTeams);
     }
-    
-    // Fallback to provided data
-    updateAnalyticsKPIsWithData(teams, zones, tickets);
 }
 
 function updateAnalyticsKPIsWithData(teams, zones, tickets) {
