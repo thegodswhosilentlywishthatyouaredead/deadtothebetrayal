@@ -1006,10 +1006,14 @@ async function loadTeamStatusOverview() {
             // Calculate zone performance from ticketv2 data
             zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
         } else {
-            // Fallback to regular API
-            const response = await fetch(`${API_BASE}/teams/analytics/zones`);
+            // Fallback to regular API - use ticketv2 instead
+            const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
             const data = await response.json();
-            zonesData = data.zones || [];
+            if (data && data.tickets && data.teams) {
+                zonesData = calculateZonePerformanceFromTicketv2(data.tickets.tickets, data.teams.teams);
+            } else {
+                zonesData = [];
+            }
         }
         
         const container = document.getElementById('team-status-overview');
@@ -1646,9 +1650,14 @@ async function autoAssignTickets() {
         const teamsData = await teamsResponse.json();
         const availableTeams = (teamsData.teams || []).filter(t => t.is_active === true);
         
-        // Get zones data for intelligent assignment
-        const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
-        const zonesData = await zonesResponse.json();
+        // Get zones data for intelligent assignment - use ticketv2
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await ticketv2Response.json();
+        
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         let assignedCount = 0;
         
@@ -1773,9 +1782,14 @@ async function autoAssignTicket(ticketId) {
         const teamsData = await teamsResponse.json();
         const availableTeams = (teamsData.teams || []).filter(t => t.is_active === true);
         
-        // Get zones data
-        const zonesResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
-        const zonesData = await zonesResponse.json();
+        // Get zones data - use ticketv2
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await ticketv2Response.json();
+        
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         const assignedTeam = await intelligentAssignTicket(ticketData, availableTeams, zonesData.zones || []);
         
@@ -1798,15 +1812,21 @@ async function showManualAssignmentModal(ticketId) {
         console.log(`🔍 Opening manual assignment modal for ticket ${ticketId}`);
         
         // Fetch ticket, teams, and zones data
-        const [ticketsRes, teamsRes, zonesRes] = await Promise.all([
+        const [ticketsRes, teamsRes, ticketv2Res] = await Promise.all([
             fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/teams/analytics/zones`)
+            fetch(`${API_BASE}/ticketv2?limit=1000`)
         ]);
         
         const ticketsData = await ticketsRes.json();
         const teamsData = await teamsRes.json();
-        const zonesData = await zonesRes.json();
+        const ticketv2Data = await ticketv2Res.json();
+        
+        // Calculate zones data from ticketv2
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         const ticket = ticketsData.tickets.find(t => (t._id || t.id) == ticketId);
         const teams = teamsData.teams || [];
@@ -4145,24 +4165,30 @@ async function loadFieldTeams() {
         console.log('🔧 loadFieldTeams: Starting with API_BASE:', API_BASE);
         
         // Fetch teams data with productivity metrics
-        const [teamsResponse, productivityResponse, ticketsResponse, zonesResponse] = await Promise.all([
+        const [teamsResponse, productivityResponse, ticketsResponse, ticketv2Response] = await Promise.all([
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/teams/analytics/productivity`),
             fetch(`${API_BASE}/tickets?limit=1000`),
-            fetch(`${API_BASE}/teams/analytics/zones`)
+            fetch(`${API_BASE}/ticketv2?limit=1000`)
         ]);
         
         console.log('🔧 loadFieldTeams: API responses:', {
             teams: teamsResponse.status,
             productivity: productivityResponse.status,
             tickets: ticketsResponse.status,
-            zones: zonesResponse.status
+            ticketv2: ticketv2Response.status
         });
         
         const teamsData = await teamsResponse.json();
         const productivityData = await productivityResponse.json();
         const ticketsData = await ticketsResponse.json();
-        const zonesData = await zonesResponse.json();
+        const ticketv2Data = await ticketv2Response.json();
+        
+        // Calculate zones data from ticketv2
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         const basicTeams = teamsData.teams || [];
         const productivityTeams = productivityData.teams || [];
@@ -6693,19 +6719,25 @@ async function loadZoneDetails() {
         console.log('📊 Loading zone details...');
         
         // Fetch zones, teams, and tickets data
-        const [zonesResponse, teamsResponse, ticketsResponse] = await Promise.all([
-            fetch(`${API_BASE}/teams/analytics/zones`),
+        const [ticketv2Response, teamsResponse, ticketsResponse] = await Promise.all([
+            fetch(`${API_BASE}/ticketv2?limit=1000`),
             fetch(`${API_BASE}/teams`),
             fetch(`${API_BASE}/tickets?limit=1000`)
         ]);
         
-        if (!zonesResponse.ok || !teamsResponse.ok || !ticketsResponse.ok) {
+        if (!ticketv2Response.ok || !teamsResponse.ok || !ticketsResponse.ok) {
             throw new Error('Failed to fetch zone data');
         }
         
-        const zonesData = await zonesResponse.json();
+        const ticketv2Data = await ticketv2Response.json();
         const teamsData = await teamsResponse.json();
         const ticketsData = await ticketsResponse.json();
+        
+        // Calculate zones data from ticketv2
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         const zones = zonesData.zones || [];
         const teams = teamsData.teams || [];
@@ -7117,13 +7149,19 @@ function generateZoneAIInsights(zoneName, zoneData, zoneTickets, zoneTeams) {
 async function loadZoneAnalytics() {
     console.log('Loading zone analytics...');
     try {
-        const response = await fetch(`${API_BASE}/teams/analytics/zones`);
-        const data = await response.json();
-        console.log('Zone analytics response:', data);
+        const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await response.json();
         
-        if (data.zones) {
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
+        
+        console.log('Zone analytics response:', zonesData);
+        
+        if (zonesData && zonesData.length > 0) {
             console.log('Displaying real zone data');
-            const normalized = normalizeZones(data.zones);
+            const normalized = normalizeZones(zonesData);
             displayZoneBreakdown(normalized);
         } else {
             console.log('No zones data, showing sample data');
@@ -7702,9 +7740,14 @@ function displaySampleTicketPerformance() {
 
 async function loadTicketAnalytics() {
     try {
-        // Get zone analytics data
-        const zoneResponse = await fetch(`${API_BASE}/teams/analytics/zones`);
-        const zoneData = await zoneResponse.json();
+        // Get zone analytics data from ticketv2
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        const ticketv2Data = await ticketv2Response.json();
+        
+        let zonesData = [];
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+        }
         
         // Get tickets data
         const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
@@ -11566,22 +11609,32 @@ async function processAIQuery(query) {
 
 async function getCurrentSystemData() {
     try {
-        const [ticketsResponse, teamsResponse, zonesResponse, forecastResponse] = await Promise.all([
+        const [ticketsResponse, teamsResponse, ticketv2Response, forecastResponse] = await Promise.all([
             fetch(`${API_BASE}/tickets?limit=1000`),
             fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/teams/analytics/zones`),
+            fetch(`${API_BASE}/ticketv2?limit=1000`),
             fetch(`${API_BASE}/planning/forecast`)
         ]);
         
         const tickets = await ticketsResponse.json();
         const teams = await teamsResponse.json();
-        const zones = await zonesResponse.json();
+        const ticketv2Data = await ticketv2Response.json();
         const forecast = await forecastResponse.json();
+        
+        // Calculate zones data from ticketv2
+        let zones = {};
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
+            zones = zonesData.reduce((acc, zone) => {
+                acc[zone.zone] = zone;
+                return acc;
+            }, {});
+        }
         
         return {
             tickets: tickets.tickets || [],
             teams: teams.teams || [],
-            zones: zones.zones || {},
+            zones: zones,
             forecast: forecast || {}
         };
     } catch (error) {
