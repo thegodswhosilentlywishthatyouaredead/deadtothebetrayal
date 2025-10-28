@@ -992,6 +992,14 @@ async function loadTeamStatusOverview() {
         const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
         const ticketv2Data = await ticketv2Response.json();
         
+        console.log('👥 Ticketv2 API response:', {
+            status: ticketv2Response.status,
+            hasTickets: !!ticketv2Data.tickets,
+            hasTeams: !!ticketv2Data.teams,
+            ticketsCount: ticketv2Data.tickets?.tickets?.length || 0,
+            teamsCount: ticketv2Data.teams?.teams?.length || 0
+        });
+        
         let zonesData = [];
         
         if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
@@ -1005,7 +1013,15 @@ async function loadTeamStatusOverview() {
             
             // Calculate zone performance from ticketv2 data
             zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            console.log('👥 Calculated zones data:', zonesData.map(z => ({
+                zone: z.zone,
+                productivityPercentage: z.productivityPercentage,
+                totalTickets: z.totalTickets,
+                closedTickets: z.closedTickets
+            })));
         } else {
+            console.log('⚠️ Ticketv2 data structure invalid, falling back to regular API');
             // Fallback to regular API - use ticketv2 instead
             const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
             const data = await response.json();
@@ -1191,6 +1207,7 @@ function displaySampleZonePerformance() {
             closedTickets: 37,
             activeTeams: 3,
             productivityScore: 92,
+            productivityPercentage: 82.2,
             efficiency: 88
         },
         {
@@ -1200,6 +1217,7 @@ function displaySampleZonePerformance() {
             closedTickets: 27,
             activeTeams: 2,
             productivityScore: 89,
+            productivityPercentage: 84.4,
             efficiency: 85
         },
         {
@@ -1209,6 +1227,7 @@ function displaySampleZonePerformance() {
             closedTickets: 22,
             activeTeams: 2,
             productivityScore: 84,
+            productivityPercentage: 78.6,
             efficiency: 82
         },
         {
@@ -1218,6 +1237,7 @@ function displaySampleZonePerformance() {
             closedTickets: 18,
             activeTeams: 1,
             productivityScore: 78,
+            productivityPercentage: 81.8,
             efficiency: 79
         }
     ];
@@ -4158,230 +4178,6 @@ function sortTeamsByPerformance(teams) {
         if (diff !== 0) return diff;
         return getRating(b) - getRating(a);
     });
-}
-
-async function loadFieldTeams() {
-    try {
-        console.log('🔧 loadFieldTeams: Starting with API_BASE:', API_BASE);
-        
-        // Fetch teams data with productivity metrics
-        const [teamsResponse, productivityResponse, ticketsResponse, ticketv2Response] = await Promise.all([
-            fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/teams/analytics/productivity`),
-            fetch(`${API_BASE}/tickets?limit=1000`),
-            fetch(`${API_BASE}/ticketv2?limit=1000`)
-        ]);
-        
-        console.log('🔧 loadFieldTeams: API responses:', {
-            teams: teamsResponse.status,
-            productivity: productivityResponse.status,
-            tickets: ticketsResponse.status,
-            ticketv2: ticketv2Response.status
-        });
-        
-        const teamsData = await teamsResponse.json();
-        const productivityData = await productivityResponse.json();
-        const ticketsData = await ticketsResponse.json();
-        const ticketv2Data = await ticketv2Response.json();
-        
-        // Calculate zones data from ticketv2
-        let zonesData = [];
-        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
-            zonesData = calculateZonePerformanceFromTicketv2(ticketv2Data.tickets.tickets, ticketv2Data.teams.teams);
-        }
-        
-        const basicTeams = teamsData.teams || [];
-        const productivityTeams = productivityData.teams || [];
-        const allTickets = ticketsData.tickets || [];
-        
-        console.log('🔧 loadFieldTeams: Data fetched:', {
-            basicTeams: basicTeams.length,
-            productivityTeams: productivityTeams.length,
-            tickets: allTickets.length
-        });
-        console.log('🔧 Sample basic team:', basicTeams[0]);
-        console.log('🔧 Sample productivity team:', productivityTeams[0]);
-        
-        // Merge basic team data with productivity data
-        fieldTeams = basicTeams.map(team => {
-            const productivityTeam = productivityTeams.find(p => p.teamId === team.id);
-            return {
-                ...team,
-                teamName: team.name, // Add teamName field for consistency
-                productivity: productivityTeam?.productivity || {
-                    ticketsCompleted: 0,
-                    customerRating: 4.5,
-                    efficiencyScore: 80,
-                    averageCompletionTime: 2.0,
-                    totalHoursWorked: 8.0,
-                    overtimeHours: 0,
-                    qualityScore: 85
-                }
-            };
-        });
-        
-        // Derive team stats from tickets when missing
-        enrichTeamsWithTicketStats(fieldTeams, allTickets);
-
-        // Sort by performance before rendering (completed tickets desc, then rating)
-        const sortedByPerformance = sortTeamsByPerformance(fieldTeams);
-
-        // Update Field Teams tab metrics
-        await updateFieldTeamsMetrics(sortedByPerformance, allTickets, zonesData);
-        
-        // Populate top performers with team data - use the basic teams data which has the correct structure
-        console.log('🏆 Calling populateTopPerformersMain with basicTeams:', basicTeams.length, 'teams');
-        console.log('🏆 First basic team:', basicTeams[0]);
-        console.log('🏆 Team name field:', basicTeams[0]?.name);
-        console.log('🏆 Team zone field:', basicTeams[0]?.zone);
-        console.log('🏆 Team productivity:', basicTeams[0]?.productivity);
-        populateTopPerformersMain(basicTeams);
-        
-        console.log('👥 Loaded field teams:', fieldTeams.length);
-        console.log('👥 First team sample:', fieldTeams[0]);
-        
-        if (fieldTeams.length === 0) {
-            // Show sample data if no real data available
-            fieldTeams = [
-                {
-                    _id: '1',
-                    name: 'Zamri',
-                    email: 'zamri@company.com',
-                    phone: '555-0101',
-                    status: 'active',
-                    skills: ['network', 'customer'],
-                    hourlyRate: 180.00,
-                    state: 'Kuala Lumpur',
-                    zone: 'Central',
-                    productivity: {
-                        ticketsCompleted: 156,
-                        customerRating: 4.8,
-                        ticketsThisMonth: 23,
-                        averageResponseTime: 15,
-                        efficiencyScore: 92
-                    },
-                    currentLocation: {
-                        address: 'Jalan Ampang, Kuala Lumpur City Centre, 50450 KL',
-                        latitude: 3.1390,
-                        longitude: 101.6869
-                    }
-                },
-                {
-                    _id: '2',
-                    name: 'Nurul',
-                    email: 'nurul@company.com',
-                    phone: '555-0102',
-                    status: 'busy',
-                    skills: ['network', 'customer'],
-                    hourlyRate: 168.00,
-                    state: 'Perak',
-                    zone: 'Northern',
-                    productivity: {
-                        ticketsCompleted: 134,
-                        customerRating: 4.6,
-                        ticketsThisMonth: 18,
-                        averageResponseTime: 22,
-                        efficiencyScore: 87
-                    },
-                    currentLocation: {
-                        address: 'Jalan Sultan Idris Shah, Ipoh, 30000 Perak',
-                        latitude: 4.5841,
-                        longitude: 101.0829
-                    }
-                },
-                {
-                    _id: '3',
-                    name: 'Ah-Hock',
-                    email: 'ah-hock@company.com',
-                    phone: '555-0103',
-                    status: 'active',
-                    skills: ['customer', 'network'],
-                    hourlyRate: 192.00,
-                    state: 'Selangor',
-                    zone: 'Central',
-                    productivity: {
-                        ticketsCompleted: 189,
-                        customerRating: 4.9,
-                        ticketsThisMonth: 28,
-                        averageResponseTime: 12,
-                        efficiencyScore: 95
-                    },
-                    currentLocation: {
-                        address: 'Jalan Sultan Ismail, Chow Kit, 50350 KL',
-                        latitude: 3.1650,
-                        longitude: 101.7000
-                    }
-                },
-                {
-                    _id: '4',
-                    name: 'Muthu',
-                    email: 'muthu@company.com',
-                    phone: '555-0104',
-                    status: 'offline',
-                    skills: ['network', 'customer'],
-                    hourlyRate: 176.00,
-                    state: 'Johor',
-                    zone: 'Southern',
-                    productivity: {
-                        ticketsCompleted: 142,
-                        customerRating: 4.7,
-                        ticketsThisMonth: 16,
-                        averageResponseTime: 18,
-                        efficiencyScore: 89
-                    },
-                    currentLocation: {
-                        address: 'Jalan Tun Abdul Razak, Johor Bahru, 80000 Johor',
-                        latitude: 1.4927,
-                        longitude: 103.7414
-                    }
-                }
-            ];
-        }
-        
-        displayFieldTeams(sortedByPerformance);
-    } catch (error) {
-        console.error('Error loading field teams:', error);
-        // Show sample data on error
-        fieldTeams = [
-            {
-                _id: '1',
-                name: 'John Smith',
-                email: 'john.smith@company.com',
-                phone: '555-0101',
-                status: 'active',
-                skills: ['electrical', 'general'],
-                hourlyRate: 180.00,
-                productivity: {
-                    ticketsCompleted: 156,
-                    customerRating: 4.8
-                },
-                currentLocation: {
-                    address: '123 Main St, Downtown, NY 10001',
-                    latitude: 40.7128,
-                    longitude: -74.0060
-                }
-            },
-            {
-                _id: '2',
-                name: 'Sarah Johnson',
-                email: 'sarah.johnson@company.com',
-                phone: '555-0102',
-                status: 'busy',
-                skills: ['hvac', 'maintenance'],
-                hourlyRate: 168.00,
-                productivity: {
-                    ticketsCompleted: 134,
-                    customerRating: 4.6
-                },
-                currentLocation: {
-                    address: '456 Oak Ave, Midtown, NY 10002',
-                    latitude: 40.7589,
-                    longitude: -73.9851
-                }
-            }
-        ];
-        displayFieldTeams(sortTeamsByPerformance(fieldTeams));
-    }
 }
 
 function displayFieldTeams(teamsToShow) {
