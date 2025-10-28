@@ -5598,9 +5598,58 @@
             padding: 0.3rem 0.5rem;
         }
         
-        /* Smooth Transitions for All Elements */
-        * {
-            transition: font-size 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        /* Pagination Styles */
+        .pagination-container {
+            border-top: 1px solid #e5e7eb;
+            padding-top: 1rem;
+        }
+        
+        .page-info {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .pagination-buttons .btn {
+            min-width: 40px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .pagination-buttons .btn:hover:not(.disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .pagination-buttons .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .page-numbers .btn {
+            min-width: 32px;
+            height: 32px;
+            padding: 0;
+        }
+        
+        .page-numbers .btn.btn-primary {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .page-numbers .btn.btn-outline-primary {
+            color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        
+        .page-numbers .btn.btn-outline-primary:hover {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
         }
     </style>
 </head>
@@ -5719,7 +5768,7 @@
                         <div class="metrics-grid">
                             <div class="metric-card">
                                 <div class="metric-header">
-                                    <h3 class="metric-title">Total Tickets</h3>
+                                    <h3 class="metric-title">Today's Tickets</h3>
                                     <div class="metric-icon blue">
                                         <i class="fas fa-ticket-alt"></i>
                                     </div>
@@ -5952,7 +6001,7 @@
                                 <div class="domain-metrics">
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Total Tickets</h3>
+                                            <h3 class="metric-title">Today's Tickets</h3>
                                             <div class="metric-icon blue">
                                                 <i class="fas fa-ticket-alt"></i>
                                             </div>
@@ -5969,7 +6018,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Pending</h3>
+                                            <h3 class="metric-title">Today's Pending</h3>
                                             <div class="metric-icon orange">
                                                 <i class="fas fa-clock"></i>
                                             </div>
@@ -5986,7 +6035,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Resolved</h3>
+                                            <h3 class="metric-title">Today's Resolved</h3>
                                             <div class="metric-icon green">
                                                 <i class="fas fa-check-circle"></i>
                                             </div>
@@ -6003,7 +6052,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Critical</h3>
+                                            <h3 class="metric-title">Today's Critical</h3>
                                             <div class="metric-icon red">
                                                 <i class="fas fa-exclamation-triangle"></i>
                                             </div>
@@ -6020,7 +6069,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Resolution Rate</h3>
+                                            <h3 class="metric-title">Today's Resolution Rate</h3>
                                             <div class="metric-icon blue">
                                                 <i class="fas fa-tachometer-alt"></i>
                                             </div>
@@ -6037,7 +6086,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Avg Resolution Time</h3>
+                                            <h3 class="metric-title">Today's Avg Resolution Time</h3>
                                             <div class="metric-icon green">
                                                 <i class="fas fa-stopwatch"></i>
                                             </div>
@@ -6054,7 +6103,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Customer Satisfaction</h3>
+                                            <h3 class="metric-title">Today's Customer Satisfaction</h3>
                                             <div class="metric-icon orange">
                                                 <i class="fas fa-star"></i>
                                             </div>
@@ -6071,7 +6120,7 @@
 
                                     <div class="metric-card">
                                         <div class="metric-header">
-                                            <h3 class="metric-title">Auto Assigned</h3>
+                                            <h3 class="metric-title">Today's Auto Assigned</h3>
                                             <div class="metric-icon purple">
                                                 <i class="fas fa-robot"></i>
                                             </div>
@@ -8110,7 +8159,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/app.js?v=83"></script>
+    <script src="/src/app.js?v=96"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

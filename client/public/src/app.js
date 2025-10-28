@@ -6,6 +6,12 @@ let fieldTeams = [];
 let assignments = [];
 let chartInstances = {};
 
+// Pagination variables
+let currentPage = 1;
+let ticketsPerPage = 15;
+let totalTickets = 0;
+let filteredTickets = [];
+
 // API Configuration
 const API_BASE = window.API_BASE || 'http://localhost:8085/api';
 
@@ -68,17 +74,19 @@ function getStandardChartConfig(type = 'line') {
                 position: 'bottom',
                 labels: {
                     usePointStyle: true,
-                    padding: 20,
+                    padding: 16,
                     font: {
-                        size: 12,
-                        family: 'Inter, system-ui, sans-serif'
-                    }
+                        size: 11,
+                        family: 'Inter, system-ui, sans-serif',
+                        weight: '500'
+                    },
+                    color: '#4b5563'
                 }
             },
             tooltip: {
-                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                backgroundColor: 'rgba(17, 24, 39, 0.9)',
                 titleColor: '#fff',
-                bodyColor: '#fff',
+                bodyColor: '#e5e7eb',
                 borderColor: '#e5e7eb',
                 borderWidth: 1,
                 cornerRadius: 8,
@@ -95,22 +103,27 @@ function getStandardChartConfig(type = 'line') {
                 ticks: {
                     font: {
                         size: 11,
-                        family: 'Inter, system-ui, sans-serif'
+                        family: 'Inter, system-ui, sans-serif',
+                        weight: '500'
                     },
-                    color: '#6b7280'
+                    color: '#6b7280',
+                    maxRotation: 0,
+                    autoSkipPadding: 8
                 }
             },
             y: {
                 grid: {
-                    color: '#f3f4f6',
+                    color: '#eef2f7',
                     drawBorder: false
                 },
                 ticks: {
                     font: {
                         size: 11,
-                        family: 'Inter, system-ui, sans-serif'
+                        family: 'Inter, system-ui, sans-serif',
+                        weight: '500'
                     },
-                    color: '#6b7280'
+                    color: '#6b7280',
+                    padding: 6
                 }
             }
         }
@@ -251,6 +264,16 @@ function destroyChartByCanvasId(canvasId) {
 const chartRegistry = window.chartInstances;
 
 // Ensure all icons are properly loaded
+// Date helpers
+function isSameLocalDay(inputDate, refDate) {
+    try {
+        const d = new Date(inputDate);
+        if (isNaN(d)) return false;
+        return d.getFullYear() === refDate.getFullYear() &&
+               d.getMonth() === refDate.getMonth() &&
+               d.getDate() === refDate.getDate();
+    } catch (_) { return false; }
+}
 function ensureIconsLoaded() {
     console.log('🔍 Ensuring icons are loaded...');
     
@@ -339,13 +362,14 @@ document.addEventListener('DOMContentLoaded', function() {
             try { await fn(); } finally { inFlight = false; }
         };
     };
-    setInterval(makeSafeTimer(loadDashboardData), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(loadFieldTeams), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(loadTickets), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(loadAssignments), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(loadAnalytics), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(loadMaterialForecast), SAFE_INTERVAL);
-    setInterval(makeSafeTimer(updateKPICardsComparison), SAFE_INTERVAL); // Add KPI comparison refresh
+    // Optimized refresh intervals for better performance
+    setInterval(makeSafeTimer(loadDashboardData), SAFE_INTERVAL * 2); // Reduced frequency
+    setInterval(makeSafeTimer(loadFieldTeams), SAFE_INTERVAL * 3); // Reduced frequency
+    setInterval(makeSafeTimer(loadTickets), SAFE_INTERVAL * 2); // Reduced frequency
+    setInterval(makeSafeTimer(loadAssignments), SAFE_INTERVAL * 3); // Reduced frequency
+    setInterval(makeSafeTimer(loadAnalytics), SAFE_INTERVAL * 4); // Reduced frequency
+    setInterval(makeSafeTimer(loadMaterialForecast), SAFE_INTERVAL * 5); // Reduced frequency
+    setInterval(makeSafeTimer(updateKPICardsComparison), SAFE_INTERVAL * 2); // Reduced frequency
     setInterval(async () => {
         if (currentActiveTab !== 'tickets') return; // only refresh analysis while visible
         await makeSafeTimer(loadTeamsPerformanceAnalytics)();
@@ -525,6 +549,11 @@ function showTab(tabName) {
             break;
         case 'teams':
             showZoneView(); // Show zone view by default (data already loaded)
+            // Force-refresh field teams from ticketv2 when entering Teams tab
+            setTimeout(() => {
+                loadFieldTeams();
+                loadTeamStatusOverview();
+            }, 0);
             break;
         case 'planning':
             showMaterialForecast(); // Show material forecast by default
@@ -561,8 +590,20 @@ async function loadDashboardData() {
     console.log('🔄 Loading dashboard data from', API_BASE);
     
     try {
-        // Use ticketv2 API for comprehensive data
-        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        // Performance optimization: Use cached data if available and fresh
+        if (window.cachedDashboardData && window.cachedDashboardData.timestamp > Date.now() - 60000) {
+            console.log('📊 Using cached dashboard data');
+            const cachedData = window.cachedDashboardData.data;
+            updateDashboardMetrics(cachedData.tickets, cachedData.teams, cachedData.agingData, cachedData.productivityData);
+            await Promise.all([
+                loadRecentTickets(),
+                loadTeamStatusOverview()
+            ]);
+            return;
+        }
+        
+        // Use ticketv2 API for comprehensive data (reduced limit for performance)
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=100`);
         
         if (!ticketv2Response.ok) {
             console.error('❌ Ticketv2 API error:', ticketv2Response.status, ticketv2Response.statusText);
@@ -595,14 +636,20 @@ async function loadDashboardData() {
             productivity: productivityData.productivityScore
         });
         
+        // Cache the data for 1 minute
+        window.cachedDashboardData = {
+            data: { tickets, teams, agingData, productivityData },
+            timestamp: Date.now()
+        };
+        
         // Update metrics with correct data
         updateDashboardMetrics(tickets, teams, agingData, productivityData);
         
-        // Load recent tickets
-        await loadRecentTickets();
-        
-        // Load team status
-        await loadTeamStatusOverview();
+        // Load recent tickets and team status in parallel for better performance
+        await Promise.all([
+            loadRecentTickets(),
+            loadTeamStatusOverview()
+        ]);
         
         console.log('✅ Dashboard data loaded successfully');
         
@@ -612,10 +659,10 @@ async function loadDashboardData() {
         updateDashboardMetricsWithSampleData();
     }
 }
-
 function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData) {
-    const tickets = ticketsData.tickets || [];
-    const teams = teamsData.teams || [];
+    // Handle both direct arrays and objects with nested arrays
+    const tickets = Array.isArray(ticketsData) ? ticketsData : (ticketsData?.tickets || []);
+    const teams = Array.isArray(teamsData) ? teamsData : (teamsData?.teams || []);
     
     console.log('📊 Updating dashboard metrics with:', {
         tickets: tickets.length,
@@ -817,8 +864,15 @@ function updateDashboardMetricsWithSampleData() {
 
 async function loadRecentTickets() {
     try {
-        // Try ticketv2 API first for enhanced data
-        let response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        // Performance optimization: Use cached data if available
+        if (window.cachedRecentTickets && window.cachedRecentTickets.timestamp > Date.now() - 30000) {
+            console.log('📋 Using cached recent tickets');
+            displayRecentTickets(window.cachedRecentTickets.data);
+            return;
+        }
+        
+        // Try ticketv2 API first for enhanced data (reduced limit for performance)
+        let response = await fetch(`${API_BASE}/ticketv2?limit=50`);
         let data = await response.json();
         
         console.log('📋 Loaded ticketv2 data:', data);
@@ -835,193 +889,58 @@ async function loadRecentTickets() {
         if (data.tickets && data.tickets.tickets && data.tickets.tickets.length > 0) {
             const allTickets = data.tickets.tickets;
             
-            // Filter for today's tickets and sort by most recent
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            // Sort by most recent and take the 5 most recent tickets
+            const recentTickets = allTickets
+                .sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt))
+                .slice(0, 5);
             
-            const todayTickets = allTickets.filter(ticket => {
-                if (!ticket.created_at) return false;
-                const ticketDate = new Date(ticket.created_at);
-                ticketDate.setHours(0, 0, 0, 0);
-                return ticketDate.getTime() === today.getTime();
-            });
+            // Cache the processed data
+            window.cachedRecentTickets = {
+                data: recentTickets,
+                timestamp: Date.now()
+            };
             
-            // Sort by created_at timestamp (most recent first)
-            todayTickets.sort((a, b) => {
-                const dateA = new Date(a.created_at || 0);
-                const dateB = new Date(b.created_at || 0);
-                return dateB.getTime() - dateA.getTime();
-            });
-            
-            // Take the 5 most recent tickets from today
-            const recentTickets = todayTickets.slice(0, 5);
-            
-            console.log('📋 Displaying', recentTickets.length, 'recent tickets from today:', {
-                totalToday: todayTickets.length,
-                showing: recentTickets.length
-            });
-            
-            recentTickets.forEach(ticket => {
-                const ticketElement = createTicketElement(ticket, true);
-                container.appendChild(ticketElement);
-            });
+            displayRecentTickets(recentTickets);
         } else {
-            // Fallback to regular tickets API
+            // Fallback to old API
             response = await fetch(`${API_BASE}/tickets?limit=1000`);
             data = await response.json();
             
             if (data.tickets && data.tickets.length > 0) {
-                const allTickets = data.tickets;
-                
-                // Filter for today's tickets and sort by most recent
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                
-                const todayTickets = allTickets.filter(ticket => {
-                    if (!ticket.created_at) return false;
-                    const ticketDate = new Date(ticket.created_at);
-                    ticketDate.setHours(0, 0, 0, 0);
-                    return ticketDate.getTime() === today.getTime();
-                });
-                
-                // Sort by created_at timestamp (most recent first)
-                todayTickets.sort((a, b) => {
-                    const dateA = new Date(a.created_at || 0);
-                    const dateB = new Date(b.created_at || 0);
-                    return dateB.getTime() - dateA.getTime();
-                });
-                
-                // Take the 5 most recent tickets from today
-                const recentTickets = todayTickets.slice(0, 5);
-                
-                console.log('📋 Displaying', recentTickets.length, 'recent tickets from today (fallback):', {
-                    totalToday: todayTickets.length,
-                    showing: recentTickets.length
-                });
-                
-                recentTickets.forEach(ticket => {
-                    const ticketElement = createTicketElement(ticket, true);
-                    container.appendChild(ticketElement);
-                });
+                const recentTickets = data.tickets.slice(0, 5);
+                window.cachedRecentTickets = {
+                    data: recentTickets,
+                    timestamp: Date.now()
+                };
+                displayRecentTickets(recentTickets);
             } else {
-                // Show sample data if no real data available
-            const sampleTickets = [
-                {
-                    _id: '1',
-                    ticketNumber: 'CTT_001',
-                    zone: 'Kuala Lumpur',
-                    title: 'Network Breakdown - NTT Class 1 (Major)',
-                    description: 'Complete network infrastructure failure - NTT Class 1 major breakdown affecting all customer services and network connectivity',
-                    priority: 'emergency',
-                    status: 'open',
-                    category: 'network',
-                    customer: { name: 'Ali' },
-                    location: { address: 'Jalan Ampang, Kuala Lumpur City Centre, 50450 KL' }
-                },
-                {
-                    _id: '2',
-                    ticketNumber: 'CTT_002',
-                    zone: 'Selangor',
-                    title: 'Network Breakdown - NTT Class 2 (Intermediate)',
-                    description: 'Intermediate network infrastructure issues - NTT Class 2 breakdown affecting multiple customer services and network segments',
-                    priority: 'high',
-                    status: 'assigned',
-                    category: 'network',
-                    customer: { name: 'Muthu' },
-                    location: { address: 'Jalan Bukit Bintang, Bukit Bintang, 55100 KL' }
-                },
-                {
-                    _id: '3',
-                    ticketNumber: 'CTT_03_PENANG',
-                    zone: 'Penang',
-                    title: 'Customer - Drop Fiber',
-                    description: 'Customer drop fiber connection failure - fiber optic cable damage or termination issues requiring immediate field repair',
-                    priority: 'high',
-                    status: 'in-progress',
-                    category: 'customer',
-                    customer: { name: 'Ah-Hock' },
-                    location: { address: 'Jalan Sultan Ismail, Chow Kit, 50350 KL' }
-                },
-                {
-                    _id: '4',
-                    ticketNumber: 'CTT_04_JOHOR',
-                    zone: 'Johor',
-                    title: 'Customer - CPE',
-                    description: 'Customer Premises Equipment (CPE) troubleshooting - router, modem, or network equipment configuration and connectivity issues',
-                    priority: 'medium',
-                    status: 'assigned',
-                    category: 'customer',
-                    customer: { name: 'Nurul' },
-                    location: { address: 'Jalan Tun Razak, Mont Kiara, 50480 KL' }
-                },
-                {
-                    _id: '5',
-                    ticketNumber: 'CTT_05_PERAK',
-                    zone: 'Perak',
-                    title: 'Customer - FDP Breakdown',
-                    description: 'Fiber Distribution Point (FDP) equipment failure - distribution cabinet or fiber optic splitter issues affecting multiple customer connections',
-                    priority: 'high',
-                    status: 'open',
-                    category: 'customer',
-                    customer: { name: 'Ali' },
-                    location: { address: 'Jalan Pudu, Pudu, 55100 KL' }
-                },
-                {
-                    _id: '6',
-                    ticketNumber: 'CTT_06_KEDAH',
-                    zone: 'Kedah',
-                    title: 'Network Breakdown - NTT (Minor)',
-                    description: 'Minor network infrastructure issues - NTT minor breakdown with localized impact on specific network segments or customer services',
-                    priority: 'low',
-                    status: 'completed',
-                    category: 'network',
-                    customer: { name: 'Muthu' },
-                    location: { address: 'Jalan Klang Lama, Old Klang Road, 58000 KL' }
-                }
-            ];
-            
-            sampleTickets.forEach(ticket => {
-                const ticketElement = createTicketElement(ticket, true);
-                container.appendChild(ticketElement);
-            });
+                container.innerHTML = '<div class="text-muted">No recent tickets found</div>';
         }
         }
     } catch (error) {
-        console.error('Error loading recent tickets:', error);
-        // Show sample data on error
+        console.error('❌ Error loading recent tickets:', error);
         const container = document.getElementById('recent-tickets');
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Failed to load recent tickets</div>';
+        }
+    }
+}
+
+function displayRecentTickets(tickets) {
+    const container = document.getElementById('recent-tickets');
+    if (!container) return;
+    
         container.innerHTML = '';
         
-        const sampleTickets = [
-            {
-                _id: '1',
-                ticketNumber: 'TK-001',
-                title: 'Network Outage - Downtown Office',
-                description: 'Network Repair',
-                priority: 'high',
-                status: 'open',
-                category: 'electrical',
-                customer: { name: 'John Smith' },
-                location: { address: '123 Main St, Downtown, NY 10001' }
-            },
-            {
-                _id: '2',
-                ticketNumber: 'TK-002',
-                title: 'HVAC System Not Working',
-                description: 'Air conditioning unit needs repair',
-                priority: 'medium',
-                status: 'assigned',
-                category: 'hvac',
-                customer: { name: 'Sarah Johnson' },
-                location: { address: '456 Oak Ave, Midtown, NY 10002' }
-            }
-        ];
-        
-        sampleTickets.forEach(ticket => {
+    if (tickets.length === 0) {
+        container.innerHTML = '<div class="text-muted">No recent tickets found</div>';
+        return;
+    }
+    
+    tickets.forEach(ticket => {
             const ticketElement = createTicketElement(ticket, true);
             container.appendChild(ticketElement);
         });
-    }
 }
 
 async function loadTeamStatus() {
@@ -1051,8 +970,16 @@ async function loadTeamStatusOverview() {
     try {
         console.log('👥 Loading zone performance with ticketv2 data...');
         
-        // Get data from ticketv2 API
-        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        // Performance optimization: Use cached data if available
+        if (window.cachedZonePerformance && window.cachedZonePerformance.timestamp > Date.now() - 60000) {
+            console.log('📊 Using cached zone performance data');
+            displayZonePerformance(window.cachedZonePerformance.data);
+            return;
+        }
+        
+        // Get data from ticketv2 API (reduced limit for performance)
+        console.log('🔍 Fetching from ticketv2 API...');
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=100`);
         
         if (!ticketv2Response.ok) {
             console.error('❌ Ticketv2 API error:', ticketv2Response.status, ticketv2Response.statusText);
@@ -1081,7 +1008,16 @@ async function loadTeamStatusOverview() {
             });
             
             // Calculate zone performance from ticketv2 data
+            console.log('🔍 Calculating zone performance...');
             zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            console.log('📊 Calculated zones data:', zonesData.length, 'zones');
+            
+            // Cache the processed data
+            window.cachedZonePerformance = {
+                data: zonesData,
+                timestamp: Date.now()
+            };
             
             console.log('👥 Calculated zones data:', zonesData.map(z => ({
                 zone: z.zone,
@@ -1089,48 +1025,66 @@ async function loadTeamStatusOverview() {
                 totalTickets: z.totalTickets,
                 closedTickets: z.closedTickets
             })));
+            
+            console.log('🔍 Calling displayZonePerformance...');
+            displayZonePerformance(zonesData);
         } else {
             console.error('❌ Invalid ticketv2 data structure:', ticketv2Data);
             throw new Error('Invalid ticketv2 data structure');
         }
         
-        const container = document.getElementById('team-status-overview');
+    } catch (error) {
+        console.error('❌ Error loading team status overview:', error);
+        // Try both possible container IDs (overview and teams tabs)
+        let container = document.getElementById('team-status-overview'); // Overview tab
         if (!container) {
-            console.error('❌ Element "team-status-overview" not found in DOM');
+            container = document.getElementById('teams-zone-list'); // Teams tab
+        }
+        if (container) {
+            container.innerHTML = '<div class="text-muted">Failed to load zone performance data</div>';
+        }
+    }
+}
+
+function displayZonePerformance(zonesData) {
+    console.log('🔍 displayZonePerformance called with:', zonesData);
+    
+    // Try both possible container IDs (overview and teams tabs)
+    let container = document.getElementById('team-status-overview'); // Overview tab
+    if (!container) {
+        container = document.getElementById('teams-zone-list'); // Teams tab
+    }
+    
+    console.log('🔍 Container found:', !!container, container?.id);
+    if (!container) {
+        console.error('❌ Container team-status-overview or teams-zone-list not found');
             return;
         }
         
         container.innerHTML = '';
         
-        if (zonesData && zonesData.length > 0) {
-            // Sort by productivity percentage (descending) and take top 5
+    if (!zonesData || zonesData.length === 0) {
+        console.log('⚠️ No zones data available');
+        container.innerHTML = '<div class="text-muted">No zone performance data available</div>';
+        return;
+    }
+    
+    console.log('📊 Processing', zonesData.length, 'zones');
+    
+    // Sort by productivity percentage (highest first) and take top 5
             const sortedZones = zonesData
-                .sort((a, b) => (b.productivityPercentage || b.productivityScore || b.productivity || 0) - (a.productivityPercentage || a.productivityScore || a.productivity || 0))
-                .slice(0, 5); // Top 5 zones only
-            
-            console.log('👥 Displaying top 5 zones sorted by productivity %:', sortedZones.map(z => ({
-                zone: z.zone,
-                productivityPercentage: z.productivityPercentage,
-                rank: sortedZones.indexOf(z) + 1
-            })));
+        .sort((a, b) => b.productivityPercentage - a.productivityPercentage)
+        .slice(0, 5);
+    
+    console.log('📊 Sorted zones:', sortedZones.map(z => ({ zone: z.zone, productivity: z.productivityPercentage })));
             
             sortedZones.forEach((zone, index) => {
+        console.log('🔍 Creating element for zone:', zone.zone, 'rank:', index + 1);
                 const zoneElement = createZonePerformanceElement(zone, index + 1);
                 container.appendChild(zoneElement);
             });
-        } else {
-            console.error('❌ No zones data available');
-            // Show error message instead of sample data
-            container.innerHTML = '<div class="alert alert-warning">No zone performance data available. Please check the API connection.</div>';
-        }
-    } catch (error) {
-        console.error('❌ Error loading zone performance overview:', error);
-        // Show error message instead of sample data
-        const container = document.getElementById('team-status-overview');
-        if (container) {
-            container.innerHTML = '<div class="alert alert-danger">Error loading zone performance data. Please refresh the page.</div>';
-        }
-    }
+    
+    console.log('✅ Zone performance display completed');
 }
 
 function calculateZonePerformanceFromTicketv2(tickets, teams) {
@@ -1347,38 +1301,52 @@ function displaySampleZonePerformance() {
         container.appendChild(zoneElement);
     });
 }
-
 // Ticket functions
-async function loadTickets() {
+async function loadTickets(page = 1, limit = 15) {
     try {
-        console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE);
+        console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE, 'Page:', page, 'Limit:', limit);
+        
+        // Calculate offset for pagination
+        const offset = (page - 1) * limit;
         
         // Try ticketv2 API first for enhanced data
-        let response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        let response = await fetch(`${API_BASE}/ticketv2?limit=${limit}&offset=${offset}`);
         let data = await response.json();
         
         console.log('🔧 loadTickets: Ticketv2 response status:', response.status);
         
         // Use ticketv2 data if available
         if (data.tickets && data.tickets.tickets) {
-            tickets = data.tickets.tickets || [];
+            tickets = (data.tickets.tickets || []).slice().sort((a, b) => {
+                const da = new Date(a.created_at || a.createdAt || 0).getTime();
+                const db = new Date(b.created_at || b.createdAt || 0).getTime();
+                return db - da; // newest first
+            });
+            totalTickets = data.total_tickets || data.tickets.total || data.total || tickets.length;
             console.log('🎫 Loading tickets from ticketv2 API:', tickets.length);
         } else {
             // Fallback to regular tickets API
-            response = await fetch(`${API_BASE}/tickets?limit=1000`);
+            response = await fetch(`${API_BASE}/tickets?limit=${limit}&offset=${offset}`);
             data = await response.json();
-            tickets = data.tickets || [];
+            tickets = (data.tickets || []).slice().sort((a, b) => {
+                const da = new Date(a.created_at || a.createdAt || 0).getTime();
+                const db = new Date(b.created_at || b.createdAt || 0).getTime();
+                return db - da; // newest first
+            });
+            totalTickets = data.total || tickets.length;
             console.log('🔧 loadTickets: Regular API response status:', response.status);
-            console.log('🎫 Loading tickets from regular API:', tickets.length);
+            console.log('🎫 Loading tickets from regular API:', tickets.length, 'of', totalTickets, 'total');
+        }
+
+        // Heuristic fallback: if total unknown and we received a full page, allow a next page
+        if (!totalTickets) {
+            totalTickets = tickets.length === limit ? (page * limit + 1) : tickets.length;
         }
         
         console.log('🎫 Sample ticket:', tickets[0]);
         
-        // Update Tickets tab metrics
-        updateTicketsTabMetrics(tickets);
-        
-        // Update ticket status distribution
-        updateTicketStatusDistribution(tickets);
+        // Load a larger data set for KPI metrics (independent of paginated list)
+        await loadTicketsKPIMetrics();
         
         if (tickets.length === 0) {
             // Show sample data if no real data available
@@ -1434,7 +1402,7 @@ async function loadTickets() {
             ];
         }
         
-        displayTickets(tickets);
+        displayTicketsWithPagination(tickets, totalTickets || data.total_tickets || tickets.length, page);
     } catch (error) {
         console.error('Error loading tickets:', error);
         // Show sample data on error
@@ -1464,86 +1432,124 @@ async function loadTickets() {
                 createdAt: new Date(Date.now() - 3600000).toISOString()
             }
         ];
-        displayTickets(tickets);
+        displayTicketsWithPagination(tickets, tickets.length, page);
     }
 }
-
 // Update Tickets tab metrics with real data
 function updateTicketsTabMetrics(allTickets) {
     console.log('📊 Updating Tickets tab metrics...', allTickets.length);
     
-    // Calculate totals
-    const totalTickets = allTickets.length;
-    const resolvedTickets = allTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || t.status === 'completed').length;
-    const pendingTickets = allTickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS' || t.status === 'open' || t.status === 'in_progress').length;
-    const criticalTickets = allTickets.filter(t => t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'emergency' || t.priority === 'high').length;
+    // Calculate today's date range
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
     
-    // Calculate resolution rate
-    const resolutionRate = totalTickets > 0 
-        ? ((resolvedTickets / totalTickets) * 100).toFixed(2)
+    // Filter tickets for today
+    const todayTickets = allTickets.filter(ticket => {
+        const ticketDate = new Date(ticket.created_at || ticket.createdAt);
+        ticketDate.setHours(0, 0, 0, 0);
+        return ticketDate.getTime() === today.getTime();
+    });
+    
+    console.log('📅 Today\'s tickets:', todayTickets.length, 'of', allTickets.length, 'total');
+    
+    // Calculate today's metrics
+    const todayTotal = todayTickets.length;
+    const todayResolved = todayTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || t.status === 'completed').length;
+    const todayPending = todayTickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS' || t.status === 'open' || t.status === 'in_progress').length;
+    const todayCritical = todayTickets.filter(t => t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'emergency' || t.priority === 'high').length;
+    
+    // Calculate today's resolution rate
+    const todayResolutionRate = todayTotal > 0 
+        ? ((todayResolved / todayTotal) * 100).toFixed(2)
         : 0;
     
-    // Calculate average resolution time
-    const resolvedWithTime = allTickets.filter(t => t.resolvedAt || t.resolved_at || t.completed_at);
-    let avgResolutionTime = 0;
-    if (resolvedWithTime.length > 0) {
-        const totalTime = resolvedWithTime.reduce((sum, t) => {
+    // Calculate today's average resolution time
+    const todayResolvedWithTime = todayTickets.filter(t => t.resolvedAt || t.resolved_at || t.completed_at);
+    let todayAvgResolutionTime = 0;
+    if (todayResolvedWithTime.length > 0) {
+        const totalTime = todayResolvedWithTime.reduce((sum, t) => {
             const created = new Date(t.createdAt || t.created_at);
             const resolved = new Date(t.resolvedAt || t.resolved_at || t.completed_at);
             return sum + (resolved - created);
         }, 0);
-        avgResolutionTime = (totalTime / resolvedWithTime.length / (1000 * 60 * 60)).toFixed(2);
+        todayAvgResolutionTime = (totalTime / todayResolvedWithTime.length / (1000 * 60 * 60)).toFixed(2);
     } else {
         // Fallback: use realistic average resolution time for completed tickets
-        const completedTickets = allTickets.filter(t => t.status === 'completed');
+        const completedTickets = todayTickets.filter(t => t.status === 'completed');
         if (completedTickets.length > 0) {
-            avgResolutionTime = (Math.random() * 2 + 1).toFixed(2); // 1-3 hours
+            todayAvgResolutionTime = (Math.random() * 2 + 1).toFixed(2); // 1-3 hours
         }
     }
     
-    // Calculate customer satisfaction (from teams data)
-    const avgSatisfaction = window.fieldTeams && window.fieldTeams.length > 0
+    // Calculate today's customer satisfaction (from teams data)
+    const todayAvgSatisfaction = window.fieldTeams && window.fieldTeams.length > 0
         ? (window.fieldTeams.reduce((sum, t) => sum + (t.rating || 4.5), 0) / window.fieldTeams.length).toFixed(1)
         : 4.5;
     
-    // Calculate auto-assigned percentage
-    const assignedTickets = allTickets.filter(t => t.assigned_team_id).length;
-    const autoAssignedRate = totalTickets > 0
-        ? ((assignedTickets / totalTickets) * 100).toFixed(2)
+    // Calculate today's auto-assigned percentage
+    const todayAssignedTickets = todayTickets.filter(t => t.assigned_team_id).length;
+    const todayAutoAssignedRate = todayTotal > 0
+        ? ((todayAssignedTickets / todayTotal) * 100).toFixed(2)
         : 0;
     
-    // Update UI
-    updateElement('tickets-total', totalTickets);
-    updateElement('tickets-pending', pendingTickets);
-    updateElement('tickets-resolved', resolvedTickets);
-    updateElement('tickets-critical', criticalTickets);
-    updateElement('tickets-efficiency', `${resolutionRate}%`);
-    updateElement('tickets-avg-time', `${avgResolutionTime}h`);
-    updateElement('tickets-satisfaction', avgSatisfaction);
-    updateElement('tickets-assigned', `${autoAssignedRate}%`);
+    // Update UI with today's data
+    updateElement('tickets-total', todayTotal);
+    updateElement('tickets-pending', todayPending);
+    updateElement('tickets-resolved', todayResolved);
+    updateElement('tickets-critical', todayCritical);
+    updateElement('tickets-efficiency', `${todayResolutionRate}%`);
+    updateElement('tickets-avg-time', `${todayAvgResolutionTime}h`);
+    updateElement('tickets-satisfaction', todayAvgSatisfaction);
+    updateElement('tickets-assigned', `${todayAutoAssignedRate}%`);
     
-    // Update trend indicators with calculated values
-    updateTicketsTrendIndicators(allTickets, {
-        total: totalTickets,
-        pending: pendingTickets,
-        resolved: resolvedTickets,
-        critical: criticalTickets,
-        efficiency: resolutionRate,
-        avgTime: avgResolutionTime,
-        satisfaction: avgSatisfaction,
-        assigned: autoAssignedRate
+    // Calculate comparison data (vs yesterday)
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    const yesterdayTickets = allTickets.filter(ticket => {
+        const ticketDate = new Date(ticket.created_at || ticket.createdAt);
+        ticketDate.setHours(0, 0, 0, 0);
+        return ticketDate.getTime() === yesterday.getTime();
     });
     
-    // Update comparison data (Yesterday vs Last Month)
+    const yesterdayTotal = yesterdayTickets.length;
+    const yesterdayResolved = yesterdayTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || t.status === 'completed').length;
+    const yesterdayPending = yesterdayTickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS' || t.status === 'open' || t.status === 'in_progress').length;
+    const yesterdayCritical = yesterdayTickets.filter(t => t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'emergency' || t.priority === 'high').length;
+    const yesterdayResolutionRate = yesterdayTotal > 0 ? ((yesterdayResolved / yesterdayTotal) * 100).toFixed(2) : 0;
+    const yesterdayAssignedTickets = yesterdayTickets.filter(t => t.assigned_team_id).length;
+    const yesterdayAutoAssignedRate = yesterdayTotal > 0 ? ((yesterdayAssignedTickets / yesterdayTotal) * 100).toFixed(2) : 0;
+    
+    // Calculate trend changes (vs yesterday)
+    const totalChange = yesterdayTotal > 0 ? (((todayTotal - yesterdayTotal) / yesterdayTotal) * 100).toFixed(1) : (todayTotal > 0 ? 100 : 0);
+    const pendingChange = yesterdayPending > 0 ? (((todayPending - yesterdayPending) / yesterdayPending) * 100).toFixed(1) : (todayPending > 0 ? 100 : 0);
+    const resolvedChange = yesterdayResolved > 0 ? (((todayResolved - yesterdayResolved) / yesterdayResolved) * 100).toFixed(1) : (todayResolved > 0 ? 100 : 0);
+    const criticalChange = yesterdayCritical > 0 ? (((todayCritical - yesterdayCritical) / yesterdayCritical) * 100).toFixed(1) : (todayCritical > 0 ? 100 : 0);
+    const efficiencyChange = yesterdayResolutionRate > 0 ? (todayResolutionRate - yesterdayResolutionRate).toFixed(1) : (todayResolutionRate > 0 ? todayResolutionRate : 0);
+    const assignedChange = yesterdayAutoAssignedRate > 0 ? (todayAutoAssignedRate - yesterdayAutoAssignedRate).toFixed(1) : (todayAutoAssignedRate > 0 ? todayAutoAssignedRate : 0);
+    
+    // Update trend indicators
+    updateElement('tickets-total-change', `${totalChange >= 0 ? '+' : ''}${totalChange}% vs yesterday`);
+    updateElement('tickets-pending-change', `${pendingChange >= 0 ? '+' : ''}${pendingChange}% vs yesterday`);
+    updateElement('tickets-resolved-change', `${resolvedChange >= 0 ? '+' : ''}${resolvedChange}% vs yesterday`);
+    updateElement('tickets-critical-change', `${criticalChange >= 0 ? '+' : ''}${criticalChange} vs yesterday`);
+    updateElement('tickets-efficiency-change', `${efficiencyChange >= 0 ? '+' : ''}${efficiencyChange}% improvement`);
+    updateElement('tickets-avg-time-change', `${todayAvgResolutionTime}h avg time`);
+    updateElement('tickets-satisfaction-change', `${todayAvgSatisfaction} rating`);
+    updateElement('tickets-assigned-change', `${assignedChange >= 0 ? '+' : ''}${assignedChange}% vs yesterday`);
+    
+    // Update comparison data (Yesterday vs Last Week)
     updateTicketsComparisonData(allTickets);
     
-    console.log('✅ Tickets tab metrics updated:', {
-        total: totalTickets,
-        resolved: resolvedTickets,
-        pending: pendingTickets,
-        critical: criticalTickets,
-        resolutionRate,
-        avgTime: avgResolutionTime
+    console.log('✅ Today\'s tickets metrics updated:', {
+        total: todayTotal,
+        resolved: todayResolved,
+        pending: todayPending,
+        critical: todayCritical,
+        resolutionRate: todayResolutionRate,
+        avgTime: todayAvgResolutionTime
     });
 }
 
@@ -1715,13 +1721,17 @@ function updateTicketsTrendIndicators(allTickets, currentMetrics) {
 // Update ticket status distribution in the tickets tab
 function updateTicketStatusDistribution(tickets) {
     console.log('📊 Updating ticket status distribution...', tickets.length);
+    // Align charts with today's metrics
+    const today = new Date();
+    const todaysTickets = tickets.filter(t => isSameLocalDay(t.created_at || t.createdAt, today));
+    const dataSet = todaysTickets; // strictly today's data for alignment
     
     // Calculate status counts based on actual backend data
     const statusCounts = {
-        'open': tickets.filter(t => t.status === 'OPEN' || t.status === 'open').length,
-        'in_progress': tickets.filter(t => t.status === 'IN_PROGRESS' || t.status === 'in_progress').length,
-        'completed': tickets.filter(t => t.status === 'COMPLETED' || t.status === 'completed').length,
-        'cancelled': tickets.filter(t => t.status === 'CANCELLED' || t.status === 'cancelled').length
+        'open': dataSet.filter(t => t.status === 'OPEN' || t.status === 'open').length,
+        'in_progress': dataSet.filter(t => t.status === 'IN_PROGRESS' || t.status === 'in_progress').length,
+        'completed': dataSet.filter(t => t.status === 'COMPLETED' || t.status === 'completed').length,
+        'cancelled': dataSet.filter(t => t.status === 'CANCELLED' || t.status === 'cancelled').length
     };
     
     const total = Object.values(statusCounts).reduce((sum, count) => sum + count, 0);
@@ -1778,6 +1788,124 @@ function displayTickets(ticketsToShow) {
     });
 }
 
+function displayTicketsWithPagination(ticketsToShow, totalCount, currentPageNum) {
+    const container = document.getElementById('tickets-list');
+    container.innerHTML = '';
+    
+    if (ticketsToShow.length === 0) {
+        container.innerHTML = '<p class="text-muted">No tickets found</p>';
+        return;
+    }
+    
+    // Display tickets
+    ticketsToShow.forEach(ticket => {
+        const ticketElement = createTicketElement(ticket);
+        container.appendChild(ticketElement);
+    });
+    
+    // Add pagination controls
+    addPaginationControls(totalCount, currentPageNum, ticketsToShow.length);
+}
+
+function addPaginationControls(totalCount, currentPageNum, receivedCount) {
+    const container = document.getElementById('tickets-list');
+    let totalPages = Math.ceil(totalCount / ticketsPerPage);
+    // Fallback: if API didn't provide total but we received a full page, assume there is a next page
+    if ((!totalCount || totalCount <= currentPageNum * ticketsPerPage) && receivedCount === ticketsPerPage) {
+        totalPages = Math.max(totalPages, currentPageNum + 1);
+    }
+    
+    if (totalPages <= 1) return; // No pagination needed
+    
+    const paginationDiv = document.createElement('div');
+    paginationDiv.className = 'pagination-container mt-4 d-flex justify-content-between align-items-center';
+    
+    // Page info
+    const startItem = (currentPageNum - 1) * ticketsPerPage + 1;
+    const endItem = Math.min(currentPageNum * ticketsPerPage, totalCount);
+    const pageInfo = document.createElement('div');
+    pageInfo.className = 'page-info text-muted';
+    pageInfo.innerHTML = `Showing ${startItem}-${endItem} of ${totalCount} tickets`;
+    
+    // Pagination buttons
+    const paginationButtons = document.createElement('div');
+    paginationButtons.className = 'pagination-buttons d-flex gap-2';
+    
+    // Previous button
+    const prevButton = document.createElement('button');
+    prevButton.className = `btn btn-outline-primary btn-sm ${currentPageNum === 1 ? 'disabled' : ''}`;
+    prevButton.innerHTML = '<i class="fas fa-chevron-left"></i> Previous';
+    prevButton.disabled = currentPageNum === 1;
+    prevButton.onclick = () => {
+        if (currentPageNum > 1) {
+            loadTickets(currentPageNum - 1, ticketsPerPage);
+        }
+    };
+    
+    // Page numbers
+    const pageNumbers = document.createElement('div');
+    pageNumbers.className = 'page-numbers d-flex gap-1';
+    
+    // Show page numbers (max 5 visible)
+    const startPage = Math.max(1, currentPageNum - 2);
+    const endPage = Math.min(totalPages, startPage + 4);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.className = `btn btn-sm ${i === currentPageNum ? 'btn-primary' : 'btn-outline-primary'}`;
+        pageButton.textContent = i;
+        pageButton.onclick = () => loadTickets(i, ticketsPerPage);
+        pageNumbers.appendChild(pageButton);
+    }
+    
+    // Next button
+    const nextButton = document.createElement('button');
+    nextButton.className = `btn btn-outline-primary btn-sm ${currentPageNum === totalPages ? 'disabled' : ''}`;
+    nextButton.innerHTML = 'Next <i class="fas fa-chevron-right"></i>';
+    nextButton.disabled = currentPageNum === totalPages;
+    nextButton.onclick = () => {
+        if (currentPageNum < totalPages) {
+            loadTickets(currentPageNum + 1, ticketsPerPage);
+        }
+    };
+    
+    paginationButtons.appendChild(prevButton);
+    paginationButtons.appendChild(pageNumbers);
+    paginationButtons.appendChild(nextButton);
+    
+    paginationDiv.appendChild(pageInfo);
+    paginationDiv.appendChild(paginationButtons);
+    container.appendChild(paginationDiv);
+}
+
+// Fetch a larger set of tickets for KPI metrics (e.g., last 1000)
+async function loadTicketsKPIMetrics() {
+    try {
+        const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        if (!response.ok) throw new Error(`Ticketv2 KPI fetch failed: ${response.status}`);
+        const data = await response.json();
+        const allTickets = (data.tickets?.tickets || []).slice().sort((a, b) => {
+            const da = new Date(a.created_at || a.createdAt || 0).getTime();
+            const db = new Date(b.created_at || b.createdAt || 0).getTime();
+            return db - da; // newest first
+        });
+        // Compute today's KPI metrics using the full set
+        updateTicketsTabMetrics(allTickets);
+        // Also update charts using the same full dataset so they match KPIs
+        updateTicketStatusDistribution(allTickets);
+        if (document.getElementById('priorityBreakdownChart')) {
+            createPriorityBreakdownChart(allTickets);
+        }
+    } catch (e) {
+        console.warn('KPI metrics load failed, using current page tickets as fallback:', e);
+        const fallbackTickets = tickets || [];
+        updateTicketsTabMetrics(fallbackTickets);
+        updateTicketStatusDistribution(fallbackTickets);
+        if (document.getElementById('priorityBreakdownChart')) {
+            createPriorityBreakdownChart(fallbackTickets);
+        }
+    }
+}
 function createTicketElement(ticket, isCompact = false) {
     const div = document.createElement('div');
     
@@ -2089,7 +2217,6 @@ async function assignTicketToTeam(ticket, team) {
         return null;
     }
 }
-
 // Auto Assign Single Ticket
 async function autoAssignTicket(ticketId) {
     try {
@@ -2396,9 +2523,8 @@ function filterTickets() {
         return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
     });
     
-    displayTickets(filteredTickets);
+    displayTicketsWithPagination(filteredTickets, filteredTickets.length, 1);
 }
-
 // Field Team functions
 async function updateFieldTeamsMetrics(teams, tickets, zonesData) {
     console.log('📊 Updating Field Teams metrics with:', {
@@ -2886,7 +3012,6 @@ async function loadSamplePerformanceAnalytics() {
         showErrorMessage('Error loading analytics data. Please check your connection and try again.');
     }
 }
-
 // Update Analytics KPIs with ticketv2 data
 function updateAnalyticsKPIs(teams, zones, tickets) {
     try {
@@ -2907,10 +3032,16 @@ function updateAnalyticsKPIs(teams, zones, tickets) {
         // Calculate active teams
         const activeTeams = teams.filter(t => t.is_active || t.status === 'available' || t.status === 'busy').length;
         
-        // Update KPI elements
+        // Update KPI elements (support both legacy and analytics-prefixed IDs)
         updateElement('total-teams', teams.length);
+        updateElement('analytics-total-teams', teams.length);
+        
         updateElement('active-teams', activeTeams);
+        updateElement('analytics-active-teams', `${activeTeams} Active`);
+        updateElement('live-active-teams', activeTeams);
+        
         updateElement('completion-rate', `${completionRate}%`);
+        updateElement('analytics-completion-rate', `${completionRate}%`);
         
         // Update zone performance
         if (zones && zones.length > 0) {
@@ -2926,34 +3057,103 @@ function updateAnalyticsKPIs(teams, zones, tickets) {
 }
 
 // Chart creation functions
-function createZonePerformanceChart(zones, teams) {
-    try {
-        console.log('📊 Creating zone performance chart with zones:', zones.length);
-        
-        const canvas = document.getElementById('zonePerformanceChart');
-        if (!canvas) {
-            console.warn('⚠️ Zone performance chart canvas not found');
+function createZonePerformanceChart(zones) {
+    const ctx = document.getElementById('zonePerformanceChart');
+    if (!ctx) {
+        console.error('❌ Zone performance chart canvas not found');
             return;
         }
         
         // Destroy existing chart
-        destroyChartIfExists('zonePerformanceChart');
-        
-        // Prepare data
-        const labels = zones.slice(0, 5).map(zone => zone.zone);
-        const productivityData = zones.slice(0, 5).map(zone => zone.productivityPercentage || 0);
-        
-        const chartConfig = {
+    if (chartRegistry.zonePerformanceChart) {
+        chartRegistry.zonePerformanceChart.destroy();
+    }
+    
+    // Normalize input: accept array or object
+    let zonesObj;
+    if (Array.isArray(zones)) {
+        const tmp = {};
+        zones.forEach(z => {
+            const name = z.zone || z.name || 'Unknown';
+            const total = (z.total != null) ? z.total : ((z.openTickets || 0) + (z.closedTickets || 0));
+            const closed = z.closedTickets || 0;
+            const open = (z.openTickets != null) ? z.openTickets : Math.max(0, total - closed);
+            const prod = (z.productivityPercentage != null)
+                ? z.productivityPercentage
+                : (total > 0 ? Math.round((closed / total) * 100) : 0);
+            tmp[name] = { productivityScore: prod, openTickets: open, closedTickets: closed };
+        });
+        // Keep top 5 by productivity
+        zonesObj = Object.fromEntries(
+            Object.entries(tmp)
+                .sort((a, b) => b[1].productivityScore - a[1].productivityScore)
+                .slice(0, 5)
+        );
+    } else if (zones && typeof zones === 'object') {
+        // Already keyed by zone name
+        const entries = Object.entries(zones);
+        zonesObj = Object.fromEntries(
+            entries
+                .sort((a, b) => (b[1].productivityScore || 0) - (a[1].productivityScore || 0))
+                .slice(0, 5)
+        );
+    } else {
+        console.warn('⚠️ No zones data available for chart');
+        return;
+    }
+    
+    const zoneNames = Object.keys(zonesObj);
+    if (zoneNames.length === 0) {
+        console.warn('⚠️ No zones data available for chart');
+        return;
+    }
+    
+    const productivityScores = zoneNames.map(name => zonesObj[name].productivityScore || 0);
+    const openTickets = zoneNames.map(name => zonesObj[name].openTickets || 0);
+    const closedTickets = zoneNames.map(name => zonesObj[name].closedTickets || 0);
+    
+    chartRegistry.zonePerformanceChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Productivity %',
-                    data: productivityData,
-                    backgroundColor: getStandardColorPalette(labels.length),
-                    borderColor: '#0066cc',
-                    borderWidth: 1
-                }]
+            labels: zoneNames,
+            datasets: [
+                {
+                    label: 'Productivity Score (%)',
+                    data: productivityScores,
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(59, 130, 246, 0.9)',
+                    hoverBorderColor: 'rgba(59, 130, 246, 1)',
+                    hoverBorderWidth: 3
+                },
+                {
+                    label: 'Open Tickets',
+                    data: openTickets,
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(239, 68, 68, 0.9)',
+                    hoverBorderColor: 'rgba(239, 68, 68, 1)',
+                    hoverBorderWidth: 3
+                },
+                {
+                    label: 'Closed Tickets',
+                    data: closedTickets,
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgba(16, 185, 129, 1)',
+                    borderWidth: 2,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    hoverBackgroundColor: 'rgba(16, 185, 129, 0.9)',
+                    hoverBorderColor: 'rgba(16, 185, 129, 1)',
+                    hoverBorderWidth: 3
+                }
+            ]
             },
             options: {
                 responsive: true,
@@ -2961,29 +3161,11 @@ function createZonePerformanceChart(zones, teams) {
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Productivity Percentage (%)'
-                        }
-                    }
-                },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Top 5 Zone Performance'
-                    }
+                    ticks: { precision: 0 }
                 }
             }
-        };
-        
-        const chart = new Chart(canvas, chartConfig);
-        chartInstances['zonePerformanceChart'] = chart;
-        
-        console.log('✅ Zone Performance Chart created successfully');
-    } catch (error) {
-        console.error('❌ Error creating zone performance chart:', error);
-    }
+        }
+    });
 }
 
 function createStatePerformanceChart(zones, teams) {
@@ -3035,12 +3217,11 @@ function createStatePerformanceChart(zones, teams) {
         console.error('❌ Error creating state performance chart:', error);
     }
 }
-
 function createTeamsPerformanceChart(teams) {
     try {
         console.log('📊 Creating teams performance chart with teams:', teams.length);
         
-        const canvas = document.getElementById('teamsPerformanceChart');
+        const canvas = document.getElementById('teamsPerformanceChart') || document.getElementById('statePerformanceChart');
         if (!canvas) {
             console.warn('⚠️ Teams performance chart canvas not found');
             return;
@@ -3048,6 +3229,7 @@ function createTeamsPerformanceChart(teams) {
         
         // Destroy existing chart
         destroyChartIfExists('teamsPerformanceChart');
+        destroyChartIfExists('statePerformanceChart');
         
         // Prepare data - top 10 teams by efficiency
         const sortedTeams = teams
@@ -3412,176 +3594,6 @@ function updateAnalyticsKPIsWithData(teams, zones, tickets) {
     updateElement('analytics-rating-trend', ratingTrend);
     updateElement('analytics-response-trend', responseTrend);
 }
-
-// Create zone performance chart
-function createZonePerformanceChart(zones) {
-    const ctx = document.getElementById('zonePerformanceChart');
-    if (!ctx) {
-        console.error('❌ Zone performance chart canvas not found');
-        return;
-    }
-    
-    // Destroy existing chart
-    if (chartRegistry.zonePerformanceChart) {
-        chartRegistry.zonePerformanceChart.destroy();
-    }
-    
-    const zoneNames = Object.keys(zones);
-    if (zoneNames.length === 0) {
-        console.warn('⚠️ No zones data available for chart');
-        return;
-    }
-    
-    const productivityScores = zoneNames.map(name => zones[name].productivityScore || 0);
-    const openTickets = zoneNames.map(name => zones[name].openTickets || 0);
-    const closedTickets = zoneNames.map(name => zones[name].closedTickets || 0);
-    
-    chartRegistry.zonePerformanceChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: zoneNames,
-            datasets: [
-                {
-                    label: 'Productivity Score (%)',
-                    data: productivityScores,
-                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                    borderColor: 'rgba(59, 130, 246, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    hoverBackgroundColor: 'rgba(59, 130, 246, 0.9)',
-                    hoverBorderColor: 'rgba(59, 130, 246, 1)',
-                    hoverBorderWidth: 3
-                },
-                {
-                    label: 'Open Tickets',
-                    data: openTickets,
-                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                    borderColor: 'rgba(239, 68, 68, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    hoverBackgroundColor: 'rgba(239, 68, 68, 0.9)',
-                    hoverBorderColor: 'rgba(239, 68, 68, 1)',
-                    hoverBorderWidth: 3
-                },
-                {
-                    label: 'Closed Tickets',
-                    data: closedTickets,
-                    backgroundColor: 'rgba(34, 197, 94, 0.8)',
-                    borderColor: 'rgba(34, 197, 94, 1)',
-                    borderWidth: 2,
-                    borderRadius: 6,
-                    borderSkipped: false,
-                    hoverBackgroundColor: 'rgba(34, 197, 94, 0.9)',
-                    hoverBorderColor: 'rgba(34, 197, 94, 1)',
-                    hoverBorderWidth: 3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Zone Performance Overview',
-                    font: {
-                        size: 14,
-                        weight: '600'
-                    },
-                    color: '#374151'
-                },
-                legend: {
-                    position: 'top',
-                    labels: {
-                        usePointStyle: true,
-                        padding: 16,
-                        font: {
-                            size: 12,
-                            weight: '500'
-                        }
-                    }
-                },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
-                    borderWidth: 1,
-                    cornerRadius: 8,
-                    padding: 12,
-                    displayColors: true,
-                    callbacks: {
-                        title: function(context) {
-                            return context[0].label;
-                        },
-                        label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y}`;
-                        }
-                    }
-                }
-            },
-            animation: {
-                duration: 1200,
-                easing: 'easeInOutQuart',
-                delay: (context) => {
-                    let delay = 0;
-                    if (context.type === 'data' && context.mode === 'default') {
-                        delay = context.dataIndex * 100;
-                    }
-                    return delay;
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Count / Percentage',
-                        font: {
-                            size: 12,
-                            weight: '600'
-                        },
-                        color: '#374151'
-                    },
-                    ticks: {
-                        font: {
-                            size: 11,
-                            weight: '500'
-                        },
-                        color: '#6b7280'
-                    },
-                    grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
-                        drawBorder: false
-                    },
-                    border: {
-                        display: false
-                    }
-                },
-                x: {
-                    ticks: {
-                        font: {
-                            size: 11,
-                            weight: '500'
-                        },
-                        color: '#6b7280',
-                        maxRotation: 45,
-                        minRotation: 0
-                    },
-                    grid: {
-                        display: false
-                    },
-                    border: {
-                        display: false
-                    }
-                }
-            }
-        }
-    });
-}
-
 // Create Zone Performance Analysis Chart - Shows Productivity vs Efficiency (Right Chart)
 function createZonePerformanceAnalysisChart(zones) {
     const canvas = document.getElementById('statePerformanceChart');
@@ -3793,7 +3805,6 @@ function createZonePerformanceAnalysisChart(zones) {
         console.error('❌ Error creating zone performance chart:', error);
     }
 }
-
 // Create state performance chart (DEPRECATED - replaced by zone distribution)
 function createStatePerformanceChart(teams) {
     const ctx = document.getElementById('statePerformanceChart');
@@ -4146,7 +4157,6 @@ function createRatingDistributionChart(teams) {
         }
     });
 }
-
 // Populate zone ranking table with enhanced UI/UX
 function populateZoneRankingTable(zones) {
     const container = document.getElementById('zone-ranking-table');
@@ -4272,7 +4282,6 @@ function populateZoneRankingTable(zones) {
     
     container.innerHTML = tableHTML;
 }
-
 // Populate top teams table with enhanced UI/UX
 function populateTopTeamsTable(teams) {
     const container = document.getElementById('top-teams-table');
@@ -4556,7 +4565,6 @@ function displayFieldTeams(teamsToShow) {
         }
     });
 }
-
 function createTeamCard(team) {
     console.log('🔍 Creating team card for:', team);
     
@@ -4788,7 +4796,6 @@ function createAssignmentElement(assignment) {
     
     return div;
 }
-
 // Analytics functions
 async function loadAnalytics() {
     try {
@@ -5039,7 +5046,6 @@ async function loadAnalytics() {
             element.textContent = value;
         }
     }
-
 function displayPerformanceMetrics(data) {
     const container = document.getElementById('performance-metrics');
     
@@ -5346,7 +5352,6 @@ function addSampleMarkers() {
         `);
     });
 }
-
 // Update simple stats
 function updateSimpleStats() {
     const teamsElement = document.getElementById('live-teams-simple');
@@ -5409,7 +5414,6 @@ function filterByZone() {
     displayTicketMarkers(filteredTickets);
     updateLiveMetrics();
 }
-
 function filterByStatus() {
     const selectedStatus = document.getElementById('status-filter').value;
     console.log('🔍 Filtering by status:', selectedStatus);
@@ -5617,15 +5621,15 @@ async function preloadTeamNames() {
         // Fallback to old teams API
         try {
             console.log('🔄 Fallback: trying old teams API...');
-            const response = await fetch(`${API_BASE}/teams`);
-            const data = await response.json();
-            
-            if (data.teams && Array.isArray(data.teams)) {
-                data.teams.forEach(team => {
-                    teamNameCache[team.id] = team.name;
-                });
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        
+        if (data.teams && Array.isArray(data.teams)) {
+            data.teams.forEach(team => {
+                teamNameCache[team.id] = team.name;
+            });
                 console.log('✅ Team names cached from fallback API:', Object.keys(teamNameCache).length, 'teams');
-            }
+        }
         } catch (fallbackError) {
             console.warn('Failed to preload team names from fallback API:', fallbackError);
         }
@@ -5838,7 +5842,6 @@ async function loadTicketDataOptimized() {
         return sampleTickets;
     }
 }
-
 // Generate sample tickets for fallback
 function generateSampleTickets() {
     const sampleTickets = [];
@@ -6033,7 +6036,6 @@ function getZoneFromCoordinates(lat, lng) {
     if (lat >= 1.0 && lat <= 2.0 && lng >= 109.5 && lng <= 111.0) return 'Sarawak';
     return 'Kuala Lumpur'; // Default
 }
-
 function generateLiveTeamData() {
     // Generate realistic live team positions with movement simulation
     return fieldTeams.map(team => {
@@ -6123,7 +6125,6 @@ function clearMapMarkers() {
     ticketMarkers = [];
     routeLines = [];
 }
-
 function addLiveTeamMarkers() {
     console.log('👥 Adding live team markers...');
     
@@ -6548,7 +6549,7 @@ function addMalaysianStateBoundaries() {
         { name: 'Kuala Lumpur', bounds: [[3.05, 101.6], [3.25, 101.8]] },
         { name: 'Selangor', bounds: [[2.8, 101.2], [3.8, 101.8]] },
         { name: 'Penang', bounds: [[5.2, 100.1], [5.5, 100.5]] },
-        { name: 'Johor', bounds: [[1.2, 103.0], [2.8, 104.5]] },
+        { name: 'Johor', bounds: [[1.2, 103.0], [2.8, 110.5]] },
         { name: 'Perak', bounds: [[3.8, 100.5], [5.2, 101.8]] },
         { name: 'Sabah', bounds: [[4.0, 115.0], [7.5, 119.0]] },
         { name: 'Sarawak', bounds: [[0.5, 109.0], [5.0, 115.0]] }
@@ -6632,7 +6633,6 @@ function addNetworkInfrastructureMarkers() {
         }));
     });
 }
-
 function updateMapMetrics() {
     // Update map metrics in the dashboard
     const activeTeams = fieldTeams.filter(team => team.status === 'active').length;
@@ -6681,7 +6681,6 @@ function showCreateTeamModal() {
     const modal = new bootstrap.Modal(document.getElementById('createTeamModal'));
     modal.show();
 }
-
 function showAIAssistModal() {
     const modal = new bootstrap.Modal(document.getElementById('aiAssistModal'));
     modal.show();
@@ -6849,7 +6848,10 @@ function showZoneView() {
     if (listView) {
         listView.style.display = 'none';
     } else {
-        console.error('list-view element not found');
+        if (!window.__warnedNoTeamsListView) {
+            console.warn('list-view element not found (Teams tab only uses zone-view by default)');
+            window.__warnedNoTeamsListView = true;
+        }
     }
     
     if (analyticsView) {
@@ -6877,7 +6879,6 @@ function showTeamsPerformanceAnalytics() {
         loadTeamsPerformanceAnalytics();
     }, 500);
 }
-
 // Load Zone Details
 async function loadZoneDetails() {
     try {
@@ -6925,8 +6926,6 @@ async function loadZoneDetails() {
         console.error('❌ Error loading zone details:', error);
     }
 }
-
-
 // Standardized ticket display function
 function createTicketDisplay(ticket) {
     const ticketName = getTicketName(ticket);
@@ -7309,8 +7308,6 @@ function generateZoneAIInsights(zoneName, zoneData, zoneTickets, zoneTeams) {
         </div>
     `).join('');
 }
-
-
 async function loadZoneAnalytics() {
     console.log('Loading zone analytics...');
     try {
@@ -7420,7 +7417,6 @@ function createZoneElement(zone) {
     
     return div;
 }
-
 function createStateElement(state) {
     const productivityScore = state.productivityScore || 0;
     const productivityColor = productivityScore >= 50 ? '#28a745' : productivityScore >= 0 ? '#ffc107' : '#dc3545';
@@ -7475,8 +7471,6 @@ function createStateElement(state) {
         </div>
     `;
 }
-
-
 function displaySampleZoneData() {
     const sampleZones = {
         "Central": {
@@ -7933,7 +7927,6 @@ async function loadTicketAnalytics() {
         displaySampleTicketAnalytics();
     }
 }
-
 function displayTicketInfo(tickets) {
     const container = document.getElementById('ticket-info');
     
@@ -8221,7 +8214,6 @@ function displaySampleTicketAnalytics() {
     createPriorityDistributionChart(sampleTickets);
     createTeamPerformanceChart(sampleZones);
 }
-
 function exportTicketData() {
     // Simple export functionality
     const data = {
@@ -8269,7 +8261,6 @@ function showInventoryManagement() {
     // Load inventory data
     loadInventoryManagement();
 }
-
 function showReorderAlerts() {
     document.getElementById('material-forecast-view').style.display = 'none';
     document.getElementById('inventory-management-view').style.display = 'none';
@@ -8557,7 +8548,6 @@ function getStockStatusClass(status) {
         default: return 'bg-secondary';
     }
 }
-
 async function loadReorderAlerts() {
     try {
         const response = await fetch(`${API_BASE}/planning/reorder-alerts`);
@@ -8944,7 +8934,6 @@ function extractRootCause(ticket) {
     
     return null;
 }
-
 window.viewTicketDetails = async function(ticketId) {
     try {
         console.log('🔍 Loading ticket details for:', ticketId);
@@ -9487,14 +9476,18 @@ async function loadPerformanceAnalysis() {
         }
         
         const ticketv2Data = await ticketv2Response.json();
-        const allTickets = ticketv2Data.tickets?.tickets || [];
+        const allTickets = (ticketv2Data.tickets?.tickets || []).slice().sort((a, b) => {
+            const da = new Date(a.created_at || a.createdAt || 0).getTime();
+            const db = new Date(b.created_at || b.createdAt || 0).getTime();
+            return db - da; // newest first
+        });
         const allTeams = ticketv2Data.teams?.teams || [];
         
         // cache for consistency
         lastPerfData = { tickets: allTickets, teams: allTeams };
 
         console.log('📊 Performance Analysis data:', { tickets: allTickets.length, teams: allTeams.length });
-        console.log('🔍 Teams data sample:', allTeams[0]);
+    console.log('🔍 Teams data sample:', allTeams[0]);
     console.log('🔍 Teams API response structure:', {
         hasTeamName: !!allTeams[0]?.teamName,
         hasName: !!allTeams[0]?.name,
@@ -9511,22 +9504,28 @@ async function loadPerformanceAnalysis() {
         if (document.getElementById('productivityVsEfficiencyChart')) createProductivityVsEfficiencyChart(allTickets, allTeams);
         // Zone performance expects zones aggregation, not raw tickets
         if (document.getElementById('zonePerformanceChart')) {
-            const zonesAgg = allTickets.reduce((acc, t) => {
-                const zone = t.zone || t.location?.zone || 'Unknown';
-                const z = acc[zone] || { productivityScore: 0, openTickets: 0, closedTickets: 0, count: 0 };
-                z.count += 1;
-                if (t.status === 'open' || t.status === 'in_progress' || t.status === 'pending') z.openTickets += 1;
-                if (t.status === 'resolved' || t.status === 'closed' || t.status === 'completed') z.closedTickets += 1;
-                acc[zone] = z;
+            const zonesAggMap = allTickets.reduce((acc, t) => {
+                const zoneName = t.zone || t.location?.zone || 'Unknown';
+                const status = String(t.status || '').toUpperCase();
+                const z = acc.get(zoneName) || { zone: zoneName, openTickets: 0, closedTickets: 0, total: 0 };
+                z.total += 1;
+                if (status === 'OPEN' || status === 'IN_PROGRESS' || status === 'PENDING') {
+                    z.openTickets += 1;
+                } else if (status === 'COMPLETED' || status === 'RESOLVED' || status === 'CLOSED') {
+                    z.closedTickets += 1;
+                }
+                acc.set(zoneName, z);
                 return acc;
-            }, {});
-            // simple productivity proxy: closed / total * 100
-            Object.keys(zonesAgg).forEach(k => {
-                const z = zonesAgg[k];
-                const total = z.openTickets + z.closedTickets;
-                z.productivityScore = total > 0 ? Math.round((z.closedTickets / total) * 100) : 0;
-            });
-            createZonePerformanceChart(zonesAgg);
+            }, new Map());
+            const zonesAgg = Array.from(zonesAggMap.values()).map(z => ({
+                zone: z.zone,
+                productivityPercentage: z.total > 0 ? Math.round((z.closedTickets / z.total) * 100) : 0,
+                activeTeams: (allTeams || []).filter(tm => (tm.state || tm.zone) === z.zone && (tm.is_active || tm.status === 'active' || tm.status === 'busy')).length,
+                openTickets: z.openTickets,
+                closedTickets: z.closedTickets,
+                total: z.total
+            })).sort((a,b) => b.productivityPercentage - a.productivityPercentage);
+            createZonePerformanceChart(zonesAgg, allTeams);
         }
         if (document.getElementById('priorityBreakdownChart')) createPriorityBreakdownChart(allTickets);
         if (document.getElementById('categoryDistChart')) createCategoryDistributionChart(allTickets);
@@ -9578,62 +9577,52 @@ async function loadPerformanceAnalysis() {
         perfLoadInFlight = false;
     }
 }
-
 // Update KPI cards
 function updatePerformanceKPIs(tickets, teams) {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-    
-    // Ticket growth
-    const thisMonth = tickets.filter(t => {
-        const createdDate = t.created_at || t.createdAt;
-        return createdDate && new Date(createdDate) >= monthStart;
-    }).length;
-    const lastMonth = tickets.filter(t => {
-        const createdDate = t.created_at || t.createdAt;
-        if (!createdDate) return false;
-        const date = new Date(createdDate);
-        return date >= lastMonthStart && date <= lastMonthEnd;
-    }).length;
-    const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth * 100).toFixed(1) : 0;
-    
-    // Efficiency rate - use status instead of timestamps
-    const resolved = tickets.filter(t => t.status === 'completed' || t.status === 'resolved' || t.status === 'closed');
-    const efficientTickets = resolved.filter(t => {
-        const createdDate = t.created_at || t.createdAt;
-        if (!createdDate) return false;
-        // For completed tickets without timestamps, assume they were completed within 2 hours
-        // This is a fallback since we don't have actual completion times
-        return true; // All completed tickets are considered efficient for now
-    }).length;
-    // Use realistic efficiency from backend data instead of calculating from tickets
-    const efficiency = 87.3; // Use backend efficiency data
-    
-    // Average resolution time - use fallback since completed_at is null
+    const nowTs = Date.now();
+    const last24hStart = nowTs - 24 * 60 * 60 * 1000;
+    const prev24hStart = last24hStart - 24 * 60 * 60 * 1000;
+
+    const toTs = (d) => new Date(d || 0).getTime();
+
+    const last24hTickets = tickets.filter(t => toTs(t.created_at || t.createdAt) >= last24hStart);
+    const prev24hTickets = tickets.filter(t => {
+        const ts = toTs(t.created_at || t.createdAt);
+        return ts >= prev24hStart && ts < last24hStart;
+    });
+
+    // Fallback: if last24h empty, use today window so cards don't stay zero
+    const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+    const todayTickets = tickets.filter(t => toTs(t.created_at || t.createdAt) >= todayStart);
+    const windowTickets = last24hTickets.length ? last24hTickets : todayTickets;
+
+    const compareTickets = prev24hTickets; // if empty, growth => 0
+
+    const growth = compareTickets.length > 0
+        ? (((windowTickets.length - compareTickets.length) / compareTickets.length) * 100).toFixed(1)
+        : 0;
+
+    const isCompleted = (s) => ['COMPLETED','completed','RESOLVED','resolved','CLOSED','closed'].includes(String(s));
+    const resolved = windowTickets.filter(t => isCompleted(t.status));
+    const efficiency = windowTickets.length > 0 ? ((resolved.length / windowTickets.length) * 100).toFixed(1) : 0;
+
     const avgTime = resolved.length > 0 
         ? (resolved.reduce((sum, t) => {
-            const completedDate = t.completed_at || t.resolvedAt;
-            const createdDate = t.created_at || t.createdAt;
-            if (!completedDate || !createdDate) {
-                // Fallback: assume 2 hours for completed tickets without timestamps
-                return sum + (2 * 60 * 60 * 1000); // 2 hours in milliseconds
-            }
-            return sum + (new Date(completedDate) - new Date(createdDate));
+            const end = toTs(t.completed_at || t.resolvedAt);
+            const start = toTs(t.created_at || t.createdAt);
+            if (!end || !start) return sum + 2 * 60 * 60 * 1000; // fallback 2h
+            return sum + (end - start);
         }, 0) / resolved.length / (1000 * 60 * 60)).toFixed(2)
         : 0;
     
-    // Monthly cost
     const hourlyRate = teams[0]?.hourlyRate || 45;
-    const monthlyCost = thisMonth * hourlyRate * 1.5;
+    const monthlyCost = windowTickets.length * hourlyRate * 1.5;
     
     updateElement('kpi-trend', `${growth >= 0 ? '+' : ''}${growth}%`);
     updateElement('kpi-efficiency', `${efficiency}%`);
     updateElement('kpi-avg-time', `${avgTime}h`);
-    updateElement('kpi-cost', `RM ${monthlyCost.toLocaleString()}`);
+    updateElement('kpi-cost', `RM ${Number(monthlyCost).toLocaleString()}`);
 }
-
 // Create Ticket Trends Chart with projections
 function createTicketTrendsChart(tickets) {
     const ctx = document.getElementById('ticketTrendsChart');
@@ -9643,6 +9632,9 @@ function createTicketTrendsChart(tickets) {
     }
     
     console.log('📈 Creating Ticket Trends Chart...');
+    
+    // Destroy existing chart
+    destroyChartIfExists('ticketTrendsChart');
     
     // Get last 30 days of data
     const days = [];
@@ -9849,21 +9841,36 @@ function createStatusDistributionChart(tickets) {
     
     console.log('📊 Creating Status Distribution Chart...');
     
+    // Destroy existing chart
+    destroyChartIfExists('statusDistChart');
+    
+    // Filter for today's tickets
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTickets = tickets.filter(t => {
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return false;
+        const ticketDate = new Date(createdDate);
+        return ticketDate >= today;
+    });
+    
+    // Use today's tickets if available, otherwise use all tickets
+    const ticketsToUse = todayTickets.length > 0 ? todayTickets : tickets;
+    
     const statusCounts = {
-        open: tickets.filter(t => t.status === 'open').length,
-        in_progress: tickets.filter(t => t.status === 'in_progress').length,
-        resolved: tickets.filter(t => t.status === 'resolved' || t.status === 'completed').length,
-        closed: tickets.filter(t => t.status === 'closed').length
+        open: ticketsToUse.filter(t => t.status === 'OPEN' || t.status === 'open').length,
+        in_progress: ticketsToUse.filter(t => t.status === 'IN_PROGRESS' || t.status === 'in_progress').length,
+        completed: ticketsToUse.filter(t => t.status === 'COMPLETED' || t.status === 'completed').length,
+        cancelled: ticketsToUse.filter(t => t.status === 'CANCELLED' || t.status === 'cancelled').length
     };
     
-    destroyChartIfExists('statusDist');
-    chartInstances['statusDist'] = new Chart(ctx, {
+    chartInstances['statusDistChart'] = new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: ['Open', 'In Progress', 'Resolved', 'Closed'],
+            labels: ['Open', 'In Progress', 'Completed', 'Cancelled'],
             datasets: [{
-                data: [statusCounts.open, statusCounts.in_progress, statusCounts.resolved, statusCounts.closed],
-                backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#6b7280'],
+                data: [statusCounts.open, statusCounts.in_progress, statusCounts.completed, statusCounts.cancelled],
+                backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
                 borderWidth: 0,
                 hoverOffset: 10
             }]
@@ -10170,7 +10177,6 @@ function createProductivityVsEfficiencyChart(tickets, teams) {
     
     console.log('✅ Productivity vs Efficiency Chart created');
 }
-
 // Create Zone Performance Chart
 function createTeamsZonePerformanceChart(zones) {
     const ctx = document.getElementById('teamsZonePerformanceChart');
@@ -10357,24 +10363,42 @@ function createTeamsZonePerformanceChart(zones) {
         console.error('❌ Error creating states ticket breakdown chart:', error);
     }
 }
-
 // Create Priority Breakdown Chart (Enhanced Donut)
 function createPriorityBreakdownChart(tickets) {
     const ctx = document.getElementById('priorityBreakdownChart');
     if (!ctx) {
-        console.warn(`⚠️ Canvas not found for chart`);
+        console.warn('⚠️ priorityBreakdownChart canvas not found');
         return;
     }
     
+    console.log('📊 Creating Priority Breakdown Chart...');
+    
+    // Destroy existing chart
+    destroyChartIfExists('priorityBreakdownChart');
+    
+    // Filter for today's tickets
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayTickets = tickets.filter(t => {
+        const createdDate = t.created_at || t.createdAt;
+        if (!createdDate) return false;
+        const ticketDate = new Date(createdDate);
+        return ticketDate >= today;
+    });
+    
+    // Use today's tickets if available, otherwise use all tickets
+    const dataSet = todayTickets.length > 0 ? todayTickets : tickets;
+    
     const priorities = {
-        emergency: tickets.filter(t => t.priority === 'emergency').length,
-        high: tickets.filter(t => t.priority === 'high').length,
-        medium: tickets.filter(t => t.priority === 'medium').length,
-        low: tickets.filter(t => t.priority === 'low').length
+        emergency: dataSet.filter(t => t.priority === 'EMERGENCY' || t.priority === 'emergency').length,
+        high: dataSet.filter(t => t.priority === 'HIGH' || t.priority === 'high').length,
+        medium: dataSet.filter(t => t.priority === 'MEDIUM' || t.priority === 'medium').length,
+        low: dataSet.filter(t => t.priority === 'LOW' || t.priority === 'low').length
     };
     
-    // Destroy existing chart instance if it exists
+    // Destroy existing chart instance and any canvas-bound chart before recreating
     destroyChartIfExists('priorityBreakdownChart');
+    destroyChartByCanvasId('priorityBreakdownChart');
     
     chartInstances.priorityBreakdownChart = new Chart(ctx, {
         type: 'doughnut',
@@ -10413,18 +10437,20 @@ function createPriorityBreakdownChart(tickets) {
                     position: 'bottom',
                     labels: {
                         usePointStyle: true,
-                        padding: 20,
+                        padding: 16,
                         font: {
-                            size: 12,
+                            size: 11,
+                            family: 'Inter, system-ui, sans-serif',
                             weight: '500'
-                        }
+                        },
+                        color: '#4b5563'
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
+                    borderColor: '#e5e7eb',
                     borderWidth: 1,
                     cornerRadius: 8,
                     displayColors: true,
@@ -10514,18 +10540,20 @@ function createCategoryDistributionChart(tickets) {
                     position: 'bottom',
                     labels: {
                         usePointStyle: true,
-                        padding: 20,
+                        padding: 16,
                         font: {
-                            size: 12,
+                            size: 11,
+                            family: 'Inter, system-ui, sans-serif',
                             weight: '500'
-                        }
+                        },
+                        color: '#4b5563'
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
+                    borderColor: '#e5e7eb',
                     borderWidth: 1,
                     cornerRadius: 8,
                     displayColors: true,
@@ -10591,7 +10619,7 @@ function createTeamProductivityChart(teams) {
         .slice(0, 10);
     
     console.log('📊 Top teams for chart:', topTeams.length);
-    console.log('📊 Top teams data:', topTeams.map(t => ({
+    console.log('📊 Top teams data:', topTeams.map((t) => ({
         name: t.teamName || t.name,
         tickets: t.productivity?.ticketsCompleted || 0
     })));
@@ -10707,16 +10735,16 @@ function createCostAnalysisChart(tickets, teams) {
                     display: true,
                     position: 'top',
                     labels: {
-                        font: { size: 12, weight: '500' },
+                        font: { size: 11, weight: '500' },
                         usePointStyle: true,
                         padding: 16
                     }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: 'white',
-                    bodyColor: 'white',
-                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
+                    borderColor: '#e5e7eb',
                     borderWidth: 1,
                     cornerRadius: 8,
                     padding: 12,
@@ -10748,18 +10776,18 @@ function createCostAnalysisChart(tickets, teams) {
                     title: { 
                         display: true, 
                         text: 'Cost (RM)',
-                        font: { size: 12, weight: '600' },
-                        color: '#374151'
+                        font: { size: 11, weight: '500', family: 'Inter, system-ui, sans-serif' },
+                        color: '#6b7280'
                     },
                     ticks: {
-                        font: { size: 11, weight: '500' },
+                        font: { size: 11, weight: '500', family: 'Inter, system-ui, sans-serif' },
                         color: '#6b7280',
                         callback: function(value) {
                             return 'RM ' + value.toFixed(0);
                         }
                     },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)',
+                        color: '#eef2f7',
                         drawBorder: false
                     },
                     border: {
@@ -10768,7 +10796,7 @@ function createCostAnalysisChart(tickets, teams) {
                 },
                 x: {
                     ticks: {
-                        font: { size: 10, weight: '500' },
+                        font: { size: 11, weight: '500', family: 'Inter, system-ui, sans-serif' },
                         color: '#6b7280',
                         maxRotation: 45,
                         minRotation: 0
@@ -10789,7 +10817,6 @@ function createCostAnalysisChart(tickets, teams) {
         }
     });
 }
-
 // Create Peak Hours Chart
 function createPeakHoursChart(tickets) {
     const ctx = document.getElementById('peakHoursChart');
@@ -11011,9 +11038,9 @@ function createProductivityMetricsChart(tickets, teams) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
                     borderColor: '#3b82f6',
                     borderWidth: 2,
                     cornerRadius: 12,
@@ -11045,7 +11072,8 @@ function createProductivityMetricsChart(tickets, teams) {
                     ticks: {
                         font: {
                             size: 13,
-                            weight: '600'
+                            weight: '600',
+                            family: 'Inter, system-ui, sans-serif'
                         },
                         color: '#475569',
                         padding: 8
@@ -11061,7 +11089,8 @@ function createProductivityMetricsChart(tickets, teams) {
                     ticks: {
                         font: {
                             size: 12,
-                            weight: '600'
+                            weight: '600',
+                            family: 'Inter, system-ui, sans-serif'
                         },
                         color: '#64748b',
                         padding: 8,
@@ -11084,7 +11113,6 @@ function createProductivityMetricsChart(tickets, teams) {
         }
     });
 }
-
 // Create Efficiency Trends Chart
 function createEfficiencyTrendsChart(tickets) {
     const ctx = document.getElementById('efficiencyTrendsChart');
@@ -11181,9 +11209,9 @@ function createEfficiencyTrendsChart(tickets) {
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
+                    backgroundColor: 'rgba(17, 24, 39, 0.9)',
+                    titleColor: '#fff',
+                    bodyColor: '#e5e7eb',
                     borderColor: '#10b981',
                     borderWidth: 2,
                     cornerRadius: 12,
@@ -11214,10 +11242,11 @@ function createEfficiencyTrendsChart(tickets) {
                     },
                     ticks: {
                         font: {
-                            size: 13,
-                            weight: '600'
+                            size: 11,
+                            weight: '500',
+                            family: 'Inter, system-ui, sans-serif'
                         },
-                        color: '#475569',
+                        color: '#6b7280',
                         padding: 8
                     }
                 },
@@ -11225,16 +11254,17 @@ function createEfficiencyTrendsChart(tickets) {
                     beginAtZero: true,
                     max: 100,
                     grid: {
-                        color: 'rgba(148, 163, 184, 0.15)',
+                        color: '#eef2f7',
                         drawBorder: false,
                         lineWidth: 1
                     },
                     ticks: {
                         font: {
-                            size: 12,
-                            weight: '600'
+                            size: 11,
+                            weight: '500',
+                            family: 'Inter, system-ui, sans-serif'
                         },
-                        color: '#64748b',
+                        color: '#6b7280',
                         padding: 8,
                         callback: function(value) {
                             return value + '%';
@@ -11244,10 +11274,11 @@ function createEfficiencyTrendsChart(tickets) {
                         display: true,
                         text: 'Efficiency (%)',
                         font: {
-                            size: 13,
-                            weight: '700'
+                            size: 11,
+                            weight: '500',
+                            family: 'Inter, system-ui, sans-serif'
                         },
-                        color: '#374151'
+                        color: '#6b7280'
                     }
                 }
             },
@@ -11414,7 +11445,6 @@ function populateTopPerformersForAnalysis(teams) {
         team_name: sortedTeams[0].team_name
     } : 'No teams');
 }
-
 // Populate Top Performers for Main Dashboard
 function populateTopPerformersMain(teams) {
     console.log('🏆 populateTopPerformersMain called with teams:', teams);
@@ -11844,7 +11874,6 @@ function addAIMessage(message) {
     
     aiChatHistory.push({ role: 'assistant', content: message });
 }
-
 function formatAIMessage(content) {
     if (!content) return '';
     
@@ -12049,7 +12078,6 @@ async function generateAIResponse(query, systemData) {
     // Default response
     return generateDefaultResponse(systemData);
 }
-
 function generateTicketAnalysis(data) {
     const tickets = data.tickets;
     const totalTickets = tickets.length;
@@ -12218,4 +12246,3 @@ function generateDefaultResponse(data) {
         </ul>
     `;
 }
-
