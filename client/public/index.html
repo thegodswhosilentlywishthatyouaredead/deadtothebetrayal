@@ -1013,25 +1013,29 @@
 
         .ticket-card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
+            border-radius: 8px;
+            padding: 0.75rem;
             box-shadow: var(--card-shadow);
             border: 1px solid #f1f5f9;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+            line-height: 1.4;
         }
 
         .ticket-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 1rem;
+            margin-bottom: 0.5rem;
         }
 
         .ticket-title {
-            font-size: 1.125rem;
+            font-size: 0.9rem;
             font-weight: 600;
             color: var(--text-primary);
             margin: 0;
+            line-height: 1.3;
         }
 
         .priority-badge {
@@ -1049,21 +1053,23 @@
 
         .ticket-description {
             color: var(--text-secondary);
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.8rem;
+            line-height: 1.4;
         }
 
         .ticket-details {
             display: flex;
-            gap: 1.5rem;
+            gap: 1rem;
             align-items: center;
         }
 
         .ticket-detail {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
             color: var(--text-secondary);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
         }
 
         .ticket-detail i {
@@ -2621,8 +2627,8 @@
         .zone-performance-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
             border-radius: 16px;
-            padding: 1.25rem;
-            margin-bottom: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.875rem;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
             border: 1px solid rgba(0, 102, 204, 0.1);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2666,21 +2672,21 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 0.875rem;
         }
 
         .zone-name {
-            font-weight: 700;
-            font-size: 1.15rem;
+            font-weight: 600;
+            font-size: 0.9rem;
             color: var(--text-primary);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.375rem;
         }
 
         .zone-name::before {
             content: '📍';
-            font-size: 1.2rem;
+            font-size: 0.85rem;
         }
 
         .zone-rank {
@@ -2721,39 +2727,39 @@
 
         .zone-metrics {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.625rem;
+            margin-bottom: 0.875rem;
         }
 
         .zone-metric {
             text-align: center;
-            padding: 0.75rem;
+            padding: 0.625rem;
             background: linear-gradient(135deg, rgba(0, 102, 204, 0.08) 0%, rgba(0, 102, 204, 0.03) 100%);
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid rgba(0, 102, 204, 0.1);
             transition: all 0.3s ease;
         }
 
         .zone-metric:hover {
             background: linear-gradient(135deg, rgba(0, 102, 204, 0.12) 0%, rgba(0, 102, 204, 0.05) 100%);
-            transform: scale(1.05);
+            transform: scale(1.02);
         }
 
         .zone-metric-value {
-            font-weight: 700;
-            font-size: 1.5rem;
+            font-weight: 600;
+            font-size: 0.85rem;
             color: var(--primary-color);
             display: block;
             margin-bottom: 0.25rem;
         }
 
         .zone-metric-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            font-weight: 600;
+            font-weight: 500;
         }
 
         .zone-productivity {
@@ -2927,10 +2933,10 @@
         .ticket-status {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+            gap: 4px;
+            padding: 3px 6px;
+            border-radius: 8px;
+            font-size: 0.7rem;
             font-weight: 500;
             text-transform: uppercase;
         }
@@ -5543,6 +5549,59 @@
                 font-size: 0.6rem;
             }
         }
+        /* Performance Optimizations and Smooth Transitions */
+        .ticket-card {
+            will-change: transform;
+        }
+        
+        .ticket-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .ticket-details-drawer {
+            will-change: transform;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        .ticket-details-drawer .small {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        .ticket-details-drawer .fw-semibold {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        
+        .ticket-details-drawer .text-muted {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Form Controls Improvements */
+        .form-select, .form-control {
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+        }
+        
+        /* Badge Improvements */
+        .badge {
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 0.3rem 0.5rem;
+        }
+        
+        /* Smooth Transitions for All Elements */
+        * {
+            transition: font-size 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+        }
     </style>
 </head>
 <body>
@@ -5901,7 +5960,10 @@
                                         <div class="metric-value" id="tickets-total">0</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+12% vs last week</span>
+                                            <span id="tickets-total-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-total-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-total">0</span> | Last Month: <span id="last-month-tickets-total">0</span></small>
                                         </div>
                                     </div>
 
@@ -5915,7 +5977,10 @@
                                         <div class="metric-value" id="tickets-pending">0</div>
                                         <div class="metric-trend trend-down">
                                             <i class="fas fa-arrow-down"></i>
-                                            <span>-5% vs last week</span>
+                                            <span id="tickets-pending-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-pending-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-pending">0</span> | Last Month: <span id="last-month-tickets-pending">0</span></small>
                                         </div>
                                     </div>
 
@@ -5929,7 +5994,10 @@
                                         <div class="metric-value" id="tickets-resolved">0</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+8% vs last week</span>
+                                            <span id="tickets-resolved-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-resolved-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-resolved">0</span> | Last Month: <span id="last-month-tickets-resolved">0</span></small>
                                         </div>
                                     </div>
 
@@ -5943,7 +6011,10 @@
                                         <div class="metric-value" id="tickets-critical">0</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+2 vs last week</span>
+                                            <span id="tickets-critical-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-critical-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-critical">0</span> | Last Month: <span id="last-month-tickets-critical">0</span></small>
                                         </div>
                                     </div>
 
@@ -5957,7 +6028,10 @@
                                         <div class="metric-value" id="tickets-efficiency">0%</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+3% improvement</span>
+                                            <span id="tickets-efficiency-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-efficiency-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-efficiency">0%</span> | Last Month: <span id="last-month-tickets-efficiency">0%</span></small>
                                         </div>
                                     </div>
 
@@ -5971,7 +6045,10 @@
                                         <div class="metric-value" id="tickets-avg-time">0h</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-down"></i>
-                                            <span>-15% faster</span>
+                                            <span id="tickets-avg-time-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-avg-time-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-avg-time">0h</span> | Last Month: <span id="last-month-tickets-avg-time">0h</span></small>
                                         </div>
                                     </div>
 
@@ -5985,7 +6062,10 @@
                                         <div class="metric-value" id="tickets-satisfaction">0.0</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+0.2 vs last week</span>
+                                            <span id="tickets-satisfaction-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-satisfaction-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-satisfaction">0.0</span> | Last Month: <span id="last-month-tickets-satisfaction">0.0</span></small>
                                         </div>
                                     </div>
 
@@ -5999,7 +6079,10 @@
                                         <div class="metric-value" id="tickets-assigned">0%</div>
                                         <div class="metric-trend trend-up">
                                             <i class="fas fa-arrow-up"></i>
-                                            <span>+7% vs last week</span>
+                                            <span id="tickets-assigned-change">Loading...</span>
+                                        </div>
+                                        <div class="metric-detail" id="tickets-assigned-detail">
+                                            <small>Yesterday: <span id="yesterday-tickets-assigned">0%</span> | Last Month: <span id="last-month-tickets-assigned">0%</span></small>
                                         </div>
                                     </div>
                                 </div>
@@ -8027,7 +8110,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/app.js?v=69"></script>
+    <script src="/src/app.js?v=83"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

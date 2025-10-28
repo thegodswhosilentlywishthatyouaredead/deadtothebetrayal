@@ -229,14 +229,17 @@ def seed_enhanced_database():
                 customer_names = ['Ahmad', 'Siti', 'Muhammad', 'Fatimah', 'Ali', 'Aisha', 'Hassan', 'Zainab']
                 customer_name = random.choice(customer_names)
                 
+                # Generate customer email
+                customer_email = f"{customer_name.lower()}@example.com"
+                
                 conn.execute(text("""
                     INSERT INTO tickets (ticket_number, title, description, priority, status, category,
                                        location, zone, coordinates, assigned_team_id, assigned_user_id,
                                        created_at, updated_at, due_date, completed_at, sla_hours, 
-                                       estimated_duration, customer_name, customer_contact)
+                                       estimated_duration, customer_name, customer_contact, customer_email)
                     VALUES (:ticket_number, :title, :description, :priority, :status, :category,
                            :location, :zone, :coordinates, :team_id, :user_id, :created_at, :updated_at,
-                           :due_date, :completed_at, :sla_hours, :estimated_duration, :customer_name, :customer_contact)
+                           :due_date, :completed_at, :sla_hours, :estimated_duration, :customer_name, :customer_contact, :customer_email)
                 """), {
                     'ticket_number': ticket_number,
                     'title': f'{root_cause.replace("_", " ").title()} - {state} Zone',
@@ -256,7 +259,8 @@ def seed_enhanced_database():
                     'sla_hours': 24,
                     'estimated_duration': round(random.uniform(1.0, 8.0), 2),
                     'customer_name': customer_name,
-                    'customer_contact': f'60{random.randint(100000000, 999999999)}'
+                    'customer_contact': f'60{random.randint(100000000, 999999999)}',
+                    'customer_email': customer_email
                 })
             
             conn.commit()

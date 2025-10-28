@@ -268,6 +268,7 @@ async def get_tickets(
             "estimated_duration": ticket.estimated_duration,
             "customer_name": ticket.customer_name,
             "customer_contact": ticket.customer_contact,
+            "customer_email": ticket.customer_email,
             # Additional fields for KPI calculations
             "resolved_at": ticket.completed_at,  # Alias for frontend compatibility
             "resolvedAt": ticket.completed_at,  # Alias for frontend compatibility

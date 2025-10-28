@@ -1073,67 +1073,95 @@ async function loadTeamStatusOverview() {
 function calculateZonePerformanceFromTicketv2(tickets, teams) {
     const zoneStats = {};
     
-    // Calculate zone statistics from tickets
-    tickets.forEach(ticket => {
-        const zone = ticket.zone || 'Unknown';
+    // Initialize zone statistics based on teams (zones = states = accumulation of teams)
+    teams.forEach(team => {
+        const zone = team.zone || 'Unknown';
         if (!zoneStats[zone]) {
             zoneStats[zone] = {
                 zone: zone,
+                totalTeams: 0,
+                activeTeams: 0,
                 totalTickets: 0,
                 openTickets: 0,
                 closedTickets: 0,
-                activeTeams: 0,
-                productivityScore: 0,
-                efficiencyScore: 0,
+                totalTicketsCompleted: 0,
+                totalEfficiencyScore: 0,
+                totalProductivityScore: 0,
+                totalRating: 0,
+                totalResponseTime: 0,
+                avgEfficiencyScore: 0,
+                avgProductivityScore: 0,
+                avgRating: 0,
                 avgResponseTime: 0,
                 productivityPercentage: 0
             };
         }
         
-        zoneStats[zone].totalTickets++;
+        zoneStats[zone].totalTeams++;
         
-        if (ticket.status === 'COMPLETED' || ticket.status === 'completed') {
-            zoneStats[zone].closedTickets++;
-        } else {
-            zoneStats[zone].openTickets++;
+        // Count active teams (online or busy)
+        if (team.status === 'online' || team.status === 'busy') {
+            zoneStats[zone].activeTeams++;
         }
+        
+        // Accumulate team productivity metrics
+        const efficiencyScore = team.efficiency_score || team.productivity?.efficiency || 0;
+        const productivityScore = team.productivity_score || team.productivity?.completionRate || 0;
+        const rating = team.rating || team.productivity?.customerRating || 0;
+        const responseTime = team.response_time_avg || team.productivity?.responseTime || 0;
+        const ticketsCompleted = team.tickets_completed || team.productivity?.ticketsCompleted || 0;
+        
+        zoneStats[zone].totalEfficiencyScore += efficiencyScore;
+        zoneStats[zone].totalProductivityScore += productivityScore;
+        zoneStats[zone].totalRating += rating;
+        zoneStats[zone].totalResponseTime += responseTime;
+        zoneStats[zone].totalTicketsCompleted += ticketsCompleted;
     });
     
-    // Calculate team statistics per zone
-    teams.forEach(team => {
-        const zone = team.zone || 'Unknown';
+    // Calculate ticket statistics per zone for additional context
+    tickets.forEach(ticket => {
+        const zone = ticket.zone || 'Unknown';
         if (zoneStats[zone]) {
-            zoneStats[zone].activeTeams++;
+            zoneStats[zone].totalTickets++;
             
-            // Use team productivity data if available
-            if (team.productivity) {
-                zoneStats[zone].efficiencyScore = team.productivity.efficiency || 0;
-                zoneStats[zone].avgResponseTime = team.productivity.responseTime || 0;
+            if (ticket.status === 'COMPLETED' || ticket.status === 'completed') {
+                zoneStats[zone].closedTickets++;
+            } else {
+                zoneStats[zone].openTickets++;
             }
         }
     });
     
-    // Calculate productivity percentage for all zones based on completion rate
+    // Calculate average team productivity metrics per zone
     Object.values(zoneStats).forEach(zone => {
-        // Calculate productivity percentage based on completion rate
-        const completionRate = zone.totalTickets > 0 ? (zone.closedTickets / zone.totalTickets) * 100 : 0;
-        zone.productivityPercentage = Math.round(completionRate * 10) / 10; // Round to 1 decimal place
-        zone.productivityScore = zone.productivityPercentage; // For backward compatibility
-        
-        // If we have team efficiency data, blend it with completion rate
-        if (zone.efficiencyScore > 0) {
-            // Weight: 70% completion rate + 30% team efficiency
-            zone.productivityPercentage = Math.round((completionRate * 0.7 + zone.efficiencyScore * 0.3) * 10) / 10;
-            zone.productivityScore = zone.productivityPercentage;
+        if (zone.totalTeams > 0) {
+            zone.avgEfficiencyScore = Math.round((zone.totalEfficiencyScore / zone.totalTeams) * 10) / 10;
+            zone.avgProductivityScore = Math.round((zone.totalProductivityScore / zone.totalTeams) * 10) / 10;
+            zone.avgRating = Math.round((zone.totalRating / zone.totalTeams) * 100) / 100;
+            zone.avgResponseTime = Math.round((zone.totalResponseTime / zone.totalTeams) * 10) / 10;
+            
+            // Calculate overall productivity percentage based on team performance
+            // Weight: 40% efficiency + 40% productivity + 20% rating
+            zone.productivityPercentage = Math.round((
+                zone.avgEfficiencyScore * 0.4 + 
+                zone.avgProductivityScore * 0.4 + 
+                (zone.avgRating / 5) * 100 * 0.2
+            ) * 10) / 10;
+            
+            // Ensure productivity percentage is within 0-100 range
+            zone.productivityPercentage = Math.max(0, Math.min(100, zone.productivityPercentage));
         }
     });
     
-    console.log('📊 Zone performance calculated:', Object.values(zoneStats).map(z => ({
+    console.log('📊 Zone team productivity calculated:', Object.values(zoneStats).map(z => ({
         zone: z.zone,
+        totalTeams: z.totalTeams,
+        activeTeams: z.activeTeams,
         productivityPercentage: z.productivityPercentage,
-        totalTickets: z.totalTickets,
-        closedTickets: z.closedTickets,
-        activeTeams: z.activeTeams
+        avgEfficiencyScore: z.avgEfficiencyScore,
+        avgProductivityScore: z.avgProductivityScore,
+        avgRating: z.avgRating,
+        totalTicketsCompleted: z.totalTicketsCompleted
     })));
     
     return Object.values(zoneStats);
@@ -1143,13 +1171,13 @@ function createZonePerformanceElement(zone, rank) {
     const zoneCard = document.createElement('div');
     zoneCard.className = `zone-performance-card rank-${rank}`;
     
-    // Calculate metrics with proper formatting
-    // Use the calculated productivity percentage from ticketv2 data
-    const productivityPercentage = parseFloat(zone.productivityPercentage || zone.productivityScore || zone.productivity || 0).toFixed(1);
+    // Calculate team-focused metrics with proper formatting
+    const productivityPercentage = parseFloat(zone.productivityPercentage || 0).toFixed(1);
     const activeTeams = zone.activeTeams || 0;
     const totalTeams = zone.totalTeams || 0;
-    const totalTickets = zone.totalTickets || (zone.openTickets || 0) + (zone.closedTickets || 0);
-    const avgRating = parseFloat(zone.averageRating || 4.5).toFixed(2);
+    const avgEfficiencyScore = parseFloat(zone.avgEfficiencyScore || 0).toFixed(1);
+    const avgRating = parseFloat(zone.avgRating || 0).toFixed(2);
+    const totalTicketsCompleted = zone.totalTicketsCompleted || 0;
     
     // Determine productivity color based on percentage
     let productivityColor = '#28a745'; // green
@@ -1164,17 +1192,21 @@ function createZonePerformanceElement(zone, rank) {
         
         <div class="zone-metrics">
             <div class="zone-metric">
-                <span class="zone-metric-value">${totalTickets}</span>
-                <div class="zone-metric-label">Total Tickets</div>
-            </div>
-            <div class="zone-metric">
                 <span class="zone-metric-value">${activeTeams}/${totalTeams}</span>
                 <div class="zone-metric-label">Active Teams</div>
+            </div>
+            <div class="zone-metric">
+                <span class="zone-metric-value">${totalTicketsCompleted}</span>
+                <div class="zone-metric-label">Tickets Completed</div>
+            </div>
+            <div class="zone-metric">
+                <span class="zone-metric-value">${avgEfficiencyScore}</span>
+                <div class="zone-metric-label">Avg Efficiency</div>
             </div>
         </div>
         
         <div class="zone-productivity">
-            <div class="productivity-label">Productivity Score</div>
+            <div class="productivity-label">Team Productivity</div>
             <div class="productivity-score" style="color: ${productivityColor}">${productivityPercentage}%</div>
         </div>
         
@@ -1184,10 +1216,7 @@ function createZonePerformanceElement(zone, rank) {
         
         <div class="mt-2" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-top: 1px solid rgba(0, 102, 204, 0.1);">
             <small style="color: #6c757d; font-weight: 500;">
-                <i class="fas fa-folder-open" style="color: #ffc107;"></i> ${zone.openTickets || 0} open
-            </small>
-            <small style="color: #6c757d; font-weight: 500;">
-                <i class="fas fa-check-circle" style="color: #28a745;"></i> ${zone.closedTickets || 0} closed
+                <i class="fas fa-users" style="color: #007bff;"></i> ${totalTeams} teams
             </small>
             <small style="color: #6c757d; font-weight: 500;">
                 <i class="fas fa-star" style="color: #ffc107;"></i> ${avgRating}
@@ -1205,43 +1234,48 @@ function displaySampleZonePerformance() {
     const sampleZones = [
         {
             zone: 'Central Zone (KL)',
-            totalTickets: 45,
-            openTickets: 8,
-            closedTickets: 37,
-            activeTeams: 3,
-            productivityScore: 92,
-            productivityPercentage: 82.2,
-            efficiency: 88
+            totalTeams: 8,
+            activeTeams: 6,
+            totalTicketsCompleted: 145,
+            avgEfficiencyScore: 88.5,
+            avgRating: 4.2,
+            productivityPercentage: 85.2
         },
         {
             zone: 'Northern Zone (Penang)',
-            totalTickets: 32,
-            openTickets: 5,
-            closedTickets: 27,
-            activeTeams: 2,
-            productivityScore: 89,
-            productivityPercentage: 84.4,
-            efficiency: 85
+            totalTeams: 6,
+            activeTeams: 4,
+            totalTicketsCompleted: 98,
+            avgEfficiencyScore: 82.3,
+            avgRating: 4.1,
+            productivityPercentage: 78.9
         },
         {
             zone: 'Southern Zone (Johor)',
-            totalTickets: 28,
-            openTickets: 6,
-            closedTickets: 22,
-            activeTeams: 2,
-            productivityScore: 84,
-            productivityPercentage: 78.6,
-            efficiency: 82
+            totalTeams: 7,
+            activeTeams: 5,
+            totalTicketsCompleted: 112,
+            avgEfficiencyScore: 79.8,
+            avgRating: 3.9,
+            productivityPercentage: 72.4
         },
         {
-            zone: 'East Malaysia',
-            totalTickets: 22,
-            openTickets: 4,
-            closedTickets: 18,
-            activeTeams: 1,
-            productivityScore: 78,
-            productivityPercentage: 81.8,
-            efficiency: 79
+            zone: 'Eastern Zone (Terengganu)',
+            totalTeams: 5,
+            activeTeams: 3,
+            totalTicketsCompleted: 67,
+            avgEfficiencyScore: 75.2,
+            avgRating: 3.8,
+            productivityPercentage: 68.1
+        },
+        {
+            zone: 'Sabah Zone',
+            totalTeams: 4,
+            activeTeams: 2,
+            totalTicketsCompleted: 45,
+            avgEfficiencyScore: 71.6,
+            avgRating: 3.7,
+            productivityPercentage: 64.3
         }
     ];
     

@@ -59,6 +59,7 @@ class Ticket(Base):
     # Customer info
     customer_name = Column(String(100))
     customer_contact = Column(String(100))
+    customer_email = Column(String(255))
     
     # Relationships
     assignments = relationship("Assignment", back_populates="ticket")
