@@ -988,8 +988,14 @@ async function loadTeamStatusOverview() {
     try {
         console.log('👥 Loading zone performance with ticketv2 data...');
         
-        // Try to get data from ticketv2 API first
+        // Get data from ticketv2 API
         const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        
+        if (!ticketv2Response.ok) {
+            console.error('❌ Ticketv2 API error:', ticketv2Response.status, ticketv2Response.statusText);
+            throw new Error(`Ticketv2 API Error: ${ticketv2Response.status}`);
+        }
+        
         const ticketv2Data = await ticketv2Response.json();
         
         console.log('👥 Ticketv2 API response:', {
@@ -1021,15 +1027,8 @@ async function loadTeamStatusOverview() {
                 closedTickets: z.closedTickets
             })));
         } else {
-            console.log('⚠️ Ticketv2 data structure invalid, falling back to regular API');
-            // Fallback to regular API - use ticketv2 instead
-            const response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
-            const data = await response.json();
-            if (data && data.tickets && data.teams) {
-                zonesData = calculateZonePerformanceFromTicketv2(data.tickets.tickets, data.teams.teams);
-            } else {
-                zonesData = [];
-            }
+            console.error('❌ Invalid ticketv2 data structure:', ticketv2Data);
+            throw new Error('Invalid ticketv2 data structure');
         }
         
         const container = document.getElementById('team-status-overview');
@@ -1057,13 +1056,17 @@ async function loadTeamStatusOverview() {
                 container.appendChild(zoneElement);
             });
         } else {
-            console.log('⚠️  No zones data, showing sample data');
-            displaySampleZonePerformance();
+            console.error('❌ No zones data available');
+            // Show error message instead of sample data
+            container.innerHTML = '<div class="alert alert-warning">No zone performance data available. Please check the API connection.</div>';
         }
     } catch (error) {
         console.error('❌ Error loading zone performance overview:', error);
-        // Show sample data on error
-        displaySampleZonePerformance();
+        // Show error message instead of sample data
+        const container = document.getElementById('team-status-overview');
+        if (container) {
+            container.innerHTML = '<div class="alert alert-danger">Error loading zone performance data. Please refresh the page.</div>';
+        }
     }
 }
 
