@@ -2501,34 +2501,45 @@ function hideErrorMessage() {
 }
 
 // Load sample data as fallback
-function loadSamplePerformanceAnalytics() {
-    console.log('📊 Loading sample performance analytics data...');
+// Load sample data as fallback - now uses ticketv2 data
+async function loadSamplePerformanceAnalytics() {
+    console.log('📊 Loading performance analytics data from ticketv2 API...');
     
-    // Create sample zones data
-    const sampleZones = [
-        { zone: 'Kuala Lumpur', productivityPercentage: 87.5, totalTickets: 45, closedTickets: 40, activeTeams: 3 },
-        { zone: 'Selangor', productivityPercentage: 82.3, totalTickets: 38, closedTickets: 32, activeTeams: 2 },
-        { zone: 'Johor', productivityPercentage: 79.1, totalTickets: 42, closedTickets: 34, activeTeams: 3 },
-        { zone: 'Penang', productivityPercentage: 75.8, totalTickets: 35, closedTickets: 28, activeTeams: 2 },
-        { zone: 'Perak', productivityPercentage: 73.2, totalTickets: 28, closedTickets: 22, activeTeams: 2 }
-    ];
-    
-    // Create sample teams data
-    const sampleTeams = [
-        { name: 'Team Alpha', zone: 'Kuala Lumpur', productivity: { efficiency: 87.5 } },
-        { name: 'Team Beta', zone: 'Selangor', productivity: { efficiency: 82.3 } },
-        { name: 'Team Gamma', zone: 'Johor', productivity: { efficiency: 79.1 } }
-    ];
-    
-    // Create sample tickets data
-    const sampleTickets = [
-        { zone: 'Kuala Lumpur', status: 'COMPLETED' },
-        { zone: 'Selangor', status: 'COMPLETED' },
-        { zone: 'Johor', status: 'OPEN' }
-    ];
-    
-    // Process sample data
-    processPerformanceAnalyticsData(sampleZones, sampleTeams, sampleTickets);
+    try {
+        // Get data from ticketv2 API
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        
+        if (!ticketv2Response.ok) {
+            console.error('❌ Ticketv2 API error:', ticketv2Response.status, ticketv2Response.statusText);
+            throw new Error(`Ticketv2 API Error: ${ticketv2Response.status}`);
+        }
+        
+        const ticketv2Data = await ticketv2Response.json();
+        
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const tickets = ticketv2Data.tickets.tickets || [];
+            const teams = ticketv2Data.teams.teams || [];
+            
+            console.log('📊 Using ticketv2 data for performance analytics:', {
+                tickets: tickets.length,
+                teams: teams.length
+            });
+            
+            // Calculate zones data from ticketv2
+            const zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            // Process the data
+            await processPerformanceAnalyticsData(zonesData, teams, tickets);
+        } else {
+            console.error('❌ Invalid ticketv2 data structure');
+            throw new Error('Invalid ticketv2 data structure');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading performance analytics from ticketv2:', error);
+        // Show error message instead of sample data
+        showErrorMessage('Error loading analytics data. Please check your connection and try again.');
+    }
 }
 
 // Update Analytics KPIs with ticketv2 data
@@ -2889,79 +2900,69 @@ function hideErrorMessage() {
     }
 }
 
-// Load sample data as fallback
-function loadSamplePerformanceAnalytics() {
-    console.log('📊 Loading sample performance analytics data...');
+// Load sample data as fallback - now uses ticketv2 data
+async function loadSamplePerformanceAnalytics() {
+    console.log('📊 Loading performance analytics data from ticketv2 API...');
     
-    // Sample zones data
-    const sampleZones = {
-        'Central Zone': {
-            productivityScore: 85.5,
-            openTickets: 12,
-            closedTickets: 45,
-            teams: [
-                { name: 'Team Alpha', state: 'Kuala Lumpur', status: 'active' },
-                { name: 'Team Beta', state: 'Selangor', status: 'active' }
-            ]
-        },
-        'Northern Zone': {
-            productivityScore: 78.2,
-            openTickets: 8,
-            closedTickets: 32,
-            teams: [
-                { name: 'Team Gamma', state: 'Penang', status: 'active' }
-            ]
-        },
-        'Southern Zone': {
-            productivityScore: 82.1,
-            openTickets: 6,
-            closedTickets: 28,
-            teams: [
-                { name: 'Team Delta', state: 'Johor', status: 'active' }
-            ]
+    try {
+        // Get data from ticketv2 API
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        
+        if (!ticketv2Response.ok) {
+            console.error('❌ Ticketv2 API error:', ticketv2Response.status, ticketv2Response.statusText);
+            throw new Error(`Ticketv2 API Error: ${ticketv2Response.status}`);
         }
-    };
-    
-    // Sample teams data
-    const sampleTeams = [
-        { name: 'Team Alpha', state: 'Kuala Lumpur', zone: 'Central Zone', status: 'active', rating: 4.8, productivity: { ticketsCompleted: 45, customerRating: 4.8 } },
-        { name: 'Team Beta', state: 'Selangor', zone: 'Central Zone', status: 'active', rating: 4.6, productivity: { ticketsCompleted: 38, customerRating: 4.6 } },
-        { name: 'Team Gamma', state: 'Penang', zone: 'Northern Zone', status: 'active', rating: 4.7, productivity: { ticketsCompleted: 32, customerRating: 4.7 } },
-        { name: 'Team Delta', state: 'Johor', zone: 'Southern Zone', status: 'active', rating: 4.5, productivity: { ticketsCompleted: 28, customerRating: 4.5 } }
-    ];
-    
-    // Sample tickets data
-    const sampleTickets = [
-        { status: 'resolved', created_at: '2024-01-15T10:00:00Z', resolved_at: '2024-01-15T14:30:00Z' },
-        { status: 'closed', created_at: '2024-01-14T09:00:00Z', resolved_at: '2024-01-14T16:45:00Z' },
-        { status: 'resolved', created_at: '2024-01-13T11:00:00Z', resolved_at: '2024-01-13T15:20:00Z' }
-    ];
-    
-    // Update KPI cards with sample data
-    updateAnalyticsKPIs(sampleTeams, sampleZones, sampleTickets);
-    
-    // Create charts with sample data
-    // Convert sample zones to the format expected by createZonePerformanceAnalysisChart
-    const zonesArray = Object.keys(sampleZones).map(zoneName => ({
-        zoneName: zoneName,
-        zone: zoneName,
-        openTickets: sampleZones[zoneName].openTickets,
-        closedTickets: sampleZones[zoneName].closedTickets,
-        productivity: sampleZones[zoneName].productivityScore
-    }));
-    createZonePerformanceAnalysisChart(zonesArray);
-    // createStatePerformanceChart(sampleTeams); // DISABLED - conflicts with createZonePerformanceAnalysisChart
-    // Only create chart if canvas exists
-    if (document.getElementById('teamsProductivityChart')) {
-        createTeamProductivityChart(sampleTeams);
+        
+        const ticketv2Data = await ticketv2Response.json();
+        
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const tickets = ticketv2Data.tickets.tickets || [];
+            const teams = ticketv2Data.teams.teams || [];
+            
+            console.log('📊 Using ticketv2 data for performance analytics:', {
+                tickets: tickets.length,
+                teams: teams.length
+            });
+            
+            // Calculate zones data from ticketv2
+            const zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            // Convert zones data to the format expected by charts
+            const zonesArray = zonesData.map(zone => ({
+                zoneName: zone.zone,
+                zone: zone.zone,
+                openTickets: zone.openTickets || 0,
+                closedTickets: zone.closedTickets || 0,
+                productivity: zone.productivityPercentage || 0
+            }));
+            
+            // Update KPI cards with ticketv2 data
+            updateAnalyticsKPIs(teams, zonesData, tickets);
+            
+            // Create charts with ticketv2 data
+            createZonePerformanceAnalysisChart(zonesArray);
+            
+            // Only create chart if canvas exists
+            if (document.getElementById('teamsProductivityChart')) {
+                createTeamProductivityChart(teams);
+            }
+            createRatingDistributionChart(teams);
+            
+            // Populate tables with ticketv2 data
+            populateZoneRankingTable(zonesData);
+            populateTopTeamsTable(teams);
+            
+            console.log('✅ Performance analytics loaded from ticketv2 API');
+        } else {
+            console.error('❌ Invalid ticketv2 data structure');
+            throw new Error('Invalid ticketv2 data structure');
+        }
+        
+    } catch (error) {
+        console.error('❌ Error loading performance analytics from ticketv2:', error);
+        // Show error message instead of sample data
+        showErrorMessage('Error loading analytics data. Please check your connection and try again.');
     }
-    createRatingDistributionChart(sampleTeams);
-    
-    // Populate tables with sample data
-    populateZoneRankingTable(sampleZones);
-    populateTopTeamsTable(sampleTeams);
-    
-    console.log('✅ Sample performance analytics loaded');
 }
 
 // Field Team functions
@@ -7971,21 +7972,58 @@ async function loadZoneMaterialUsage() {
     }
 }
 
-function displaySampleZoneMaterialUsage() {
+async function displaySampleZoneMaterialUsage() {
     const container = document.getElementById('zone-material-usage');
-    const sampleZones = [
-        { zoneName: 'Central Zone', totalUsage: 45 },
-        { zoneName: 'Northern Zone', totalUsage: 32 },
-        { zoneName: 'Southern Zone', totalUsage: 28 },
-        { zoneName: 'Eastern Zone', totalUsage: 22 }
-    ];
     
-    container.innerHTML = sampleZones.map(zone => `
-        <div class="zone-material-item">
-            <span class="zone-material-name">${zone.zoneName}</span>
-            <span class="zone-material-usage">${zone.totalUsage} units</span>
-        </div>
-    `).join('');
+    try {
+        // Get data from ticketv2 API
+        const ticketv2Response = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        
+        if (!ticketv2Response.ok) {
+            throw new Error(`Ticketv2 API Error: ${ticketv2Response.status}`);
+        }
+        
+        const ticketv2Data = await ticketv2Response.json();
+        
+        if (ticketv2Data && ticketv2Data.tickets && ticketv2Data.teams) {
+            const tickets = ticketv2Data.tickets.tickets || [];
+            const teams = ticketv2Data.teams.teams || [];
+            
+            // Calculate zones data from ticketv2
+            const zonesData = calculateZonePerformanceFromTicketv2(tickets, teams);
+            
+            // Sort by total tickets and take top 4
+            const topZones = zonesData
+                .sort((a, b) => b.totalTickets - a.totalTickets)
+                .slice(0, 4);
+            
+            container.innerHTML = topZones.map(zone => `
+                <div class="zone-material-item">
+                    <span class="zone-material-name">${zone.zone}</span>
+                    <span class="zone-material-usage">${zone.totalTickets} tickets</span>
+                </div>
+            `).join('');
+        } else {
+            throw new Error('Invalid ticketv2 data structure');
+        }
+        
+    } catch (error) {
+        console.error('Error loading zone material usage from ticketv2:', error);
+        // Fallback to sample data if ticketv2 fails
+        const sampleZones = [
+            { zoneName: 'Terengganu', totalUsage: 75 },
+            { zoneName: 'Perlis', totalUsage: 83 },
+            { zoneName: 'Sabah', totalUsage: 57 },
+            { zoneName: 'Kuala Lumpur', totalUsage: 65 }
+        ];
+        
+        container.innerHTML = sampleZones.map(zone => `
+            <div class="zone-material-item">
+                <span class="zone-material-name">${zone.zoneName}</span>
+                <span class="zone-material-usage">${zone.totalUsage} tickets</span>
+            </div>
+        `).join('');
+    }
 }
 
 function createMaterialTrendsChart(trends) {
