@@ -20,11 +20,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Service URLs
-AUTH_URL = os.getenv("AUTH_URL", "http://localhost:8000")
-TICKETS_URL = os.getenv("TICKETS_URL", "http://localhost:8001")
-ANALYTICS_URL = os.getenv("ANALYTICS_URL", "http://localhost:8002")
-AI_URL = os.getenv("AI_URL", "http://localhost:8003")
+# Service URLs - Route to backend on port 5002
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5002")
+AUTH_URL = os.getenv("AUTH_URL", BACKEND_URL)
+TICKETS_URL = os.getenv("TICKETS_URL", BACKEND_URL)
+ANALYTICS_URL = os.getenv("ANALYTICS_URL", BACKEND_URL)
+AI_URL = os.getenv("AI_URL", BACKEND_URL)
 
 # Health check
 @app.get("/health")
@@ -37,7 +38,7 @@ async def get_teams():
     logger.info("Teams endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{AUTH_URL}/auth/teams")
+            response = await client.get(f"{AUTH_URL}/api/teams")
             logger.info(f"Auth service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -52,7 +53,7 @@ async def get_teams_productivity():
     logger.info("Teams productivity endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{AUTH_URL}/auth/teams/analytics/productivity")
+            response = await client.get(f"{AUTH_URL}/api/teams/analytics/productivity")
             logger.info(f"Auth service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -67,7 +68,7 @@ async def get_teams_zones():
     logger.info("Teams zones endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{AUTH_URL}/auth/teams/analytics/zones")
+            response = await client.get(f"{AUTH_URL}/api/teams/analytics/zones")
             logger.info(f"Auth service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -83,7 +84,7 @@ async def get_tickets(request: Request):
     logger.info("Tickets endpoint called")
     # Forward query parameters to tickets service
     query_params = str(request.url.query)
-    tickets_url = f"{TICKETS_URL}/tickets"
+    tickets_url = f"{TICKETS_URL}/api/tickets"
     if query_params:
         tickets_url += f"?{query_params}"
     
@@ -104,7 +105,7 @@ async def get_tickets_overview():
     logger.info("Tickets overview endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{TICKETS_URL}/tickets/analytics/overview")
+            response = await client.get(f"{TICKETS_URL}/api/tickets/analytics/overview")
             logger.info(f"Tickets service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -147,18 +148,18 @@ async def get_ticketv2_data(request: Request):
     
     async with httpx.AsyncClient() as client:
         try:
-            # Get tickets data
-            tickets_response = await client.get(tickets_url)
+            # Get tickets data from backend
+            tickets_response = await client.get(f"{TICKETS_URL}/api/tickets{('?' + query_string) if query_string else ''}")
             tickets_data = tickets_response.json() if tickets_response.headers.get("content-type", "").startswith("application/json") else {"data": tickets_response.text}
             logger.info(f"Tickets data structure: {type(tickets_data)}, keys: {tickets_data.keys() if isinstance(tickets_data, dict) else 'not dict'}")
             
-            # Get teams data
-            teams_response = await client.get(f"{AUTH_URL}/auth/teams")
+            # Get teams data from backend
+            teams_response = await client.get(f"{AUTH_URL}/api/teams")
             teams_data = teams_response.json() if teams_response.headers.get("content-type", "").startswith("application/json") else {"data": teams_response.text}
             logger.info(f"Teams data structure: {type(teams_data)}, keys: {teams_data.keys() if isinstance(teams_data, dict) else 'not dict'}")
             
-            # Get assignments data
-            assignments_response = await client.get(f"{TICKETS_URL}/assignments")
+            # Get assignments data from backend
+            assignments_response = await client.get(f"{TICKETS_URL}/api/assignments")
             assignments_data = assignments_response.json() if assignments_response.headers.get("content-type", "").startswith("application/json") else {"data": assignments_response.text}
             logger.info(f"Assignments data structure: {type(assignments_data)}, keys: {assignments_data.keys() if isinstance(assignments_data, dict) else 'not dict'}")
             
@@ -218,7 +219,7 @@ async def get_assignments():
     logger.info("Assignments endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{TICKETS_URL}/assignments")
+            response = await client.get(f"{TICKETS_URL}/api/assignments")
             logger.info(f"Tickets service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -233,7 +234,7 @@ async def get_assignments_performance():
     logger.info("Assignments performance endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{TICKETS_URL}/assignments/analytics/performance")
+            response = await client.get(f"{TICKETS_URL}/api/assignments/analytics/performance")
             logger.info(f"Tickets service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -249,7 +250,7 @@ async def get_tickets_aging():
     logger.info("Tickets aging endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{ANALYTICS_URL}/analytics/tickets/aging")
+            response = await client.get(f"{ANALYTICS_URL}/api/analytics/tickets/aging")
             logger.info(f"Analytics service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -265,7 +266,7 @@ async def get_planning_forecast():
     logger.info("Planning forecast endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{ANALYTICS_URL}/planning/forecast")
+            response = await client.get(f"{ANALYTICS_URL}/api/planning/forecast")
             logger.info(f"Analytics service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -280,7 +281,7 @@ async def get_zone_materials():
     logger.info("Zone materials endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{ANALYTICS_URL}/planning/zone-materials")
+            response = await client.get(f"{ANALYTICS_URL}/api/planning/zone-materials")
             logger.info(f"Analytics service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},
@@ -296,7 +297,7 @@ async def get_ai_insights():
     logger.info("AI insights endpoint called")
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.get(f"{AI_URL}/ai/insights")
+            response = await client.get(f"{AI_URL}/api/ai/insights")
             logger.info(f"AI service response: {response.status_code}")
             return JSONResponse(
                 content=response.json() if response.headers.get("content-type", "").startswith("application/json") else {"data": response.text},

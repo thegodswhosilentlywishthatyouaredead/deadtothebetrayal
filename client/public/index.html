@@ -6174,6 +6174,17 @@
                     </div>
 
                         <!-- Tabs Navigation -->
+                        <script>
+                            // Guard: ensure showTab exists before main app.js loads
+                            window.showTab = window.showTab || function(tabName) {
+                                try {
+                                    const targetId = `${tabName}-tab`;
+                                    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                                    const pane = document.getElementById(targetId);
+                                    if (pane) pane.classList.add('active');
+                                } catch (_) {}
+                            };
+                        </script>
                         <div class="tabs-nav">
                             <button class="tab-button active" onclick="showTab('overview')">Overview</button>
                             <button class="tab-button" onclick="showTab('tickets')">Tickets</button>
@@ -6582,95 +6593,7 @@
                                         </div>
                                     </div>
 
-                                    <!-- Compact Analysis Charts - 2x2 Grid -->
-                                    <div class="row mb-3">
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h6>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button class="btn btn-outline-primary active" onclick="updateTrendPeriod('week')">Week</button>
-                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('month')">Month</button>
-                                                    </div>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="ticketTrendsChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
-                                                    <div class="aging-stats mt-2">
-                                                        <div class="row text-center">
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-productivity">0%</div>
-                                                                    <div class="aging-label">Productivity</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-efficiency">0%</div>
-                                                                    <div class="aging-label">Efficiency</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="zonePerformanceChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-pie me-2"></i>Status Distribution</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="statusDistChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="priorityBreakdownChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-tags me-2"></i>Category Distribution</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="categoryDistChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <!-- Charts moved to Field Teams Performance Analytics -->
 
                                     <div class="row mb-4">
                                         <div class="col-md-6">
@@ -6724,6 +6647,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    
 
                                     <div class="row mb-4">
                                         <div class="col-md-6">
@@ -7146,25 +7071,93 @@
                                         </div>
                                     </div>
 
-                                    <!-- Detailed Analysis Charts -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
+                                    
+
+                                    <!-- Moved Charts from Tickets Performance Analysis -->
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-map-marked-alt me-2"></i>Zone Performance Analysis</h5>
+                                                    <h6><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h6>
+                                                    <div class="btn-group btn-group-sm">
+                                                        <button class="btn btn-outline-primary active" onclick="updateTrendPeriod('week')">Week</button>
+                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('month')">Month</button>
+                                                    </div>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="teamsZonePerformanceChart"></canvas>
+                                                    <canvas id="ticketTrendsChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
+                                        <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-chart-bar me-2"></i>Zone Performance Analysis</h5>
+                                                    <h6><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="statePerformanceChart"></canvas>
+                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
+                                                    <div class="aging-stats mt-2">
+                                                        <div class="row text-center">
+                                                            <div class="col-6">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="current-productivity">0%</div>
+                                                                    <div class="aging-label">Productivity</div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <div class="aging-stat">
+                                                                    <div class="aging-value" id="current-efficiency">0%</div>
+                                                                    <div class="aging-label">Efficiency</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="zonePerformanceChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-chart-pie me-2"></i>Status Distribution</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="statusDistChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-3">
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="priorityBreakdownChart"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6 col-md-6">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header">
+                                                    <h6><i class="fas fa-tags me-2"></i>Category Distribution</h6>
+                                                </div>
+                                                <div class="analysis-card-body">
+                                                    <canvas id="categoryDistChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -7192,6 +7185,8 @@
                                             </div>
                                         </div>
                                     </div>
+
+                                    
 
                                     <!-- Performance Tables -->
                                     <div class="row">
@@ -8404,7 +8399,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="/src/config.js?v=3"></script>
     <script>
-        // Force API to single backend port 8080 as a defensive override
+        // Force API to gateway port 8085 as a defensive override
         window.API_BASE = 'http://localhost:8085/api';
         
         // Check authentication on page load
@@ -8426,7 +8421,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/app.js?v=106"></script>
+    <script src="/src/app.js?v=109"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

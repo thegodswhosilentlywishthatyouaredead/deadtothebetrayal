@@ -703,6 +703,15 @@ async def gateway_route(service: str, path: str, request: Request):
     )
 ```
 
+### Ticketv2 Aggregate Endpoint (Gateway)
+
+The gateway also exposes `GET /api/ticketv2` which aggregates data from Tickets (`/tickets`), Auth/Teams (`/auth/teams`), and Assignments. This is the single source of truth for the frontend.
+
+Key notes:
+- Arrays are nested (`tickets.tickets`, `teams.teams`) for backward compatibility.
+- Uppercase status values are used in payloads; the UI normalizes both cases.
+- Zone/state performance is computed on the client from this payload.
+
 ## 🗄️ Database Design
 
 ### PostgreSQL Schema

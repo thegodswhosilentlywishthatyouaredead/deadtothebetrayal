@@ -41,7 +41,6 @@ The main dashboard is a comprehensive management interface providing real-time i
 - **Team Management**: Field team oversight and performance tracking
 - **AI Assistant**: NRO-Bots chatbot for intelligent guidance
 - **Predictive Planning**: AI-powered forecasting and optimization
- - **Single Data Source**: All pages consume the Gateway aggregate `GET /api/ticketv2`
 
 ### Component Architecture
 
@@ -164,10 +163,10 @@ const aiAssistant = {
 // Main Application Functions
 const coreFunctions = {
     // Data Loading
-    loadDashboardData: 'Loads all dashboard metrics and KPIs (from /api/ticketv2)',
+    loadDashboardData: 'Loads all dashboard metrics and KPIs',
     loadTickets: 'Fetches and displays ticket data',
-    loadFieldTeams: 'Loads team performance data (from /api/ticketv2)',
-    loadAnalytics: 'Loads analytics and reporting data (from /api/ticketv2)',
+    loadFieldTeams: 'Loads team performance data',
+    loadAnalytics: 'Loads analytics and reporting data',
     
     // Chart Management
     createCharts: 'Initializes and manages Chart.js instances',
