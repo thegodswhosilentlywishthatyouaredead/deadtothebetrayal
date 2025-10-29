@@ -7073,45 +7073,25 @@
 
                                     
 
-                                    <!-- Moved Charts from Tickets Performance Analysis -->
+                                    <!-- Revamped Field Team Performance Analysis -->
                                     <div class="row mb-3">
                                         <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-area me-2"></i>Ticket Trends & Projections</h6>
-                                                    <div class="btn-group btn-group-sm">
-                                                        <button class="btn btn-outline-primary active" onclick="updateTrendPeriod('week')">Week</button>
-                                                        <button class="btn btn-outline-primary" onclick="updateTrendPeriod('month')">Month</button>
-                                                    </div>
+                                                    <h6><i class="fas fa-layer-group me-2"></i>Field team performance by states (Open vs Closed) + 4-week projection</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="ticketTrendsChart"></canvas>
+                                                    <canvas id="stateOpenClosedProjectionChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-line me-2"></i>Productivity vs Efficiency</h6>
+                                                    <h6><i class="fas fa-sliders-h me-2"></i>Field team productivity vs efficiency by states (dual axis)</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="productivityVsEfficiencyChart"></canvas>
-                                                    <div class="aging-stats mt-2">
-                                                        <div class="row text-center">
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-productivity">0%</div>
-                                                                    <div class="aging-label">Productivity</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <div class="aging-stat">
-                                                                    <div class="aging-value" id="current-efficiency">0%</div>
-                                                                    <div class="aging-label">Efficiency</div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                    <canvas id="stateProdEffDualAxisChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -7121,43 +7101,20 @@
                                         <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-map-marked-alt me-2"></i>Zone Performance</h6>
+                                                    <h6><i class="fas fa-chart-line me-2"></i>Volume projection by state (allocation and status)</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="zonePerformanceChart"></canvas>
+                                                    <canvas id="stateVolumeProjectionChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-lg-6 col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-pie me-2"></i>Status Distribution</h6>
+                                                    <h6><i class="fas fa-map-pin me-2"></i>Customer location breakdown (location vs tickets vs field team)</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="statusDistChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div class="row mb-3">
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-exclamation-circle me-2"></i>Priority Breakdown</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="priorityBreakdownChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-6 col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-tags me-2"></i>Category Distribution</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="categoryDistChart"></canvas>
+                                                    <canvas id="customerLocationBreakdownChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
@@ -7167,20 +7124,20 @@
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-trophy me-2"></i>Team Productivity Trends</h5>
+                                                    <h6><i class="fas fa-trophy me-2"></i>Top 10 field team performers (by productivity)</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="teamsProductivityChart"></canvas>
+                                                    <canvas id="topPerformersRankingChart"></canvas>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="analysis-card">
                                                 <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-star me-2"></i>Customer Rating Distribution</h5>
+                                                    <h6><i class="fas fa-robot me-2"></i>AI Recommendations</h6>
                                                 </div>
                                                 <div class="analysis-card-body">
-                                                    <canvas id="ratingDistributionChart"></canvas>
+                                                    <div id="ai-recommendations"></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -8421,7 +8378,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/app.js?v=109"></script>
+    <script src="/src/app.js?v=110"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

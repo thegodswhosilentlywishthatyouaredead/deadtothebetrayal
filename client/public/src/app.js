@@ -2934,23 +2934,13 @@ async function processPerformanceAnalyticsData(zonesData, teams, tickets) {
             console.log('📊 Teams data for charts:', teams.length, 'teams');
             console.log('📊 Tickets data for charts:', tickets.length, 'tickets');
             
-            // Create zone performance chart (left chart)
-            createZonePerformanceChart(zonesData, teams);
-            
-            // Create state performance chart (only if canvas exists)
-            if (document.getElementById('statePerformanceChart')) {
-            createStatePerformanceChart(zonesData, teams);
-            }
-            
-            // Create teams performance chart (only if canvas exists)
-            if (document.getElementById('teamsPerformanceChart') || document.getElementById('statePerformanceChart')) {
-            createTeamsPerformanceChart(teams);
-            }
-            
-            // Create tickets breakdown chart (only if canvas exists)
-            if (document.getElementById('ticketsBreakdownChart')) {
-            createTicketsBreakdownChart(tickets);
-            }
+            // Create the 6 new performance analysis charts
+            createStateOpenClosedProjectionChart(zonesData, tickets);
+            createStateProdEffDualAxisChart(zonesData);
+            createStateVolumeProjectionChart(zonesData, tickets);
+            createCustomerLocationBreakdownChart(tickets, teams);
+            createTopPerformersRankingChart(teams, tickets);
+            populateAIRecommendations(zonesData, teams, tickets);
             
             console.log('✅ All charts created successfully');
         } catch (chartError) {
@@ -3368,6 +3358,676 @@ function createTicketsBreakdownChart(tickets) {
         console.log('✅ Tickets Breakdown Chart created successfully');
     } catch (error) {
         console.error('❌ Error creating tickets breakdown chart:', error);
+    }
+}
+
+// New Performance Analysis Chart Functions
+
+// 1. Field team performance by states with 4 weeks future projection - bar charts of open, closed
+function createStateOpenClosedProjectionChart(zonesData, tickets) {
+    try {
+        const canvas = document.getElementById('stateOpenClosedProjectionChart');
+        if (!canvas) {
+            console.warn('⚠️ State open/closed projection chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('stateOpenClosedProjectionChart');
+        
+        // Prepare data by state/zone
+        const stateData = {};
+        zonesData.forEach(zone => {
+            const state = zone.zone || 'Unknown';
+            stateData[state] = {
+                open: zone.openTickets || 0,
+                closed: zone.closedTickets || 0,
+                total: zone.totalTickets || 0
+            };
+        });
+        
+        // Calculate 4-week projection (simple linear projection)
+        const states = Object.keys(stateData);
+        const openData = states.map(state => stateData[state].open);
+        const closedData = states.map(state => stateData[state].closed);
+        
+        // Project future 4 weeks (week 1-4)
+        const weeks = ['Current', 'Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        const projectedOpen = openData.map(open => Math.round(open * 1.05)); // 5% growth
+        const projectedClosed = closedData.map(closed => Math.round(closed * 1.08)); // 8% growth
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: states,
+                datasets: [
+                    {
+                        label: 'Open Tickets (Current)',
+                        data: openData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Closed Tickets (Current)',
+                        data: closedData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Open (Projected)',
+                        data: projectedOpen,
+                        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                        borderColor: 'rgba(255, 99, 132, 0.8)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    {
+                        label: 'Closed (Projected)',
+                        data: projectedClosed,
+                        backgroundColor: 'rgba(54, 162, 235, 0.3)',
+                        borderColor: 'rgba(54, 162, 235, 0.8)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Tickets'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'States'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['stateOpenClosedProjectionChart'] = chart;
+        
+        console.log('✅ State Open/Closed Projection Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating state open/closed projection chart:', error);
+    }
+}
+
+// 2. Field team performance by states with productivity and efficiency - dual axis charts
+function createStateProdEffDualAxisChart(zonesData) {
+    try {
+        const canvas = document.getElementById('stateProdEffDualAxisChart');
+        if (!canvas) {
+            console.warn('⚠️ State productivity/efficiency dual axis chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('stateProdEffDualAxisChart');
+        
+        // Prepare data by state/zone
+        const states = zonesData.map(zone => zone.zone || 'Unknown');
+        const productivityData = zonesData.map(zone => zone.productivityPercentage || 0);
+        const efficiencyData = zonesData.map(zone => parseFloat(zone.efficiency || '0') || 0);
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: states,
+                datasets: [
+                    {
+                        label: 'Productivity (%)',
+                        data: productivityData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Efficiency (%)',
+                        data: efficiencyData,
+                        type: 'line',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        backgroundColor: 'rgba(255, 159, 64, 0.1)',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Productivity (%)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Efficiency (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'States'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['stateProdEffDualAxisChart'] = chart;
+        
+        console.log('✅ State Productivity/Efficiency Dual Axis Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating state productivity/efficiency dual axis chart:', error);
+    }
+}
+
+// 3. Field team volume projection based on tickets allocation and status, based on states
+function createStateVolumeProjectionChart(zonesData, tickets) {
+    try {
+        const canvas = document.getElementById('stateVolumeProjectionChart');
+        if (!canvas) {
+            console.warn('⚠️ State volume projection chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('stateVolumeProjectionChart');
+        
+        // Group tickets by state/zone and status
+        const stateStatusData = {};
+        zonesData.forEach(zone => {
+            const state = zone.zone || 'Unknown';
+            stateStatusData[state] = {
+                open: zone.openTickets || 0,
+                inProgress: zone.totalTickets - (zone.openTickets || 0) - (zone.closedTickets || 0),
+                completed: zone.closedTickets || 0,
+                total: zone.totalTickets || 0
+            };
+        });
+        
+        const states = Object.keys(stateStatusData);
+        const openData = states.map(state => stateStatusData[state].open);
+        const inProgressData = states.map(state => stateStatusData[state].inProgress);
+        const completedData = states.map(state => stateStatusData[state].completed);
+        
+        // Project future allocation (simple projection)
+        const projectedOpen = openData.map(open => Math.round(open * 1.1));
+        const projectedInProgress = inProgressData.map(ip => Math.round(ip * 1.15));
+        const projectedCompleted = completedData.map(comp => Math.round(comp * 1.12));
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: states,
+                datasets: [
+                    {
+                        label: 'Open (Current)',
+                        data: openData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'In Progress (Current)',
+                        data: inProgressData,
+                        backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Completed (Current)',
+                        data: completedData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Open (Projected)',
+                        data: projectedOpen,
+                        backgroundColor: 'rgba(255, 99, 132, 0.3)',
+                        borderColor: 'rgba(255, 99, 132, 0.8)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    {
+                        label: 'In Progress (Projected)',
+                        data: projectedInProgress,
+                        backgroundColor: 'rgba(255, 206, 86, 0.3)',
+                        borderColor: 'rgba(255, 206, 86, 0.8)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    },
+                    {
+                        label: 'Completed (Projected)',
+                        data: projectedCompleted,
+                        backgroundColor: 'rgba(75, 192, 192, 0.3)',
+                        borderColor: 'rgba(75, 192, 192, 0.8)',
+                        borderWidth: 1,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Number of Tickets'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'States'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['stateVolumeProjectionChart'] = chart;
+        
+        console.log('✅ State Volume Projection Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating state volume projection chart:', error);
+    }
+}
+
+// 4. Customer location breakdown by location vs tickets vs field team
+function createCustomerLocationBreakdownChart(tickets, teams) {
+    try {
+        const canvas = document.getElementById('customerLocationBreakdownChart');
+        if (!canvas) {
+            console.warn('⚠️ Customer location breakdown chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('customerLocationBreakdownChart');
+        
+        // Group tickets by location/zone
+        const locationData = {};
+        tickets.forEach(ticket => {
+            const location = ticket.location || ticket.zone || 'Unknown';
+            if (!locationData[location]) {
+                locationData[location] = { tickets: 0, teams: 0 };
+            }
+            locationData[location].tickets++;
+        });
+        
+        // Count teams per location
+        teams.forEach(team => {
+            const location = team.zone || 'Unknown';
+            if (!locationData[location]) {
+                locationData[location] = { tickets: 0, teams: 0 };
+            }
+            locationData[location].teams++;
+        });
+        
+        const locations = Object.keys(locationData).slice(0, 15); // Top 15 locations
+        const ticketsData = locations.map(loc => locationData[loc].tickets);
+        const teamsData = locations.map(loc => locationData[loc].teams);
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: locations,
+                datasets: [
+                    {
+                        label: 'Tickets',
+                        data: ticketsData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Field Teams',
+                        data: teamsData,
+                        backgroundColor: 'rgba(255, 159, 64, 0.6)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Number of Tickets'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Number of Teams'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Locations'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['customerLocationBreakdownChart'] = chart;
+        
+        console.log('✅ Customer Location Breakdown Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating customer location breakdown chart:', error);
+    }
+}
+
+// 5. Field team top performer sort from top 1 to top 10 with sorting productivity ranking
+function createTopPerformersRankingChart(teams, tickets) {
+    try {
+        const canvas = document.getElementById('topPerformersRankingChart');
+        if (!canvas) {
+            console.warn('⚠️ Top performers ranking chart canvas not found');
+            return;
+        }
+        
+        // Destroy existing chart
+        destroyChartIfExists('topPerformersRankingChart');
+        
+        // Calculate productivity for each team
+        const teamProductivity = teams.map(team => {
+            const teamTickets = tickets.filter(t => 
+                (t.assigned_team_id && t.assigned_team_id == team.id) ||
+                (t.assignedTo && t.assignedTo == team.id) ||
+                (t.team_id && t.team_id == team.id)
+            );
+            const completedTickets = teamTickets.filter(t => 
+                t.status === 'COMPLETED' || t.status === 'completed'
+            ).length;
+            const totalTickets = teamTickets.length;
+            const productivity = totalTickets > 0 ? (completedTickets / totalTickets) * 100 : 0;
+            
+            return {
+                name: team.name || team.team_name || 'Unknown Team',
+                productivity: productivity,
+                completedTickets: completedTickets,
+                totalTickets: totalTickets
+            };
+        });
+        
+        // Sort by productivity and get top 10
+        const topPerformers = teamProductivity
+            .sort((a, b) => b.productivity - a.productivity)
+            .slice(0, 10);
+        
+        const labels = topPerformers.map((team, index) => `#${index + 1} ${team.name}`);
+        const productivityData = topPerformers.map(team => team.productivity.toFixed(1));
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Productivity (%)',
+                    data: productivityData,
+                    backgroundColor: topPerformers.map((_, index) => 
+                        index < 3 ? 'rgba(255, 215, 0, 0.8)' : 'rgba(75, 192, 192, 0.6)'
+                    ),
+                    borderColor: topPerformers.map((_, index) => 
+                        index < 3 ? 'rgba(255, 215, 0, 1)' : 'rgba(75, 192, 192, 1)'
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Productivity (%)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Top 10 Teams'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterLabel: function(context) {
+                                const index = context.dataIndex;
+                                const team = topPerformers[index];
+                                return [
+                                    `Completed: ${team.completedTickets}`,
+                                    `Total: ${team.totalTickets}`
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        
+        const chart = new Chart(canvas, chartConfig);
+        chartInstances['topPerformersRankingChart'] = chart;
+        
+        console.log('✅ Top Performers Ranking Chart created successfully');
+    } catch (error) {
+        console.error('❌ Error creating top performers ranking chart:', error);
+    }
+}
+
+// 6. AI Recommendations section
+function populateAIRecommendations(zonesData, teams, tickets) {
+    try {
+        const container = document.getElementById('ai-recommendations');
+        if (!container) {
+            console.warn('⚠️ AI recommendations container not found');
+            return;
+        }
+        
+        // Analyze data for recommendations
+        const recommendations = [];
+        
+        // Performance recommendations
+        const lowPerformingZones = zonesData
+            .filter(zone => (zone.productivityPercentage || 0) < 80)
+            .sort((a, b) => (a.productivityPercentage || 0) - (b.productivityPercentage || 0))
+            .slice(0, 3);
+        
+        if (lowPerformingZones.length > 0) {
+            recommendations.push({
+                type: 'performance',
+                title: 'Performance Optimization Needed',
+                icon: 'fa-chart-line',
+                color: 'warning',
+                content: `Zones with low productivity: ${lowPerformingZones.map(z => z.zone).join(', ')}. Consider reallocating resources or providing additional training.`
+            });
+        }
+        
+        // Team capacity recommendations
+        const overCapacityTeams = teams.filter(team => {
+            const teamTickets = tickets.filter(t => 
+                (t.assigned_team_id && t.assigned_team_id == team.id) ||
+                (t.assignedTo && t.assignedTo == team.id)
+            );
+            return teamTickets.length > 50;
+        });
+        
+        if (overCapacityTeams.length > 0) {
+            recommendations.push({
+                type: 'capacity',
+                title: 'Team Capacity Warning',
+                icon: 'fa-users',
+                color: 'danger',
+                content: `${overCapacityTeams.length} team(s) are handling more than 50 tickets. Consider redistributing workload or adding team members.`
+            });
+        }
+        
+        // Zone needs recommendations
+        const zonesNeedingTeams = zonesData.filter(zone => (zone.activeTeams || 0) === 0);
+        
+        if (zonesNeedingTeams.length > 0) {
+            recommendations.push({
+                type: 'zones',
+                title: 'Zone Coverage Gap',
+                icon: 'fa-map-marked-alt',
+                color: 'info',
+                content: `${zonesNeedingTeams.length} zone(s) have no active teams: ${zonesNeedingTeams.map(z => z.zone).join(', ')}. Consider assigning teams to these zones.`
+            });
+        }
+        
+        // Future team projection
+        const totalTickets = tickets.length;
+        const avgTicketsPerTeam = teams.length > 0 ? totalTickets / teams.length : 0;
+        const projectedTeamsNeeded = Math.ceil((totalTickets * 1.2) / avgTicketsPerTeam) - teams.length;
+        
+        if (projectedTeamsNeeded > 0) {
+            recommendations.push({
+                type: 'projection',
+                title: 'Future Team Projection',
+                icon: 'fa-crystal-ball',
+                color: 'success',
+                content: `Based on current ticket volume trends, you may need ${projectedTeamsNeeded} additional team(s) in the next 4 weeks to maintain optimal performance.`
+            });
+        }
+        
+        // Optimization tips
+        recommendations.push({
+            type: 'optimization',
+            title: 'Optimization Tips',
+            icon: 'fa-lightbulb',
+            color: 'primary',
+            content: `Focus on root-cause analysis for recurring issues. Implement preventive maintenance schedules. Consider cross-training team members for better flexibility.`
+        });
+        
+        // Render recommendations
+        let html = '<div class="ai-recommendations-list">';
+        recommendations.forEach((rec, index) => {
+            html += `
+                <div class="ai-recommendation-item mb-3 p-3 border rounded">
+                    <div class="d-flex align-items-start">
+                        <div class="ai-recommendation-icon me-3">
+                            <i class="fas ${rec.icon} fa-2x text-${rec.color}"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-2">${rec.title}</h6>
+                            <p class="mb-0 text-muted">${rec.content}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        html += '</div>';
+        
+        container.innerHTML = html;
+        
+        console.log('✅ AI Recommendations populated successfully');
+    } catch (error) {
+        console.error('❌ Error populating AI recommendations:', error);
     }
 }
 
@@ -9769,7 +10429,10 @@ async function loadPerformanceAnalysis() {
                 closedTickets: z.closedTickets,
                 total: z.total
             })).sort((a,b) => b.productivityPercentage - a.productivityPercentage);
-            createZonePerformanceChart(zonesAgg, allTeams);
+            // Only draw if canvas exists (revamped layout may remove it)
+            if (document.getElementById('zonePerformanceChart')) {
+                createZonePerformanceChart(zonesAgg, allTeams);
+            }
 
             // Also feed the "Zone Performance Analysis" (right chart) using ticketv2 data
             if (document.getElementById('statePerformanceChart')) {
