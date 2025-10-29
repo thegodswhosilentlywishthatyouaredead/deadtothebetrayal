@@ -866,6 +866,36 @@ X-RateLimit-Reset: 1640995200
 }
 ```
 
+### Aggregate Ticketv2 Endpoint (Standardized)
+
+The frontend standardizes on this aggregate endpoint for tickets + teams + assignments data.
+
+```http
+GET /api/ticketv2?limit=1000[&status=OPEN|IN_PROGRESS|COMPLETED|CANCELLED][&zone=STATE][&priority=LOW|MEDIUM|HIGH|EMERGENCY][&category=...]
+```
+
+Response (abridged):
+```json
+{
+  "api_version": "v2",
+  "total_tickets": 1000,
+  "total_teams": 80,
+  "tickets": { "tickets": [/* ticket objects */] },
+  "teams": { "teams": [/* team objects */] },
+  "assignments": { "assignments": [] },
+  "analytics": {
+    "ticket_status_distribution": { "OPEN": 0.25, "IN_PROGRESS": 0.35, "COMPLETED": 0.35, "CANCELLED": 0.05 },
+    "team_capacity": "Maximum 5 tickets per day per team",
+    "malaysian_states": ["Johor", "Kedah", "Kelantan", "Melaka", ...]
+  }
+}
+```
+
+Notes:
+- Tickets returned may use both `created_at` and `createdAt` (aliases); UI supports both.
+- Status values are uppercase; UI normalizes both upper/lower cases.
+- Zone performance in the UI is computed client‑side by aggregating tickets and teams from this endpoint (zones ≡ states).
+
 ## 📝 Error Codes
 
 ### HTTP Status Codes

@@ -128,6 +128,7 @@ A comprehensive field team management system designed specifically for Malaysian
 - **Field Portal**: http://localhost:8080/field-portal.html
 - **Login Page**: http://localhost:8080/login.html
 - **API Base**: http://localhost:8085/api/
+ - **Aggregate Data (Frontend primary)**: `GET /api/ticketv2`
 
 ## 📈 Current System Status
 
