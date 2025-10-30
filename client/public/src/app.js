@@ -1148,8 +1148,8 @@ function calculateZonePerformanceFromTicketv2(tickets, teams) {
         const zone = ticket.zone || 'Unknown';
         if (zoneStats[zone]) {
             zoneStats[zone].totalTickets++;
-            
-            if (ticket.status === 'COMPLETED' || ticket.status === 'completed') {
+            const status = String(ticket.status || '').toUpperCase();
+            if (status === 'COMPLETED' || status === 'RESOLVED' || status === 'CLOSED') {
                 zoneStats[zone].closedTickets++;
             } else {
                 zoneStats[zone].openTickets++;
@@ -1165,13 +1165,20 @@ function calculateZonePerformanceFromTicketv2(tickets, teams) {
             zone.avgRating = Math.round((zone.totalRating / zone.totalTeams) * 100) / 100;
             zone.avgResponseTime = Math.round((zone.totalResponseTime / zone.totalTeams) * 10) / 10;
             
+            // Calculate ticket-closure productivity
+            const total = (zone.openTickets || 0) + (zone.closedTickets || 0);
+            const ticketClosurePct = total > 0 ? Math.round(((zone.closedTickets || 0) / total) * 1000) / 10 : 0;
+
             // Calculate overall productivity percentage based on team performance
             // Weight: 40% efficiency + 40% productivity + 20% rating
-            zone.productivityPercentage = Math.round((
+            const teamWeightedPct = Math.round((
                 zone.avgEfficiencyScore * 0.4 + 
                 zone.avgProductivityScore * 0.4 + 
                 (zone.avgRating / 5) * 100 * 0.2
             ) * 10) / 10;
+
+            // Prefer ticket-derived percentage when team metrics are missing/zero
+            zone.productivityPercentage = teamWeightedPct > 0 ? teamWeightedPct : ticketClosurePct;
             
             // Ensure productivity percentage is within 0-100 range
             zone.productivityPercentage = Math.max(0, Math.min(100, zone.productivityPercentage));
