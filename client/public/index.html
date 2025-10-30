@@ -8381,6 +8381,12 @@
         #ai-recommendations .ai-recommendation-icon i { font-size: 1.2rem; }
         /* compact priority badges inside recommendation cards */
         #ai-recommendations .badge { font-size: 0.7rem; padding: 0.25rem 0.45rem; border-radius: 999px; }
+        /* Standard KPI trend styles to match other pages */
+        .metric-trend { display: inline-flex; align-items: center; gap: 6px; font-size: .85rem; }
+        .metric-trend i { font-size: .8rem; }
+        .metric-trend.trend-up { color: #16a34a; }
+        .metric-trend.trend-down { color: #dc2626; }
+        .metric-trend.trend-neutral { color: #64748b; }
     </style>
 
     <!-- Scripts -->
@@ -8414,7 +8420,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-<script src="/src/app.js?v=118"></script>
+<script src="/src/app.js?v=121"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">

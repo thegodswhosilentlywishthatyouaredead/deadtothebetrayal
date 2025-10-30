@@ -829,6 +829,18 @@ function updateElement(id, value) {
     }
 }
 
+// Standardized compact trend renderer used across pages
+function setTrendText(id, rawText) {
+    const host = document.getElementById(id);
+    if (!host) return;
+    const negative = /^-/.test(rawText);
+    const neutral = /no data/i.test(rawText);
+    const cls = neutral ? 'trend-neutral' : negative ? 'trend-down' : 'trend-up';
+    const icon = neutral ? 'minus' : negative ? 'down' : 'up';
+    host.className = `metric-trend ${cls}`;
+    host.innerHTML = `<i class="fas fa-arrow-${icon}"></i> <small>${rawText}</small>`;
+}
+
 function updateTrendElement(trendId, changeId, change, suffix) {
     const trendElement = document.getElementById(trendId);
     const changeElement = document.getElementById(changeId);
@@ -1097,10 +1109,36 @@ function calculateZonePerformanceFromTicketv2(tickets, teams) {
     });
     
     const zoneStats = {};
+
+    function normalizeZoneName(input) {
+        const raw = (input || '').toString().trim().toLowerCase();
+        if (!raw) return 'Unknown';
+        const aliases = {
+            'kuala lumpur': 'Kuala Lumpur', 'kl': 'Kuala Lumpur', 'wp kuala lumpur': 'Kuala Lumpur', 'wilayah persekutuan kuala lumpur': 'Kuala Lumpur',
+            'selangor': 'Selangor',
+            'johor': 'Johor',
+            'melaka': 'Melaka', 'malacca': 'Melaka',
+            'perak': 'Perak',
+            'perlis': 'Perlis',
+            'kedah': 'Kedah',
+            'penang': 'Penang', 'pulau pinang': 'Penang',
+            'pahang': 'Pahang',
+            'terengganu': 'Terengganu', 'trg': 'Terengganu',
+            'kelantan': 'Kelantan',
+            'negeri sembilan': 'Negeri Sembilan', 'n.s': 'Negeri Sembilan', 'ns': 'Negeri Sembilan',
+            'sabah': 'Sabah',
+            'sarawak': 'Sarawak',
+            'putrajaya': 'Putrajaya',
+            'labuan': 'Labuan'
+        };
+        if (aliases[raw]) return aliases[raw];
+        // Title-case fallback
+        return raw.replace(/\b\w/g, c => c.toUpperCase());
+    }
     
-    // Initialize zone statistics based on teams (zones = states = accumulation of teams)
+    // Initialize zone statistics based on teams (zones/states)
     teams.forEach(team => {
-        const zone = team.zone || 'Unknown';
+        const zone = normalizeZoneName(team.zone || team.state || team.location?.zone || team.location?.state || 'Unknown');
         if (!zoneStats[zone]) {
             zoneStats[zone] = {
                 zone: zone,
@@ -1125,7 +1163,8 @@ function calculateZonePerformanceFromTicketv2(tickets, teams) {
         zoneStats[zone].totalTeams++;
         
         // Count active teams (online or busy)
-        if (team.status === 'online' || team.status === 'busy') {
+        const status = (team.status || '').toString().toLowerCase();
+        if (team.is_active === true || status === 'online' || status === 'busy' || status === 'available' || status === 'active') {
             zoneStats[zone].activeTeams++;
         }
         
@@ -1145,7 +1184,7 @@ function calculateZonePerformanceFromTicketv2(tickets, teams) {
     
     // Calculate ticket statistics per zone for additional context
     tickets.forEach(ticket => {
-        const zone = ticket.zone || 'Unknown';
+        const zone = normalizeZoneName(ticket.zone || ticket.location?.zone || ticket.location?.state || ticket.state || 'Unknown');
         if (zoneStats[zone]) {
             zoneStats[zone].totalTickets++;
             const status = String(ticket.status || '').toUpperCase();
@@ -2904,6 +2943,36 @@ async function loadTeamsPerformanceAnalytics() {
     }
 }
 
+// Helpers to ensure charts render when containers become visible
+function debounce(fn, wait) { let t; return function() { clearTimeout(t); t = setTimeout(fn, wait); }; }
+function resizeAndUpdateAnalyticsCharts() {
+    try {
+        if (typeof chartInstances !== 'object') return;
+        Object.keys(chartInstances).forEach(key => {
+            const ch = chartInstances[key];
+            if (ch && ch.resize) { ch.resize(); ch.update('none'); }
+        });
+    } catch (_) {}
+}
+let analyticsObserver;
+function attachAnalyticsObservers() {
+    if (analyticsObserver) return;
+    const ids = [
+        'stateOpenClosedProjectionChart',
+        'stateProdEffDualAxisChart',
+        'stateVolumeProjectionChart',
+        'customerLocationBreakdownChart',
+        'topPerformersRankingChart'
+    ];
+    const els = ids.map(id => document.getElementById(id)).filter(Boolean);
+    if (els.length === 0) return;
+    analyticsObserver = new IntersectionObserver((entries) => {
+        if (entries.some(e => e.isIntersecting)) resizeAndUpdateAnalyticsCharts();
+    }, { threshold: 0.1 });
+    els.forEach(el => analyticsObserver.observe(el));
+    window.addEventListener('resize', debounce(resizeAndUpdateAnalyticsCharts, 150));
+}
+
 // Process performance analytics data from ticketv2
 async function processPerformanceAnalyticsData(zonesData, teams, tickets) {
     try {
@@ -2954,6 +3023,9 @@ async function processPerformanceAnalyticsData(zonesData, teams, tickets) {
             populateAIRecommendations(zonesData, teams, tickets);
             
             console.log('✅ All charts created successfully');
+            // Ensure charts lay out when containers become visible
+            attachAnalyticsObservers();
+            requestAnimationFrame(resizeAndUpdateAnalyticsCharts);
         } catch (chartError) {
             console.error('❌ Error creating charts:', chartError);
             console.error('❌ Chart error details:', chartError.stack);
@@ -4380,13 +4452,13 @@ function updateFieldTeamsKPIs(teams, zones, tickets) {
     const teamsTrend = totalTeams > 0 ? `+${Math.floor(Math.random() * 3)} vs last month` : 'No data';
     const zonesTrend = coverageZones > 0 ? `${coverageZones}% coverage` : 'No coverage';
     
-    updateElement('teams-productivity-trend', productivityTrend);
-    updateElement('teams-rating-trend', ratingTrend);
-    updateElement('teams-response-trend', responseTrend);
-    updateElement('teams-completion-trend', completionTrend);
-    updateElement('teams-cost-trend', costTrend);
-    updateElement('teams-total-trend', teamsTrend);
-    updateElement('teams-zones-trend', zonesTrend);
+    setTrendText('teams-productivity-trend', productivityTrend);
+    setTrendText('teams-rating-trend', ratingTrend);
+    setTrendText('teams-response-trend', responseTrend);
+    setTrendText('teams-completion-trend', completionTrend);
+    setTrendText('teams-cost-trend', costTrend);
+    setTrendText('teams-total-trend', teamsTrend);
+    setTrendText('teams-zones-trend', zonesTrend);
     
     console.log('✅ Field Teams KPIs updated:', {
         totalTeams,
@@ -4989,7 +5061,7 @@ function populateZoneRankingTable(zones) {
             const efficiencyPct =
                 zone.efficiency != null
                     ? Number(zone.efficiency)
-                    : productivityPct;
+                    : (Number(zone.avgEfficiencyScore) || productivityPct);
             return {
                 name,
                 productivityScore: productivityPct,
@@ -5013,7 +5085,7 @@ function populateZoneRankingTable(zones) {
             const efficiencyPct =
                 data.efficiency != null
                     ? Number(data.efficiency)
-                    : productivityPct;
+                    : (Number(data.avgEfficiencyScore) || productivityPct);
             return {
                 name,
                 productivityScore: productivityPct,
