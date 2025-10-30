@@ -729,6 +729,262 @@ I'm your AI Field Assistant. I can help you with:
 
 Try the quick action buttons below for common questions!"""
 
+@app.route('/api/ticketv2/analytics/performance', methods=['GET'])
+def get_ticketv2_performance_analytics():
+    """Get comprehensive ticketv2 performance analytics with weekly trends and projections"""
+    try:
+        from collections import defaultdict
+        
+        # Calculate weekly data for the past 12 weeks
+        now = datetime.now()
+        weeks_data = []
+        
+        for week_offset in range(-11, 1):  # Past 11 weeks + current week = 12 weeks
+            week_start = now + timedelta(weeks=week_offset)
+            week_end = week_start + timedelta(days=7)
+            
+            # Filter tickets for this week
+            week_tickets = [t for t in tickets if week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+            
+            # Count by status
+            status_counts = {
+                'open': len([t for t in week_tickets if t['status'] in ['open', 'pending']]),
+                'in_progress': len([t for t in week_tickets if t['status'] == 'in_progress']),
+                'completed': len([t for t in week_tickets if t['status'] in ['completed', 'resolved', 'closed']]),
+                'cancelled': len([t for t in week_tickets if t['status'] == 'cancelled'])
+            }
+            
+            weeks_data.append({
+                'week': week_start.strftime('%Y-W%W'),
+                'week_label': week_start.strftime('%b %d'),
+                'total': len(week_tickets),
+                'statuses': status_counts
+            })
+        
+        # Project 4 future weeks based on linear regression
+        if len(weeks_data) >= 4:
+            # Calculate average growth rate
+            recent_totals = [w['total'] for w in weeks_data[-4:]]
+            avg_total = sum(recent_totals) / len(recent_totals)
+            growth_rate = (recent_totals[-1] - recent_totals[0]) / max(recent_totals[0], 1)
+            
+            # Project future weeks
+            projections = []
+            for week_offset in range(1, 5):  # 4 future weeks
+                future_week = now + timedelta(weeks=week_offset)
+                projected_total = int(avg_total * (1 + growth_rate * week_offset))
+                
+                # Distribute by status based on current distribution
+                total_current = sum([w['total'] for w in weeks_data[-4:]])
+                if total_current > 0:
+                    open_ratio = sum([w['statuses']['open'] for w in weeks_data[-4:]]) / total_current
+                    in_progress_ratio = sum([w['statuses']['in_progress'] for w in weeks_data[-4:]]) / total_current
+                    completed_ratio = sum([w['statuses']['completed'] for w in weeks_data[-4:]]) / total_current
+                    cancelled_ratio = sum([w['statuses']['cancelled'] for w in weeks_data[-4:]]) / total_current
+                else:
+                    open_ratio = in_progress_ratio = completed_ratio = cancelled_ratio = 0.25
+                
+                projections.append({
+                    'week': future_week.strftime('%Y-W%W'),
+                    'week_label': future_week.strftime('%b %d'),
+                    'total': projected_total,
+                    'statuses': {
+                        'open': int(projected_total * open_ratio),
+                        'in_progress': int(projected_total * in_progress_ratio),
+                        'completed': int(projected_total * completed_ratio),
+                        'cancelled': int(projected_total * cancelled_ratio)
+                    },
+                    'is_projection': True
+                })
+        else:
+            projections = []
+        
+        # Status distribution (all time)
+        all_status_distribution = {
+            'open': len([t for t in tickets if t['status'] in ['open', 'pending']]),
+            'in_progress': len([t for t in tickets if t['status'] == 'in_progress']),
+            'completed': len([t for t in tickets if t['status'] in ['completed', 'resolved', 'closed']]),
+            'cancelled': len([t for t in tickets if t['status'] == 'cancelled'])
+        }
+        
+        # High-level performance metrics by week
+        performance_weeks = []
+        for week_offset in range(-11, 1):
+            week_start = now + timedelta(weeks=week_offset)
+            week_end = week_start + timedelta(days=7)
+            
+            week_tickets = [t for t in tickets if week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+            completed_tickets = [t for t in week_tickets if t['status'] in ['completed', 'resolved', 'closed']]
+            
+            # Calculate metrics
+            total_tickets = len(week_tickets)
+            completed_count = len(completed_tickets)
+            productivity = (completed_count / total_tickets * 100) if total_tickets > 0 else 0
+            
+            # Availability: % of tickets assigned to teams
+            assigned_count = len([t for t in week_tickets if t.get('assignedTeam')])
+            availability = (assigned_count / total_tickets * 100) if total_tickets > 0 else 0
+            
+            # Efficiency: % completed within SLA (assume 24 hours)
+            efficient_count = 0
+            for t in completed_tickets:
+                if t.get('resolvedAt'):
+                    created = datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00'))
+                    resolved = datetime.fromisoformat(t['resolvedAt'].replace('Z', '+00:00'))
+                    hours_diff = (resolved - created).total_seconds() / 3600
+                    if hours_diff <= 24:
+                        efficient_count += 1
+            
+            efficiency = (efficient_count / completed_count * 100) if completed_count > 0 else 0
+            
+            performance_weeks.append({
+                'week': week_start.strftime('%Y-W%W'),
+                'week_label': week_start.strftime('%b %d'),
+                'productivity': round(productivity, 2),
+                'availability': round(availability, 2),
+                'efficiency': round(efficiency, 2)
+            })
+        
+        # States breakdown by week
+        states_weekly_data = defaultdict(lambda: [])
+        malaysian_states = ['Johor', 'Kedah', 'Kelantan', 'Melaka', 'Negeri Sembilan', 
+                           'Pahang', 'Penang', 'Perak', 'Perlis', 'Sabah', 'Sarawak',
+                           'Selangor', 'Terengganu', 'Kuala Lumpur', 'Putrajaya']
+        
+        for state in malaysian_states:
+            for week_offset in range(-11, 1):
+                week_start = now + timedelta(weeks=week_offset)
+                week_end = week_start + timedelta(days=7)
+                
+                state_tickets = [t for t in tickets if 
+                               t.get('location', {}).get('state') == state and
+                               week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+                
+                open_tickets = len([t for t in state_tickets if t['status'] in ['open', 'pending', 'in_progress']])
+                completed_tickets = len([t for t in state_tickets if t['status'] in ['completed', 'resolved', 'closed']])
+                
+                states_weekly_data[state].append({
+                    'week': week_start.strftime('%Y-W%W'),
+                    'week_label': week_start.strftime('%b %d'),
+                    'open': open_tickets,
+                    'completed': completed_tickets,
+                    'total': len(state_tickets)
+                })
+        
+        # States performance metrics (overall)
+        states_performance = []
+        for state in malaysian_states:
+            state_tickets = [t for t in tickets if t.get('location', {}).get('state') == state]
+            state_teams = [team for team in field_teams if team.get('state') == state]
+            
+            total_tickets = len(state_tickets)
+            completed_count = len([t for t in state_tickets if t['status'] in ['completed', 'resolved', 'closed']])
+            
+            # Productivity: completion rate
+            productivity = (completed_count / total_tickets * 100) if total_tickets > 0 else 0
+            
+            # Availability: team availability
+            active_teams = len([team for team in state_teams if team.get('status') == 'active'])
+            availability = (active_teams / len(state_teams) * 100) if len(state_teams) > 0 else 0
+            
+            # Efficiency: average team efficiency in state
+            if state_teams:
+                avg_efficiency = sum([team.get('productivity', {}).get('efficiencyScore', 0) for team in state_teams]) / len(state_teams)
+            else:
+                avg_efficiency = 0
+            
+            states_performance.append({
+                'state': state,
+                'productivity': round(productivity, 2),
+                'availability': round(availability, 2),
+                'efficiency': round(avg_efficiency, 2),
+                'total_tickets': total_tickets,
+                'completed_tickets': completed_count
+            })
+        
+        # AI Recommendations
+        total_tickets = len(tickets)
+        completed_rate = (len([t for t in tickets if t['status'] in ['completed', 'resolved', 'closed']]) / total_tickets * 100) if total_tickets > 0 else 0
+        
+        # Identify states needing attention
+        low_performing_states = [s for s in states_performance if s['productivity'] < 60]
+        high_performing_states = [s for s in states_performance if s['productivity'] >= 80]
+        
+        recommendations = []
+        
+        if low_performing_states:
+            recommendations.append({
+                'type': 'warning',
+                'category': 'State Performance',
+                'title': f'Low Productivity in {len(low_performing_states)} States',
+                'description': f"States {', '.join([s['state'] for s in low_performing_states[:3]])} need additional team support. Consider reallocating resources.",
+                'action': 'Increase team capacity in underperforming states'
+            })
+        
+        if high_performing_states:
+            recommendations.append({
+                'type': 'success',
+                'category': 'Best Practices',
+                'title': f'{len(high_performing_states)} States Exceeding Targets',
+                'description': f"States {', '.join([s['state'] for s in high_performing_states[:3]])} are performing excellently. Study their workflows for best practices.",
+                'action': 'Share best practices across all states'
+            })
+        
+        # Projection recommendations
+        if projections and len(projections) > 0:
+            projected_growth = ((projections[-1]['total'] - weeks_data[-1]['total']) / max(weeks_data[-1]['total'], 1) * 100)
+            if projected_growth > 20:
+                recommendations.append({
+                    'type': 'info',
+                    'category': 'Future Planning',
+                    'title': f'Expected {abs(projected_growth):.1f}% Increase in Tickets',
+                    'description': f'Projected {projections[-1]["total"]} tickets in 4 weeks. Plan to add {int(projections[-1]["total"] / 5)} more team members.',
+                    'action': f'Recruit and train {int(projections[-1]["total"] / 5)} additional field technicians'
+                })
+            elif projected_growth < -20:
+                recommendations.append({
+                    'type': 'info',
+                    'category': 'Resource Optimization',
+                    'title': f'Expected {abs(projected_growth):.1f}% Decrease in Tickets',
+                    'description': 'Ticket volume is projected to decrease. Consider cross-training teams for other tasks.',
+                    'action': 'Optimize team allocation and consider preventive maintenance programs'
+                })
+        
+        # Efficiency recommendations
+        avg_efficiency = sum([w['efficiency'] for w in performance_weeks]) / len(performance_weeks)
+        if avg_efficiency < 70:
+            recommendations.append({
+                'type': 'warning',
+                'category': 'Efficiency',
+                'title': 'SLA Compliance Below Target',
+                'description': f'Average efficiency is {avg_efficiency:.1f}%. Focus on reducing resolution times.',
+                'action': 'Implement faster routing algorithms and better resource planning'
+            })
+        
+        return jsonify({
+            'success': True,
+            'weekly_trends': weeks_data,
+            'projections': projections,
+            'status_distribution': all_status_distribution,
+            'performance_metrics': performance_weeks,
+            'states_weekly': dict(states_weekly_data),
+            'states_performance': states_performance,
+            'recommendations': recommendations,
+            'summary': {
+                'total_tickets': total_tickets,
+                'completion_rate': round(completed_rate, 2),
+                'active_teams': len([t for t in field_teams if t.get('status') == 'active']),
+                'avg_efficiency': round(avg_efficiency, 2),
+                'projected_growth': round(projected_growth, 2) if projections else 0
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error in ticketv2 performance analytics: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 # Load sample data on startup
 load_sample_data()
 
@@ -736,8 +992,8 @@ if __name__ == '__main__':
     print("🚀 Starting AIFF Backend Server...")
     print("📊 Sample data loaded successfully")
     print(f"📈 Loaded: {len(field_teams)} teams, {len(tickets)} tickets")
-    print("🌐 Server will be available at: http://localhost:8080")
+    print("🌐 Server will be available at: http://localhost:5002")
     print("🔗 API endpoints ready for frontend integration")
     print("📁 Static files served from client directory")
     
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=5002, debug=True)

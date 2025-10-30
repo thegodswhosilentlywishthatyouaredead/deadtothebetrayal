@@ -210,6 +210,13 @@ window.showTabFallback = function(tabName) {
 // Global function to clear all chart instances
 window.clearAllCharts = function() {
     console.log('🗑️ Clearing all chart instances...');
+    
+    // Don't destroy performance charts if performance analysis is active
+    if (window.performanceAnalysisActive) {
+        console.log('⏭️ Skipping chart destruction - performance analysis is active');
+        return;
+    }
+    
     Object.keys(chartInstances).forEach(key => {
         if (chartInstances[key]) {
             console.log(`🗑️ Destroying chart: ${key}`);
@@ -8752,6 +8759,11 @@ function showTicketsListView() {
     const analysisView = document.getElementById('tickets-performance-analysis');
     if (analysisView) analysisView.style.display = 'none';
     
+    // Clear performance analysis flag
+    if (typeof window.performanceAnalysisActive !== 'undefined') {
+        window.performanceAnalysisActive = false;
+    }
+    
     // Update button states using standardized approach
     const listBtn = document.getElementById('tickets-list-btn');
     setActiveViewButton('view-controls', listBtn);
@@ -10453,27 +10465,145 @@ async function getSystemDataForAI() {
 
 // Show Performance Analysis view
 function showTicketsPerformanceAnalysis() {
-    console.log('📊 Loading Performance Analysis...');
+    console.log('📊 [APP] Loading Performance Analysis...');
     
     // Hide other views
     document.getElementById('tickets-list-view').style.display = 'none';
     document.getElementById('tickets-performance-analysis').style.display = 'block';
     
-    // Update button states using standardized approach
+    // Update button states
     const analysisBtn = document.getElementById('tickets-analysis-btn');
     setActiveViewButton('view-controls', analysisBtn);
     
-    // Destroy existing charts
+    // Set flag to prevent chart destruction
+    window.performanceAnalysisActive = true;
+    
+    // Destroy only non-performance charts
     Object.keys(chartInstances).forEach(key => {
-        if (chartInstances[key]) {
+        if (chartInstances[key] && !key.startsWith('perf_')) {
             chartInstances[key].destroy();
             delete chartInstances[key];
         }
     });
     
-    // Load all analysis data
-    loadPerformanceAnalysis();
+    // Load using new standalone module
+    console.log('📊 [APP] Calling loadTicketsPerformanceAnalysis...');
+    console.log('📊 [APP] Function exists:', typeof window.loadTicketsPerformanceAnalysis);
+    
+    if (typeof window.loadTicketsPerformanceAnalysis === 'function') {
+        window.loadTicketsPerformanceAnalysis();
+    } else {
+        console.error('❌ [APP] loadTicketsPerformanceAnalysis not found! Module may not have loaded.');
+        setTimeout(() => {
+            if (typeof window.loadTicketsPerformanceAnalysis === 'function') {
+                console.log('✅ [APP] Function now available, calling it...');
+                window.loadTicketsPerformanceAnalysis();
+            } else {
+                alert('Performance analysis module failed to load. Please refresh the page.');
+            }
+        }, 1000);
+    }
 }
+
+// ========== OLD CODE BELOW - NOT USED ANYMORE ==========
+// The new performance analysis is in tickets-performance.js
+// Keeping this for reference only
+
+/* DISABLED - OLD CODE
+// Direct inline performance analysis loader - ensures it always works
+async function loadNewPerformanceAnalysisData() {
+    console.log('📊 [INLINE] Loading Tickets Performance Analysis...');
+    console.log('📊 [INLINE] Current performanceAnalysisActive flag:', window.performanceAnalysisActive);
+    
+    try {
+        // Fetch comprehensive analytics data
+        const apiUrl = 'http://localhost:5002/api/ticketv2/analytics/performance';
+        console.log('📊 [INLINE] Fetching from:', apiUrl);
+        const response = await fetch(apiUrl);
+        
+        console.log('📊 [INLINE] Response status:', response.status);
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('📊 [INLINE] Performance Analytics Data loaded. Keys:', Object.keys(data));
+        console.log('📊 [INLINE] Weekly trends count:', data.weekly_trends?.length);
+        console.log('📊 [INLINE] Status distribution:', data.status_distribution);
+        console.log('📊 [INLINE] States weekly count:', Object.keys(data.states_weekly || {}).length);
+        
+        // Check if render functions are available
+        console.log('📊 [INLINE] Checking render functions...');
+        console.log('  - renderWeeklyTrendsChart:', typeof window.renderWeeklyTrendsChart);
+        console.log('  - renderStatusDistributionChart:', typeof window.renderStatusDistributionChart);
+        console.log('  - renderPerformanceMetricsChart:', typeof window.renderPerformanceMetricsChart);
+        
+        // Call external render functions if available, or render inline
+        if (typeof window.renderWeeklyTrendsChart === 'function') {
+            console.log('✅ [INLINE] Using external chart renderers');
+            console.log('📊 [INLINE] Rendering chart 1: Weekly Trends...');
+            window.renderWeeklyTrendsChart(data.weekly_trends, data.projections);
+            console.log('📊 [INLINE] Rendering chart 2: Status Distribution...');
+            window.renderStatusDistributionChart(data.status_distribution);
+            console.log('📊 [INLINE] Rendering chart 3: Performance Metrics...');
+            window.renderPerformanceMetricsChart(data.performance_metrics);
+            console.log('📊 [INLINE] Rendering chart 4: States Open vs Completed...');
+            window.renderStatesOpenVsCompletedChart(data.states_weekly);
+            console.log('📊 [INLINE] Rendering chart 5: Productivity vs Availability...');
+            window.renderStatesProductivityAvailabilityChart(data.states_performance);
+            console.log('📊 [INLINE] Rendering chart 6: Productivity vs Efficiency...');
+            window.renderStatesProductivityEfficiencyChart(data.states_performance);
+            console.log('📊 [INLINE] Rendering chart 7: AI Recommendations...');
+            window.renderAIRecommendations(data.recommendations, data.summary);
+            console.log('✅ [INLINE] All charts rendered successfully!');
+        } else {
+            console.warn('⚠️ [INLINE] External chart renderers not loaded, using fallback...');
+            renderChartsInline(data);
+        }
+        
+        console.log('✅ [INLINE] Performance Analysis loaded successfully');
+    } catch (error) {
+        console.error('❌ [INLINE] Error loading performance analysis:', error);
+        console.error('❌ [INLINE] Error stack:', error.stack);
+        const container = document.getElementById('tickets-performance-analysis');
+        if (container) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger';
+            errorDiv.innerHTML = `<strong>Error:</strong> ${error.message}<br><small>Check console for details. Make sure backend is running on port 5002.</small>`;
+            container.prepend(errorDiv);
+        }
+    }
+}
+
+// Fallback inline renderer if external module fails to load
+function renderChartsInline(data) {
+    console.log('🔧 Rendering charts inline as fallback');
+    // This will use the external performance-analysis.js functions once they load
+    // For now, just show a message
+    const container = document.getElementById('tickets-performance-analysis');
+    if (container) {
+        const message = document.createElement('div');
+        message.className = 'alert alert-warning';
+        message.innerHTML = '<strong>Loading charts...</strong> Please wait or refresh the page if charts don\'t appear.';
+        container.prepend(message);
+        
+        // Try again after a short delay to let scripts load
+        setTimeout(() => {
+            if (typeof window.renderWeeklyTrendsChart === 'function') {
+                message.remove();
+                window.renderWeeklyTrendsChart(data.weekly_trends, data.projections);
+                window.renderStatusDistributionChart(data.status_distribution);
+                window.renderPerformanceMetricsChart(data.performance_metrics);
+                window.renderStatesOpenVsCompletedChart(data.states_weekly);
+                window.renderStatesProductivityAvailabilityChart(data.states_performance);
+                window.renderStatesProductivityEfficiencyChart(data.states_performance);
+                window.renderAIRecommendations(data.recommendations, data.summary);
+            }
+        }, 500);
+    }
+}
+END OF DISABLED OLD CODE */
 
 // Main function to load all performance analysis data
 let perfLoadInFlight = false;
@@ -10481,6 +10611,15 @@ let lastPerfData = { tickets: [], teams: [] };
 
 async function loadPerformanceAnalysis() {
     if (perfLoadInFlight) return; // prevent overlap
+    
+    // Don't run if new performance analysis is active
+    const perfAnalysisView = document.getElementById('tickets-performance-analysis');
+    if (perfAnalysisView && perfAnalysisView.style.display !== 'none') {
+        console.log('⏭️ Skipping old performance analysis - new version is active');
+        perfLoadInFlight = false;
+        return;
+    }
+    
     perfLoadInFlight = true;
     try {
         // Use ticketv2 API for comprehensive data

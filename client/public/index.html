@@ -2787,6 +2787,200 @@
             margin: 0;
         }
 
+        /* Status Summary Items */
+        .status-summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.35rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .status-summary-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-count {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #1f2937;
+        }
+
+        /* Metric Summary Boxes */
+        .metric-summary-box {
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.15rem;
+        }
+        
+        .metric-summary-box small {
+            font-size: 0.65rem;
+        }
+
+        /* Recommendation Summary Cards */
+        .recommendation-summary-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .recommendation-summary-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            border-color: var(--primary-color);
+        }
+
+        .summary-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.1rem;
+        }
+
+        .summary-content {
+            flex: 1;
+        }
+
+        .summary-value {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1;
+            margin-bottom: 0.2rem;
+        }
+
+        .summary-label {
+            font-size: 0.7rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        /* AI Recommendation Cards */
+        .ai-recommendation-card {
+            padding: 0.85rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-left: 3px solid var(--primary-color);
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .ai-recommendation-card:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .ai-recommendation-card.warning {
+            border-left-color: #f59e0b;
+        }
+
+        .ai-recommendation-card.success {
+            border-left-color: #10b981;
+        }
+
+        .ai-recommendation-card.info {
+            border-left-color: #3b82f6;
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 0.5rem;
+        }
+
+        .recommendation-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .recommendation-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.35rem;
+        }
+
+        .recommendation-description {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            line-height: 1.5;
+        }
+
+        .recommendation-action {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.75rem;
+            background: #f8fafc;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .recommendation-action i {
+            font-size: 0.85rem;
+        }
+
+        /* Chart.js Global Font Sizing */
+        #tickets-performance-analysis .analysis-card-body canvas {
+            font-size: 10px;
+        }
+        
+        #tickets-performance-analysis .analysis-card {
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+        
+        #tickets-performance-analysis .analysis-card:hover {
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* Status Distribution Specific Styles */
+        #statusDistributionChart {
+            max-width: 100%;
+            max-height: 120px;
+        }
+        
+        .status-summary-item {
+            font-size: 0.75rem;
+        }
+
         /* Performance Tables */
         .performance-table {
             width: 100%;
@@ -6534,170 +6728,52 @@
 
                                 <!-- Performance Analysis View -->
                                 <div id="tickets-performance-analysis" style="display: none;">
-                                    <div class="performance-analytics-header">
-                                        <h5 class="performance-analytics-title">
-                                            <i class="fas fa-chart-line me-2"></i>Comprehensive Performance Analysis
+                                    <div class="performance-analytics-header mb-3">
+                                        <h5 class="performance-analytics-title" style="font-size: 1.25rem; margin-bottom: 0.25rem;">
+                                            <i class="fas fa-chart-line me-2"></i>Tickets Performance Analysis
                                         </h5>
-                                        <p class="performance-analytics-subtitle">Real-time insights, trends, and projections</p>
-                                    </div>
-                                    
-                                    <!-- Performance KPI Cards - Optimized Layout -->
-                                    <div class="row g-2 mb-3">
-                                        <div class="col-lg-3 col-md-6 col-sm-6">
-                                            <div class="kpi-card h-100">
-                                                <div class="kpi-icon blue">
-                                                    <i class="fas fa-chart-line"></i>
-                                                </div>
-                                                <div class="kpi-content">
-                                                    <div class="kpi-value" id="kpi-trend">+0.0%</div>
-                                                    <div class="kpi-label">Ticket Growth</div>
-                                                    <div class="kpi-sublabel">vs last month</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3 col-md-6 col-sm-6">
-                                            <div class="kpi-card h-100">
-                                                <div class="kpi-icon green">
-                                                    <i class="fas fa-check-double"></i>
-                                                </div>
-                                                <div class="kpi-content">
-                                                    <div class="kpi-value" id="kpi-efficiency">0.0%</div>
-                                                    <div class="kpi-label">Efficiency Rate</div>
-                                                    <div class="kpi-sublabel">within SLA</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3 col-md-6 col-sm-6">
-                                            <div class="kpi-card h-100">
-                                                <div class="kpi-icon orange">
-                                                    <i class="fas fa-clock"></i>
-                                                </div>
-                                                <div class="kpi-content">
-                                                    <div class="kpi-value" id="kpi-avg-time">0.00h</div>
-                                                    <div class="kpi-label">Avg Resolution</div>
-                                                    <div class="kpi-sublabel">target: < 2h</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-3 col-md-6 col-sm-6">
-                                            <div class="kpi-card h-100">
-                                                <div class="kpi-icon red">
-                                                    <i class="fas fa-dollar-sign"></i>
-                                                </div>
-                                                <div class="kpi-content">
-                                                    <div class="kpi-value" id="kpi-cost">RM 0</div>
-                                                    <div class="kpi-label">Monthly Cost</div>
-                                                    <div class="kpi-sublabel">operational</div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <p class="performance-analytics-subtitle" style="font-size: 0.8rem;">Comprehensive analytics with ticketv2 API data - Weekly trends and 4-week projections</p>
                                     </div>
 
-                                    <!-- Charts moved to Field Teams Performance Analytics -->
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
+                                    <!-- Section 1: Total Tickets by Status by Week with 4-Week Projection -->
+                                    <div class="row mb-3 g-3">
+                                        <div class="col-md-9">
                                             <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-money-bill-trend-up me-2"></i>Cost Analysis & Financial Trends</h6>
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-chart-line me-2"></i>Total Tickets by Status by Week (12 Weeks + 4 Week Projection)</h6>
                                                 </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="costAnalysisChart"></canvas>
-                                                    <div class="cost-summary mt-3">
-                                                        <div class="row">
-                                                            <div class="col-6 text-center">
-                                                                <div class="cost-item">
-                                                                    <div class="cost-value" id="cost-today">RM 0</div>
-                                                                    <div class="cost-label">Today</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6 text-center">
-                                                                <div class="cost-item">
-                                                                    <div class="cost-value" id="cost-week">RM 0</div>
-                                                                    <div class="cost-label">This Week</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6 text-center">
-                                                                <div class="cost-item">
-                                                                    <div class="cost-value" id="cost-month">RM 0</div>
-                                                                    <div class="cost-label">This Month</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6 text-center">
-                                                                <div class="cost-item">
-                                                                    <div class="cost-value" id="cost-projected">RM 0</div>
-                                                                    <div class="cost-label">Projected</div>
-                                                                </div>
-                                                            </div>
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <canvas id="ticketsByStatusWeeklyChart" style="height: 280px;"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Section 2: Tickets Distribution by Status (Sidebar) -->
+                                        <div class="col-md-3">
+                                            <div class="analysis-card" style="height: 100%;">
+                                                <div class="analysis-card-header" style="padding: 0.5rem 0.75rem;">
+                                                    <h6 style="font-size: 0.8rem; margin: 0; font-weight: 600;"><i class="fas fa-chart-pie me-1" style="font-size: 0.75rem;"></i>Status Distribution</h6>
+                                                </div>
+                                                <div class="analysis-card-body" style="padding: 0.5rem 0.65rem;">
+                                                    <div style="height: 120px; margin-bottom: 0.4rem; display: flex; align-items: center; justify-content: center;">
+                                                        <canvas id="statusDistributionChart"></canvas>
+                                                    </div>
+                                                    <div style="margin-top: 0.3rem;">
+                                                        <div class="status-summary-item" style="padding: 0.25rem 0;">
+                                                            <span class="status-badge bg-warning" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">Open</span>
+                                                            <span class="status-count" style="font-size: 0.85rem;" id="status-open-count">0</span>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-trophy me-2"></i>Top Performers</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <div id="top-performers-list">
-                                                        <!-- Will be populated by JavaScript -->
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    
-
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-gauge-high me-2"></i>Productivity Metrics</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="productivityMetricsChart"></canvas>
-                                                    <div class="productivity-summary mt-3">
-                                                        <div class="row">
-                                                            <div class="col-6">
-                                                                <div class="summary-item">
-                                                                    <span class="summary-label">Tickets/Day:</span>
-                                                                    <span class="summary-value" id="tickets-per-day">0</span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <div class="summary-item">
-                                                                    <span class="summary-label">Tickets/Team:</span>
-                                                                    <span class="summary-value" id="tickets-per-team">0</span>
-                                                                </div>
-                                                            </div>
+                                                        <div class="status-summary-item" style="padding: 0.25rem 0;">
+                                                            <span class="status-badge bg-info" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">In Progress</span>
+                                                            <span class="status-count" style="font-size: 0.85rem;" id="status-inprogress-count">0</span>
                                                         </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-chart-line me-2"></i>Efficiency Trends</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="efficiencyTrendsChart"></canvas>
-                                                    <div class="efficiency-summary mt-3">
-                                                        <div class="row">
-                                                            <div class="col-6">
-                                                                <div class="summary-item">
-                                                                    <span class="summary-label">First-Time Fix:</span>
-                                                                    <span class="summary-value" id="first-time-fix">0%</span>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-6">
-                                                                <div class="summary-item">
-                                                                    <span class="summary-label">SLA Compliance:</span>
-                                                                    <span class="summary-value" id="sla-compliance">0%</span>
-                                                                </div>
-                                                            </div>
+                                                        <div class="status-summary-item" style="padding: 0.25rem 0;">
+                                                            <span class="status-badge bg-success" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">Completed</span>
+                                                            <span class="status-count" style="font-size: 0.85rem;" id="status-completed-count">0</span>
+                                                        </div>
+                                                        <div class="status-summary-item" style="padding: 0.25rem 0;">
+                                                            <span class="status-badge bg-secondary" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">Cancelled</span>
+                                                            <span class="status-count" style="font-size: 0.85rem;" id="status-cancelled-count">0</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -6705,42 +6781,35 @@
                                         </div>
                                     </div>
 
-                                    <div class="row mb-4">
+                                    <!-- Section 3: High-Level Performance Metrics -->
+                                    <div class="row mb-3 g-3">
                                         <div class="col-md-12">
                                             <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-crystal-ball me-2"></i>AI-Powered Forecast Summary</h6>
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-gauge-high me-2"></i>High-Level Performance Metrics (12 Weeks)</h6>
                                                 </div>
-                                                <div class="analysis-card-body">
-                                                    <div class="forecast-insights">
-                                                        <div class="row g-3">
-                                                            <div class="col-lg-3 col-md-6">
-                                                                <div class="insight-card">
-                                                                    <div class="insight-icon"><i class="fas fa-arrow-trend-up"></i></div>
-                                                                    <div class="insight-value" id="forecast-tickets">0</div>
-                                                                    <div class="insight-label">Projected Tickets (Next Week)</div>
-                                                                </div>
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <canvas id="performanceMetricsChart" style="height: 240px;"></canvas>
+                                                    <div class="row mt-2 g-2">
+                                                        <div class="col-md-4 text-center">
+                                                            <div class="metric-summary-box">
+                                                                <div class="metric-value" id="avg-productivity">0%</div>
+                                                                <div class="metric-label">Avg Productivity</div>
+                                                                <small class="text-muted">Completion rate</small>
                                                             </div>
-                                                            <div class="col-lg-3 col-md-6">
-                                                                <div class="insight-card">
-                                                                    <div class="insight-icon"><i class="fas fa-users"></i></div>
-                                                                    <div class="insight-value" id="forecast-teams">0</div>
-                                                                    <div class="insight-label">Teams Needed</div>
-                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-4 text-center">
+                                                            <div class="metric-summary-box">
+                                                                <div class="metric-value" id="avg-availability">0%</div>
+                                                                <div class="metric-label">Avg Availability</div>
+                                                                <small class="text-muted">Team assignment rate</small>
                                                             </div>
-                                                            <div class="col-lg-3 col-md-6">
-                                                                <div class="insight-card">
-                                                                    <div class="insight-icon"><i class="fas fa-dollar-sign"></i></div>
-                                                                    <div class="insight-value" id="forecast-cost">RM 0</div>
-                                                                    <div class="insight-label">Estimated Cost</div>
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-lg-3 col-md-6">
-                                                                <div class="insight-card">
-                                                                    <div class="insight-icon"><i class="fas fa-chart-line"></i></div>
-                                                                    <div class="insight-value" id="forecast-growth">0%</div>
-                                                                    <div class="insight-label">Growth Rate</div>
-                                                                </div>
+                                                        </div>
+                                                        <div class="col-md-4 text-center">
+                                                            <div class="metric-summary-box">
+                                                                <div class="metric-value" id="avg-efficiency">0%</div>
+                                                                <div class="metric-label">Avg Efficiency</div>
+                                                                <small class="text-muted">SLA compliance rate</small>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -6749,61 +6818,109 @@
                                         </div>
                                     </div>
 
-                                    <div class="row mb-4">
-                                        <div class="col-md-6">
+                                    <!-- Section 4: States Breakdown - Open vs Completed Over Time -->
+                                    <div class="row mb-3 g-3">
+                                        <div class="col-md-12">
                                             <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-business-time me-2"></i>Peak Hours Analysis</h6>
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem; display: flex; justify-content: space-between; align-items: center;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-map-marked-alt me-2"></i>States Breakdown: Open vs Completed Tickets by Week</h6>
+                                                    <select id="stateSelector" class="form-select form-select-sm" style="width: 160px; font-size: 0.75rem;">
+                                                        <option value="all">All States</option>
+                                                    </select>
                                                 </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="peakHoursChart"></canvas>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-star me-2"></i>Customer Ratings</h6>
-                                                </div>
-                                                <div class="analysis-card-body">
-                                                    <canvas id="customerRatingsChart"></canvas>
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <canvas id="statesOpenVsCompletedChart" style="height: 280px;"></canvas>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <!-- Performance Tables -->
-                                    <div class="row">
+                                    <!-- Section 5 & 6: States Performance - Productivity vs Availability & Efficiency -->
+                                    <div class="row mb-3 g-3">
                                         <div class="col-md-6">
                                             <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h6><i class="fas fa-list-check me-2"></i>Performance Summary</h6>
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-chart-bar me-2"></i>States: Productivity vs Availability</h6>
                                                 </div>
-                                                <div class="analysis-card-body">
-                                                    <table class="table table-hover">
-                                                        <thead>
-                                                            <tr>
-                                                                <th>Metric</th>
-                                                                <th>Current</th>
-                                                                <th>Target</th>
-                                                                <th>Status</th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody id="performance-summary-table">
-                                                            <!-- Will be populated by JavaScript -->
-                                                        </tbody>
-                                                    </table>
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <canvas id="statesProductivityAvailabilityChart" style="height: 320px;"></canvas>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-6">
                                             <div class="analysis-card">
-                                                <div class="analysis-card-header">
-                                                    <h5><i class="fas fa-lightbulb me-2"></i>AI Insights & Recommendations</h5>
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-chart-bar me-2"></i>States: Productivity vs Efficiency</h6>
                                                 </div>
-                                                <div class="analysis-card-body">
-                                                    <div id="ai-insights">
-                                                        <!-- Will be populated by JavaScript -->
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <canvas id="statesProductivityEfficiencyChart" style="height: 320px;"></canvas>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Section 7: AI Recommendations -->
+                                    <div class="row mb-3 g-3">
+                                        <div class="col-md-12">
+                                            <div class="analysis-card">
+                                                <div class="analysis-card-header" style="padding: 0.65rem 1rem;">
+                                                    <h6 style="font-size: 0.85rem; margin: 0;"><i class="fas fa-robot me-2"></i>AI-Powered Recommendations & Insights</h6>
+                                                </div>
+                                                <div class="analysis-card-body" style="padding: 1rem;">
+                                                    <!-- Summary Cards -->
+                                                    <div class="row g-2 mb-3">
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <div class="recommendation-summary-card">
+                                                                <div class="summary-icon bg-primary">
+                                                                    <i class="fas fa-ticket"></i>
+                                                                </div>
+                                                                <div class="summary-content">
+                                                                    <div class="summary-value" id="ai-total-tickets">0</div>
+                                                                    <div class="summary-label">Total Tickets</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <div class="recommendation-summary-card">
+                                                                <div class="summary-icon bg-success">
+                                                                    <i class="fas fa-percentage"></i>
+                                                                </div>
+                                                                <div class="summary-content">
+                                                                    <div class="summary-value" id="ai-completion-rate">0%</div>
+                                                                    <div class="summary-label">Completion Rate</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <div class="recommendation-summary-card">
+                                                                <div class="summary-icon bg-info">
+                                                                    <i class="fas fa-users"></i>
+                                                                </div>
+                                                                <div class="summary-content">
+                                                                    <div class="summary-value" id="ai-active-teams">0</div>
+                                                                    <div class="summary-label">Active Teams</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-lg-3 col-md-6">
+                                                            <div class="recommendation-summary-card">
+                                                                <div class="summary-icon bg-warning">
+                                                                    <i class="fas fa-arrow-trend-up"></i>
+                                                                </div>
+                                                                <div class="summary-content">
+                                                                    <div class="summary-value" id="ai-growth-rate">0%</div>
+                                                                    <div class="summary-label">Projected Growth</div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- AI Recommendations List -->
+                                                    <div id="ai-recommendations-list">
+                                                        <div class="text-center text-muted py-3" style="font-size: 0.75rem;">
+                                                            <i class="fas fa-spinner fa-spin fa-lg mb-2"></i>
+                                                            <p style="margin: 0;">Loading AI recommendations...</p>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -8419,8 +8536,9 @@
             }
         }
     </script>
-    <script src="/src/ticket-utils.js?v=1"></script>
-<script src="/src/app.js?v=121"></script>
+    <script src="/public/src/ticket-utils.js?v=9"></script>
+<script src="/public/src/app.js?v=129"></script>
+<script src="/public/src/tickets-performance.js?v=4"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
@@ -8449,3 +8567,4 @@
     </script>
 </body>
 </html>
+

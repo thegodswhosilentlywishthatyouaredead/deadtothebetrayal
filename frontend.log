@@ -1,0 +1,130 @@
+::1 - - [30/Oct/2025 22:21:46] "GET /public/ HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:21:46] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:21:46] "GET /src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:21:46] "GET /src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:29:25] "GET /public/field-portal.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:29:25] "GET /src/field-portal.js?v=4 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:29:26] "GET /public/login.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:29:26] code 404, message File not found
+::1 - - [30/Oct/2025 22:29:26] "GET /favicon.ico HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:30:09] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:30:09] code 404, message File not found
+::1 - - [30/Oct/2025 22:30:09] "GET /src/performance-analysis.js?v=1 HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:33:07] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:33:07] code 404, message File not found
+::1 - - [30/Oct/2025 22:33:07] "GET /src/performance-analysis.js?v=1 HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:33:07] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:33:07] "GET /src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:33:07] "GET /src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:33:19] code 404, message File not found
+::1 - - [30/Oct/2025 22:33:19] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:34:00] code 404, message File not found
+::1 - - [30/Oct/2025 22:34:00] "HEAD /src/performance-analysis.js HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:34:32] "HEAD /public/src/performance-analysis.js HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] "GET /public/src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:35:55] code 404, message File not found
+::1 - - [30/Oct/2025 22:35:55] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:37:17] code 404, message File not found
+::1 - - [30/Oct/2025 22:37:17] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:39:26] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [30/Oct/2025 22:39:26] "GET /public/src/app.js?v=121 HTTP/1.1" 304 -
+::1 - - [30/Oct/2025 22:39:26] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 304 -
+::1 - - [30/Oct/2025 22:39:26] code 404, message File not found
+::1 - - [30/Oct/2025 22:39:26] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:45:16] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:45:16] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:45:16] "GET /public/src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:45:16] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:45:16] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:47:37] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:47:37] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:47:37] "GET /public/src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:47:37] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:47:37] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:48:34] code 404, message File not found
+::1 - - [30/Oct/2025 22:48:34] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:49:07] code 404, message File not found
+::1 - - [30/Oct/2025 22:49:07] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:50:04] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:04] "GET /public/src/app.js?v=121 HTTP/1.1" 304 -
+::1 - - [30/Oct/2025 22:50:04] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:04] code 404, message File not found
+::1 - - [30/Oct/2025 22:50:04] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:50:50] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:50] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:50] "GET /public/src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:50] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:50:50] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:55:43] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:55:43] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:55:43] "GET /public/src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:55:43] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:55:43] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:56:08] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [30/Oct/2025 22:56:08] "GET /public/src/performance-analysis.js?v=1 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:56:08] "GET /public/src/app.js?v=121 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:56:18] code 404, message File not found
+::1 - - [30/Oct/2025 22:56:18] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 22:58:03] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:58:03] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:58:03] "GET /public/src/ticket-utils.js?v=2 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:58:03] "GET /public/src/app.js?v=122 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:58:03] "GET /public/src/performance-analysis.js?v=2 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 22:58:03] code 404, message File not found
+::1 - - [30/Oct/2025 22:58:03] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:00:52] "HEAD /public/src/performance-analysis.js HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:02:55] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:02:55] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:02:55] "GET /public/src/ticket-utils.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:02:55] "GET /public/src/app.js?v=123 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:02:55] "GET /public/src/performance-analysis.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:03:32] code 404, message File not found
+::1 - - [30/Oct/2025 23:03:32] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:05:53] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:05:53] code 404, message File not found
+::1 - - [30/Oct/2025 23:05:53] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:05:53] "GET /public/src/ticket-utils.js?v=4 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:05:53] "GET /public/src/performance-analysis.js?v=4 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:05:53] "GET /public/src/app.js?v=124 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] "GET /public/src/app.js?v=124 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] "GET /public/src/ticket-utils.js?v=4 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] "GET /public/src/performance-analysis.js?v=4 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:08:07] code 404, message File not found
+::1 - - [30/Oct/2025 23:08:07] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:08:56] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] "GET /public/src/app.js?v=125 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] "GET /public/src/ticket-utils.js?v=5 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] "GET /public/src/performance-analysis.js?v=5 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:10:07] code 404, message File not found
+::1 - - [30/Oct/2025 23:10:07] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:14:35] "GET /public/src/tickets-performance.js HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:14:45] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:14:46] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:14:46] "GET /public/src/ticket-utils.js?v=7 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:14:46] "GET /public/src/tickets-performance.js?v=2 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:14:46] code 404, message File not found
+::1 - - [30/Oct/2025 23:14:46] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:14:46] "GET /public/src/app.js?v=127 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:08] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:48] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:48] code 404, message File not found
+::1 - - [30/Oct/2025 23:17:48] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:48] "GET /public/src/ticket-utils.js?v=8 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:48] "GET /public/src/app.js?v=128 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:17:48] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:17:48] "GET /public/src/tickets-performance.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:20:52] "GET /public/index.html HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:20:52] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:20:52] "GET /public/src/ticket-utils.js?v=9 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:20:52] code 404, message File not found
+::1 - - [30/Oct/2025 23:20:52] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -
+::1 - - [30/Oct/2025 23:20:52] "GET /public/src/app.js?v=129 HTTP/1.1" 200 -
+::1 - - [30/Oct/2025 23:20:52] "GET /public/src/tickets-performance.js?v=4 HTTP/1.1" 200 -
