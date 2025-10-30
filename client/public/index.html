@@ -8349,7 +8349,18 @@
 
     <style>
         /* AI recommendations layout */
-        #ai-recommendations { max-height: 420px; overflow-y: auto; padding-right: 6px; }
+        #ai-recommendations {
+            height: 380px; /* fixed height to ensure scroll area */
+            overflow-y: auto;
+            padding-right: 6px;
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #94a3b8 transparent; /* Firefox */
+            -webkit-overflow-scrolling: touch;
+        }
+        #ai-recommendations::-webkit-scrollbar { width: 6px; }
+        #ai-recommendations::-webkit-scrollbar-track { background: transparent; }
+        #ai-recommendations::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        #ai-recommendations:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
         #ai-recommendations .ai-recommendations-list {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
             gap: 10px; align-items: stretch;
@@ -8370,11 +8381,6 @@
         #ai-recommendations .ai-recommendation-icon i { font-size: 1.2rem; }
         /* compact priority badges inside recommendation cards */
         #ai-recommendations .badge { font-size: 0.7rem; padding: 0.25rem 0.45rem; border-radius: 999px; }
-        /* thin scrollbar */
-        #ai-recommendations::-webkit-scrollbar { width: 6px; }
-        #ai-recommendations::-webkit-scrollbar-track { background: transparent; }
-        #ai-recommendations::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
-        #ai-recommendations:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
     </style>
 
     <!-- Scripts -->
