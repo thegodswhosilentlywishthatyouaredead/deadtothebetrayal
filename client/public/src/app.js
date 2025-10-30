@@ -2908,6 +2908,10 @@ async function processPerformanceAnalyticsData(zonesData, teams, tickets) {
         
         // Update KPI cards
         updateAnalyticsKPIs(teams, zonesData, tickets);
+        // Also update the analytics-specific KPI section (analytics-*) using ticketv2 data
+        if (typeof updateAnalyticsKPIsWithData === 'function') {
+            updateAnalyticsKPIsWithData(teams, zonesData, tickets);
+        }
         
         // Destroy all existing chart instances first
         console.log('🗑️ Destroying existing chart instances...');
@@ -3078,11 +3082,7 @@ function updateAnalyticsKPIs(teams, zones, tickets) {
 
 // Chart creation functions
 function createZonePerformanceChart(zones) {
-    const ctx = document.getElementById('zonePerformanceChart');
-    if (!ctx) {
-        console.error('❌ Zone performance chart canvas not found');
-            return;
-        }
+    return;
         
         // Destroy existing chart
     if (chartRegistry.zonePerformanceChart) {
@@ -4969,20 +4969,53 @@ function populateZoneRankingTable(zones) {
     let zonesArray;
     if (Array.isArray(zones)) {
         // Handle array format zones
-        zonesArray = zones.map(zone => ({
-            name: zone.zoneName || zone.zone || 'Unknown Zone',
-            productivityScore: zone.productivity || 0,
-            totalTeams: zone.totalTeams || 0,
-            activeTeams: zone.activeTeams || 0,
-            totalTickets: (zone.openTickets || 0) + (zone.closedTickets || 0),
-            efficiency: zone.efficiency || 0
-        }));
+        zonesArray = zones.map(zone => {
+            const name = zone.zoneName || zone.zone || 'Unknown Zone';
+            const open = Number(zone.openTickets || 0);
+            const closed = Number(zone.closedTickets || 0);
+            const total = Number(zone.total != null ? zone.total : open + closed);
+            const productivityPct =
+                zone.productivityPercentage != null
+                    ? Number(zone.productivityPercentage)
+                    : (total > 0 ? Number(((closed / total) * 100).toFixed(1)) : 0);
+            const teamsCount = Number(zone.activeTeams || zone.totalTeams || 0);
+            const efficiencyPct =
+                zone.efficiency != null
+                    ? Number(zone.efficiency)
+                    : productivityPct;
+            return {
+                name,
+                productivityScore: productivityPct,
+                totalTeams: teamsCount,
+                activeTeams: teamsCount,
+                totalTickets: total,
+                efficiency: efficiencyPct
+            };
+        });
     } else {
         // Handle object format zones
-        zonesArray = Object.entries(zones).map(([name, data]) => ({
-            name,
-            ...data
-        }));
+        zonesArray = Object.entries(zones).map(([name, data]) => {
+            const open = Number(data.openTickets || 0);
+            const closed = Number(data.closedTickets || 0);
+            const total = Number(data.total != null ? data.total : open + closed);
+            const productivityPct =
+                data.productivityPercentage != null
+                    ? Number(data.productivityPercentage)
+                    : (total > 0 ? Number(((closed / total) * 100).toFixed(1)) : 0);
+            const teamsCount = Number(data.activeTeams || data.totalTeams || 0);
+            const efficiencyPct =
+                data.efficiency != null
+                    ? Number(data.efficiency)
+                    : productivityPct;
+            return {
+                name,
+                productivityScore: productivityPct,
+                totalTeams: teamsCount,
+                activeTeams: teamsCount,
+                totalTickets: total,
+                efficiency: efficiencyPct
+            };
+        });
     }
     
     // Sort by productivity score (highest to lowest)
