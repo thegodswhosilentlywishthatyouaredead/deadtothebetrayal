@@ -8349,18 +8349,26 @@
 
     <style>
         /* AI recommendations layout */
-        #ai-recommendations { max-height: 520px; overflow-y: auto; padding-right: 4px; }
+        #ai-recommendations { max-height: 420px; overflow-y: auto; padding-right: 6px; }
         #ai-recommendations .ai-recommendations-list {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px; align-items: stretch;
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px; align-items: stretch;
         }
         #ai-recommendations .ai-recommendation-item {
-            background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
-            padding: 12px; height: 100%; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+            background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+            padding: 10px; height: 100%; box-shadow: 0 1px 2px rgba(0,0,0,.05);
         }
-        #ai-recommendations .ai-recommendation-item .d-flex { gap: 12px; align-items: flex-start; }
-        #ai-recommendations .ai-recommendation-item h6 { margin: 0 0 6px; }
-        #ai-recommendations .ai-recommendation-item p { margin: 0; line-height: 1.35; }
+        #ai-recommendations .ai-recommendation-item .d-flex { gap: 10px; align-items: flex-start; }
+        #ai-recommendations .ai-recommendation-item h6 { margin: 0 0 4px; font-size: 0.95rem; }
+        #ai-recommendations .ai-recommendation-item p { margin: 0; line-height: 1.28; font-size: 0.9rem; }
+        #ai-recommendations .ai-recommendation-icon i { font-size: 1.2rem; }
+        /* compact priority badges inside recommendation cards */
+        #ai-recommendations .badge { font-size: 0.7rem; padding: 0.25rem 0.45rem; border-radius: 999px; }
+        /* thin scrollbar */
+        #ai-recommendations::-webkit-scrollbar { width: 6px; }
+        #ai-recommendations::-webkit-scrollbar-track { background: transparent; }
+        #ai-recommendations::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; }
+        #ai-recommendations:hover::-webkit-scrollbar-thumb { background: #94a3b8; }
     </style>
 
     <!-- Scripts -->
@@ -8394,7 +8402,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-<script src="/src/app.js?v=116"></script>
+<script src="/src/app.js?v=117"></script>
 
     <!-- Five-minute progress bar -->
     <div id="five-min-progress" class="five-min-progress" aria-label="5 minute progress" role="progressbar">
