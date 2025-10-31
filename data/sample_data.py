@@ -148,13 +148,13 @@ class SampleDataGenerator:
         """Generate realistic tickets with Malaysian locations"""
         tickets = []
         
-        # Ensure we have tickets from different time periods
-        # 25% today, 20% yesterday, 55% this month
-        today_count = max(int(count * 0.25), 10)  # At least 10 today
-        yesterday_count = max(int(count * 0.20), 8)  # At least 8 yesterday
-        month_count = count - today_count - yesterday_count
+        # Ensure we have tickets spread across 12 weeks for trend analysis
+        # 15% today, 15% this week, 70% past 12 weeks
+        today_count = max(int(count * 0.15), 10)  # At least 10 today
+        this_week_count = max(int(count * 0.15), 10)  # At least 10 this week
+        historical_count = count - today_count - this_week_count
         
-        print(f"Generating tickets: {today_count} today, {yesterday_count} yesterday, {month_count} this month")
+        print(f"Generating tickets: {today_count} today, {this_week_count} this week, {historical_count} past 12 weeks")
         
         for i in range(count):
             # Generate ticket number in format TT_001, TT_002, etc.
@@ -189,20 +189,22 @@ class SampleDataGenerator:
                     status = "resolved"
                 else:
                     status = random.choice(["open", "in_progress", "in_progress"])
-            elif i < today_count + yesterday_count:
-                # Yesterday's tickets (1 day ago, 0-23 hours)
+            elif i < today_count + this_week_count:
+                # This week's tickets (1-6 days ago)
+                days_ago = random.randint(1, 6)
                 hours_ago = random.randint(0, 23)
-                created_at = self.generate_random_date(days_ago=1, hours_ago=hours_ago)
-                # 60% of yesterday's tickets should be resolved
-                if i < today_count + (yesterday_count * 0.6):
+                created_at = self.generate_random_date(days_ago=days_ago, hours_ago=hours_ago)
+                # 60% of this week's tickets should be resolved
+                if i < today_count + (this_week_count * 0.6):
                     status = "resolved"
                 else:
                     status = random.choice(["in_progress", "resolved"])
             else:
-                # This month's tickets (2-30 days ago)
-                created_at = self.generate_random_date(days_ago=random.randint(2, 30))
+                # Historical tickets (7-84 days ago = past 12 weeks)
+                days_ago = random.randint(7, 84)  # Past 12 weeks
+                created_at = self.generate_random_date(days_ago=days_ago)
                 # Most older tickets should be resolved or closed
-                status = random.choice(["resolved", "resolved", "closed"])
+                status = random.choice(["resolved", "resolved", "closed", "completed"])
             
             # Override status with determine_status for consistency
             # status = self.determine_status(created_at)
@@ -250,13 +252,15 @@ class SampleDataGenerator:
         assignments = []
         assigned_tickets = set()
         
-        # Assign tickets to available teams
-        available_teams = [team for team in teams if team["status"] == "available"]
+        # Use all teams for assignment (not just "available" ones)
+        # Because we want historical assignments too
+        all_teams = teams
         
         for ticket in tickets:
-            if ticket["status"] in ["open", "in_progress"] and len(assigned_tickets) < len(available_teams) * 3:
+            # Assign ALL tickets (not just open/in_progress) because historical tickets were also assigned
+            if len(assigned_tickets) < len(all_teams) * 5:  # Each team can handle multiple tickets
                 # Find best matching team
-                best_team = self.find_best_team_for_ticket(ticket, available_teams)
+                best_team = self.find_best_team_for_ticket(ticket, all_teams)
                 
                 if best_team:
                     assignment_score = self.calculate_assignment_score(ticket, best_team)

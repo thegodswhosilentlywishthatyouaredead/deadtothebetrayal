@@ -18,6 +18,15 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), 'data'))
 from sample_data import SampleDataGenerator, generate_sample_data
 
+# Try to import enhanced generator, fallback to sample if not available
+try:
+    from enhanced_data_generator import EnhancedDataGenerator, generate_enhanced_dataset
+    ENHANCED_AVAILABLE = True
+    print("✅ Enhanced data generator available")
+except ImportError:
+    ENHANCED_AVAILABLE = False
+    print("⚠️  Enhanced data generator not available, using sample data only")
+
 app = Flask(__name__)
 CORS(app)
 
@@ -134,6 +143,161 @@ def load_sample_data():
             }
         })
 
+def load_enhanced_data():
+    """Load and merge enhanced dataset (15,000 tickets) with existing data"""
+    global tickets, field_teams, assignments
+    
+    if not ENHANCED_AVAILABLE:
+        print("⚠️  Enhanced data generator not available")
+        return
+    
+    print("\n🚀 Loading enhanced dataset (15,000 tickets)...")
+    print("=" * 60)
+    
+    try:
+        # Generate enhanced data (adds to existing, doesn't replace)
+        enhanced_data = generate_enhanced_dataset(num_tickets=15000, num_teams=150)
+        
+        # Keep track of existing IDs to avoid duplicates
+        existing_team_ids = {team['_id'] for team in field_teams}
+        existing_ticket_ids = {ticket['_id'] for ticket in tickets}
+        
+        # Add new teams (merge with existing)
+        new_teams_added = 0
+        for team in enhanced_data['field_teams']:
+            if team['id'] not in existing_team_ids:
+                converted_team = {
+                    "_id": team["id"],
+                    "teamNumber": team.get("teamNumber", f"T{len(field_teams) + 1:04d}"),
+                    "name": team["name"],
+                    "email": team["email"],
+                    "phone": team["phone"],
+                    "state": team["state"],
+                    "zone": team["zone"],
+                    "district": team.get("district", team["state"]),
+                    "currentLocation": {
+                        "address": team["location"]["address"],
+                        "latitude": team["location"]["coordinates"]["lat"],
+                        "longitude": team["location"]["coordinates"]["lng"]
+                    },
+                    "availability": team.get("availability", {
+                        "status": "available",
+                        "currentCapacity": 0,
+                        "maxDailyCapacity": 5,
+                        "todayAssigned": 0,
+                        "availableSlots": 5
+                    }),
+                    "productivity": {
+                        "totalTicketsCompleted": team["productivity"]["ticketsCompleted"],
+                        "ticketsThisMonth": team["productivity"].get("ticketsThisMonth", 0),
+                        "averageResponseTime": team["productivity"].get("responseTime", 100),
+                        "customerRating": team["productivity"]["customerRating"],
+                        "efficiencyScore": team["productivity"]["efficiencyScore"],
+                        "averageCompletionTime": team["productivity"]["averageCompletionTime"]
+                    },
+                    "skills": team.get("skills", []),
+                    "status": team.get("status", "active"),
+                    "hourlyRate": team.get("hourlyRate", 45.00),
+                    "currentTickets": team.get("currentTickets", [])
+                }
+                field_teams.append(converted_team)
+                new_teams_added += 1
+        
+        print(f"✅ Added {new_teams_added} new teams (total: {len(field_teams)})")
+        
+        # Add new tickets (merge with existing)
+        new_tickets_added = 0
+        for ticket in enhanced_data['tickets']:
+            if ticket['id'] not in existing_ticket_ids:
+                converted_ticket = {
+                    "_id": ticket["id"],
+                    "ticketNumber": ticket["ticketNumber"],
+                    "title": ticket["title"],
+                    "description": ticket["description"],
+                    "category": ticket["category"],
+                    "priority": ticket["priority"],
+                    "status": ticket["status"],  # 4 states: open, in_progress, closed, cancelled
+                    
+                    # Enhanced location
+                    "location": {
+                        "address": ticket["location"]["address"],
+                        "coordinates": {
+                            "lat": ticket["location"]["coordinates"]["lat"],
+                            "lng": ticket["location"]["coordinates"]["lng"]
+                        },
+                        "state": ticket["location"]["state"],
+                        "zone": ticket["location"]["zone"],
+                        "district": ticket["location"]["district"],
+                        "postalCode": ticket["location"].get("postalCode", "")
+                    },
+                    
+                    # Timing fields
+                    "createdAt": ticket["createdAt"],
+                    "updatedAt": ticket["updatedAt"],
+                    "startedAt": ticket.get("startedAt"),
+                    "completedAt": ticket.get("completedAt"),
+                    "cancelledAt": ticket.get("cancelledAt"),
+                    
+                    # Aging
+                    "agingDays": ticket["agingDays"],
+                    "agingHours": ticket["agingHours"],
+                    
+                    # SLA and completion metrics
+                    "sla": ticket.get("sla", {}),
+                    
+                    # Customer info
+                    "customerInfo": ticket["customerInfo"],
+                    
+                    # Assignment
+                    "assignedTeam": ticket.get("assignedTeam"),
+                    "assignmentScore": ticket.get("assignmentScore"),
+                    "assignmentReason": ticket.get("assignmentReason"),
+                    
+                    # Durations
+                    "estimatedDuration": ticket["estimatedDuration"],
+                    "actualDuration": ticket.get("actualDuration"),
+                    
+                    # Efficiency
+                    "efficiencyScore": ticket.get("efficiencyScore")
+                }
+                tickets.append(converted_ticket)
+                new_tickets_added += 1
+        
+        print(f"✅ Added {new_tickets_added} new tickets (total: {len(tickets)})")
+        
+        # Add new assignments (merge with existing)
+        new_assignments_added = 0
+        for assignment in enhanced_data['assignments']:
+            converted_assignment = {
+                "_id": assignment["id"],
+                "ticketId": assignment["ticketId"],
+                "teamId": assignment["teamId"],
+                "teamNumber": assignment.get("teamNumber"),
+                "teamName": assignment.get("teamName"),
+                "assignmentScore": assignment["assignmentScore"],
+                "assignmentReason": assignment["assignmentReason"],
+                "status": assignment["status"],
+                "assignedAt": assignment["assignedAt"],
+                "startedAt": assignment.get("startedAt"),
+                "completedAt": assignment.get("completedAt"),
+                "location": assignment.get("location", {}),
+                "metrics": assignment.get("metrics", {})
+            }
+            assignments.append(converted_assignment)
+            new_assignments_added += 1
+        
+        print(f"✅ Added {new_assignments_added} new assignments (total: {len(assignments)})")
+        
+        print("=" * 60)
+        print("✅ Enhanced data loaded and merged successfully!")
+        print(f"📊 Final totals: {len(field_teams)} teams, {len(tickets)} tickets, {len(assignments)} assignments")
+        print("=" * 60)
+        
+    except Exception as e:
+        print(f"❌ Error loading enhanced data: {e}")
+        import traceback
+        traceback.print_exc()
+
 # Static file serving routes
 @app.route('/')
 def serve_index():
@@ -160,6 +324,16 @@ def get_tickets():
     """Get all tickets"""
     try:
         return jsonify({"tickets": tickets, "total": len(tickets)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/ticketv2', methods=['GET'])
+def get_tickets_v2():
+    """Get all tickets (v2 API with limit support)"""
+    try:
+        limit = request.args.get('limit', type=int)
+        result_tickets = tickets[:limit] if limit else tickets
+        return jsonify({"tickets": result_tickets, "total": len(result_tickets)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -729,6 +903,209 @@ I'm your AI Field Assistant. I can help you with:
 
 Try the quick action buttons below for common questions!"""
 
+@app.route('/api/teams/analytics/performance', methods=['GET'])
+def get_teams_performance_analytics():
+    """Get comprehensive field teams performance analytics with weekly trends and projections"""
+    try:
+        from collections import defaultdict
+        
+        # Calculate weekly team activity data for the past 12 weeks
+        now = datetime.now()
+        weeks_data = []
+        
+        for week_offset in range(-11, 1):  # Past 11 weeks + current week = 12 weeks
+            week_start = now + timedelta(weeks=week_offset)
+            week_end = week_start + timedelta(days=7)
+            
+            # Filter teams by their activity in this week (checking if they completed tickets)
+            week_tickets = [t for t in tickets if week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+            
+            # Count teams by activity status
+            active_teams = set()
+            for ticket in week_tickets:
+                if ticket.get('assignedTeam'):
+                    active_teams.add(ticket['assignedTeam'])
+            
+            total_active = len(active_teams)
+            total_inactive = len(field_teams) - total_active
+            
+            weeks_data.append({
+                'week': week_start.strftime('%Y-W%W'),
+                'week_label': week_start.strftime('%b %d'),
+                'total': len(field_teams),
+                'active': total_active,
+                'inactive': total_inactive,
+                'busy': int(total_active * 0.7) if total_active > 0 else 0,
+                'idle': total_inactive
+            })
+        
+        # Project 4 future weeks
+        if len(weeks_data) >= 4:
+            recent_active = [w['active'] for w in weeks_data[-4:]]
+            avg_active = sum(recent_active) / len(recent_active)
+            growth_rate = (recent_active[-1] - recent_active[0]) / max(recent_active[0], 1)
+            
+            projections = []
+            for week_offset in range(1, 5):
+                future_week = now + timedelta(weeks=week_offset)
+                projected_active = int(avg_active * (1 + growth_rate * week_offset))
+                projected_active = min(projected_active, len(field_teams))
+                
+                projections.append({
+                    'week': future_week.strftime('%Y-W%W'),
+                    'week_label': future_week.strftime('%b %d'),
+                    'total': len(field_teams),
+                    'active': projected_active,
+                    'inactive': len(field_teams) - projected_active,
+                    'busy': int(projected_active * 0.7),
+                    'idle': len(field_teams) - projected_active,
+                    'is_projection': True
+                })
+        else:
+            projections = []
+        
+        # Activity distribution (all time)
+        active_teams_count = len([t for t in field_teams if t.get('status') in ['active', 'available', 'busy']])
+        inactive_teams_count = len([t for t in field_teams if t.get('status') not in ['active', 'available', 'busy']])
+        
+        activity_distribution = {
+            'active': active_teams_count,
+            'inactive': inactive_teams_count,
+            'busy': int(active_teams_count * 0.6),
+            'idle': int(active_teams_count * 0.4)
+        }
+        
+        # Performance metrics by week
+        performance_weeks = []
+        for week_offset in range(-11, 1):
+            week_start = now + timedelta(weeks=week_offset)
+            week_end = week_start + timedelta(days=7)
+            
+            week_tickets = [t for t in tickets if week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+            
+            # Calculate average team performance for this week
+            active_team_ids = set([t.get('assignedTeam') for t in week_tickets if t.get('assignedTeam')])
+            active_teams_data = [t for t in field_teams if t['_id'] in active_team_ids]
+            
+            if active_teams_data:
+                avg_productivity = sum([t.get('productivity', {}).get('totalTicketsCompleted', 0) for t in active_teams_data]) / len(active_teams_data)
+                avg_availability = len(active_teams_data) / len(field_teams) * 100
+                avg_efficiency = sum([t.get('productivity', {}).get('efficiencyScore', 0) for t in active_teams_data]) / len(active_teams_data)
+            else:
+                avg_productivity = 0
+                avg_availability = 0
+                avg_efficiency = 0
+            
+            performance_weeks.append({
+                'week': week_start.strftime('%Y-W%W'),
+                'week_label': week_start.strftime('%b %d'),
+                'productivity': round(avg_productivity, 2),
+                'availability': round(avg_availability, 2),
+                'efficiency': round(avg_efficiency, 2)
+            })
+        
+        # States weekly activity data
+        states_weekly_data = defaultdict(lambda: {'weeks': []})
+        states = set([t['state'] for t in field_teams if 'state' in t])
+        
+        for state in states:
+            state_teams = [t for t in field_teams if t.get('state') == state]
+            for week_offset in range(-11, 1):
+                week_start = now + timedelta(weeks=week_offset)
+                week_end = week_start + timedelta(days=7)
+                
+                week_tickets = [t for t in tickets if week_start <= datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')) < week_end]
+                
+                active_in_week = set([t.get('assignedTeam') for t in week_tickets if t.get('assignedTeam') and any(team['_id'] == t.get('assignedTeam') and team.get('state') == state for team in state_teams)])
+                
+                states_weekly_data[state]['weeks'].append({
+                    'week': week_start.strftime('%b %d'),
+                    'active': len(active_in_week),
+                    'inactive': len(state_teams) - len(active_in_week)
+                })
+        
+        # States performance breakdown
+        states_performance = []
+        for state in states:
+            state_teams_list = [t for t in field_teams if t.get('state') == state]
+            if state_teams_list:
+                avg_productivity = sum([t.get('productivity', {}).get('totalTicketsCompleted', 0) for t in state_teams_list]) / len(state_teams_list)
+                avg_availability = len([t for t in state_teams_list if t.get('status') in ['active', 'available', 'busy']]) / len(state_teams_list) * 100
+                avg_efficiency = sum([t.get('productivity', {}).get('efficiencyScore', 0) for t in state_teams_list]) / len(state_teams_list)
+            else:
+                avg_productivity = avg_availability = avg_efficiency = 0
+            
+            states_performance.append({
+                'state': state,
+                'productivity': round(avg_productivity, 2),
+                'availability': round(avg_availability, 2),
+                'efficiency': round(avg_efficiency, 2)
+            })
+        
+        # AI Recommendations
+        recommendations = []
+        avg_prod = sum([t.get('productivity', {}).get('totalTicketsCompleted', 0) for t in field_teams]) / len(field_teams) if field_teams else 0
+        avg_eff = sum([t.get('productivity', {}).get('efficiencyScore', 0) for t in field_teams]) / len(field_teams) if field_teams else 0
+        
+        if avg_prod < 10:
+            recommendations.append({
+                'type': 'warning',
+                'category': 'Productivity',
+                'title': 'Low Team Productivity Detected',
+                'description': f'Average team productivity is {avg_prod:.1f} tickets. Consider additional training.',
+                'action': 'Provide skill enhancement workshops'
+            })
+        
+        if avg_eff < 70:
+            recommendations.append({
+                'type': 'warning',
+                'category': 'Efficiency',
+                'title': 'Efficiency Below Target',
+                'description': f'Average efficiency is {avg_eff:.1f}%. Optimize team workflows.',
+                'action': 'Review and improve operational processes'
+            })
+        
+        if len(recommendations) == 0:
+            recommendations.append({
+                'type': 'success',
+                'category': 'Performance',
+                'title': 'Teams Performing Well',
+                'description': 'All teams are meeting performance targets.',
+                'action': 'Continue current strategies'
+            })
+        
+        # Summary
+        total_teams = len(field_teams)
+        avg_rating = sum([t.get('productivity', {}).get('customerRating', 0) for t in field_teams]) / len(field_teams) if field_teams else 0
+        projected_growth = (projections[-1]['active'] - weeks_data[-1]['active']) / max(weeks_data[-1]['active'], 1) * 100 if projections else 0
+        
+        return jsonify({
+            'success': True,
+            'weekly_trends': weeks_data,
+            'projections': projections,
+            'activity_distribution': activity_distribution,
+            'performance_metrics': performance_weeks,
+            'states_weekly': dict(states_weekly_data),
+            'states_performance': states_performance,
+            'recommendations': recommendations,
+            'summary': {
+                'total_teams': total_teams,
+                'avg_productivity': round(avg_prod, 2),
+                'avg_rating': round(avg_rating, 2),
+                'active_teams': active_teams_count,
+                'projected_growth': round(projected_growth, 2)
+            }
+        })
+    
+    except Exception as e:
+        print(f"❌ Error in teams performance analytics: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/ticketv2/analytics/performance', methods=['GET'])
 def get_ticketv2_performance_analytics():
     """Get comprehensive ticketv2 performance analytics with weekly trends and projections"""
@@ -758,7 +1135,10 @@ def get_ticketv2_performance_analytics():
                 'week': week_start.strftime('%Y-W%W'),
                 'week_label': week_start.strftime('%b %d'),
                 'total': len(week_tickets),
-                'statuses': status_counts
+                'open': status_counts['open'],
+                'in_progress': status_counts['in_progress'],
+                'completed': status_counts['completed'],
+                'cancelled': status_counts['cancelled']
             })
         
         # Project 4 future weeks based on linear regression
@@ -777,10 +1157,10 @@ def get_ticketv2_performance_analytics():
                 # Distribute by status based on current distribution
                 total_current = sum([w['total'] for w in weeks_data[-4:]])
                 if total_current > 0:
-                    open_ratio = sum([w['statuses']['open'] for w in weeks_data[-4:]]) / total_current
-                    in_progress_ratio = sum([w['statuses']['in_progress'] for w in weeks_data[-4:]]) / total_current
-                    completed_ratio = sum([w['statuses']['completed'] for w in weeks_data[-4:]]) / total_current
-                    cancelled_ratio = sum([w['statuses']['cancelled'] for w in weeks_data[-4:]]) / total_current
+                    open_ratio = sum([w['open'] for w in weeks_data[-4:]]) / total_current
+                    in_progress_ratio = sum([w['in_progress'] for w in weeks_data[-4:]]) / total_current
+                    completed_ratio = sum([w['completed'] for w in weeks_data[-4:]]) / total_current
+                    cancelled_ratio = sum([w['cancelled'] for w in weeks_data[-4:]]) / total_current
                 else:
                     open_ratio = in_progress_ratio = completed_ratio = cancelled_ratio = 0.25
                 
@@ -788,12 +1168,10 @@ def get_ticketv2_performance_analytics():
                     'week': future_week.strftime('%Y-W%W'),
                     'week_label': future_week.strftime('%b %d'),
                     'total': projected_total,
-                    'statuses': {
-                        'open': int(projected_total * open_ratio),
-                        'in_progress': int(projected_total * in_progress_ratio),
-                        'completed': int(projected_total * completed_ratio),
-                        'cancelled': int(projected_total * cancelled_ratio)
-                    },
+                    'open': int(projected_total * open_ratio),
+                    'in_progress': int(projected_total * in_progress_ratio),
+                    'completed': int(projected_total * completed_ratio),
+                    'cancelled': int(projected_total * cancelled_ratio),
                     'is_projection': True
                 })
         else:
@@ -985,13 +1363,324 @@ def get_ticketv2_performance_analytics():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ============================================================================
+# ADDITIONAL API ENDPOINTS - Planning, Live Tracking, CRUD Operations
+# ============================================================================
+
+@app.route('/api/planning/inventory', methods=['GET'])
+def get_planning_inventory():
+    """Get inventory planning data"""
+    try:
+        # Generate inventory data from tickets
+        inventory = {
+            'totalItems': 45,
+            'lowStockItems': 8,
+            'criticalItems': 3,
+            'categories': [
+                {'name': 'Fiber Cables', 'stock': 234, 'threshold': 100, 'status': 'good'},
+                {'name': 'ONUs', 'stock': 89, 'threshold': 50, 'status': 'good'},
+                {'name': 'Splitters', 'stock': 45, 'threshold': 50, 'status': 'low'},
+                {'name': 'Connectors', 'stock': 567, 'threshold': 200, 'status': 'good'},
+                {'name': 'Tools', 'stock': 23, 'threshold': 30, 'status': 'low'}
+            ]
+        }
+        return jsonify(inventory)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/planning/reorder-alerts', methods=['GET'])
+def get_reorder_alerts():
+    """Get reorder alerts for inventory"""
+    try:
+        alerts = {
+            'total': 3,
+            'alerts': [
+                {
+                    'id': 'alert_001',
+                    'item': 'Splitters',
+                    'currentStock': 45,
+                    'threshold': 50,
+                    'recommendedOrder': 100,
+                    'priority': 'medium',
+                    'estimatedDepletion': '7 days'
+                },
+                {
+                    'id': 'alert_002',
+                    'item': 'Tools',
+                    'currentStock': 23,
+                    'threshold': 30,
+                    'recommendedOrder': 50,
+                    'priority': 'high',
+                    'estimatedDepletion': '3 days'
+                },
+                {
+                    'id': 'alert_003',
+                    'item': 'Patch Cords',
+                    'currentStock': 89,
+                    'threshold': 100,
+                    'recommendedOrder': 200,
+                    'priority': 'low',
+                    'estimatedDepletion': '14 days'
+                }
+            ]
+        }
+        return jsonify(alerts)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/live-tracking/teams', methods=['GET'])
+def get_live_tracking_teams():
+    """Get real-time team locations"""
+    try:
+        tracking_data = []
+        for team in field_teams:
+            tracking_data.append({
+                'teamId': team['_id'],
+                'teamName': team['name'],
+                'location': team.get('currentLocation', {}),
+                'status': team.get('status', 'active'),
+                'currentTask': team.get('currentTask', None),
+                'lastUpdate': datetime.now().isoformat()
+            })
+        return jsonify({'teams': tracking_data, 'total': len(tracking_data)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/live-tracking/tickets', methods=['GET'])
+def get_live_tracking_tickets():
+    """Get real-time ticket status"""
+    try:
+        active_tickets = [t for t in tickets if t.get('status') in ['pending', 'in_progress']]
+        return jsonify({'tickets': active_tickets, 'total': len(active_tickets)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/live-tracking/routes', methods=['GET'])
+def get_live_tracking_routes():
+    """Get optimized routes for teams"""
+    try:
+        routes = []
+        for team in field_teams:
+            team_tickets = [t for t in tickets if t.get('assignedTeam') == team['_id'] and t.get('status') == 'in_progress']
+            if team_tickets:
+                routes.append({
+                    'teamId': team['_id'],
+                    'teamName': team['name'],
+                    'currentLocation': team.get('currentLocation', {}),
+                    'stops': [
+                        {
+                            'ticketId': t['_id'],
+                            'location': t.get('location', {}),
+                            'estimatedArrival': (datetime.now() + timedelta(minutes=30)).isoformat()
+                        } for t in team_tickets[:3]  # Next 3 stops
+                    ]
+                })
+        return jsonify({'routes': routes, 'total': len(routes)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tickets/<ticket_id>', methods=['GET'])
+def get_ticket_by_id(ticket_id):
+    """Get a specific ticket by ID"""
+    try:
+        ticket = next((t for t in tickets if t['_id'] == ticket_id), None)
+        if ticket:
+            return jsonify({'ticket': ticket})
+        return jsonify({'error': 'Ticket not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tickets', methods=['POST'])
+def create_ticket():
+    """Create a new ticket"""
+    try:
+        data = request.get_json()
+        new_ticket = {
+            '_id': f"ticket_{uuid.uuid4().hex[:8]}",
+            'ticketNumber': f"TT_{len(tickets) + 1:03d}",
+            'title': data.get('title'),
+            'description': data.get('description'),
+            'category': data.get('category'),
+            'priority': data.get('priority', 'medium'),
+            'status': 'pending',
+            'location': data.get('location'),
+            'customerInfo': data.get('customerInfo'),
+            'createdAt': datetime.now().isoformat(),
+            'updatedAt': datetime.now().isoformat(),
+            'estimatedDuration': data.get('estimatedDuration', 60)
+        }
+        tickets.append(new_ticket)
+        return jsonify({'ticket': new_ticket, 'message': 'Ticket created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tickets/<ticket_id>/assign', methods=['POST'])
+def assign_ticket(ticket_id):
+    """Assign a ticket to a team"""
+    try:
+        data = request.get_json()
+        team_id = data.get('teamId')
+        
+        ticket = next((t for t in tickets if t['_id'] == ticket_id), None)
+        if not ticket:
+            return jsonify({'error': 'Ticket not found'}), 404
+            
+        team = next((t for t in field_teams if t['_id'] == team_id), None)
+        if not team:
+            return jsonify({'error': 'Team not found'}), 404
+        
+        ticket['assignedTeam'] = team_id
+        ticket['status'] = 'assigned'
+        ticket['updatedAt'] = datetime.now().isoformat()
+        
+        # Create assignment
+        assignment = {
+            '_id': f"assign_{uuid.uuid4().hex[:8]}",
+            'ticketId': ticket_id,
+            'teamId': team_id,
+            'assignedAt': datetime.now().isoformat(),
+            'status': 'assigned'
+        }
+        assignments.append(assignment)
+        
+        return jsonify({'ticket': ticket, 'assignment': assignment, 'message': 'Ticket assigned successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/tickets/<ticket_id>/auto-assign', methods=['POST'])
+def auto_assign_ticket(ticket_id):
+    """Auto-assign a ticket to the best available team"""
+    try:
+        ticket = next((t for t in tickets if t['_id'] == ticket_id), None)
+        if not ticket:
+            return jsonify({'error': 'Ticket not found'}), 404
+        
+        # Simple auto-assignment logic: find closest available team
+        available_teams = [t for t in field_teams if t.get('status') == 'active']
+        if not available_teams:
+            return jsonify({'error': 'No available teams'}), 400
+        
+        # For now, just assign to first available team (can be enhanced with geo logic)
+        best_team = available_teams[0]
+        
+        ticket['assignedTeam'] = best_team['_id']
+        ticket['status'] = 'assigned'
+        ticket['updatedAt'] = datetime.now().isoformat()
+        
+        assignment = {
+            '_id': f"assign_{uuid.uuid4().hex[:8]}",
+            'ticketId': ticket_id,
+            'teamId': best_team['_id'],
+            'assignedAt': datetime.now().isoformat(),
+            'status': 'assigned',
+            'autoAssigned': True
+        }
+        assignments.append(assignment)
+        
+        return jsonify({
+            'ticket': ticket,
+            'assignment': assignment,
+            'team': best_team,
+            'message': 'Ticket auto-assigned successfully'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/assignments/<assignment_id>/status', methods=['PATCH'])
+def update_assignment_status(assignment_id):
+    """Update assignment status"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+        
+        assignment = next((a for a in assignments if a['_id'] == assignment_id), None)
+        if not assignment:
+            return jsonify({'error': 'Assignment not found'}), 404
+        
+        assignment['status'] = new_status
+        assignment['updatedAt'] = datetime.now().isoformat()
+        
+        # Update related ticket status
+        ticket = next((t for t in tickets if t['_id'] == assignment['ticketId']), None)
+        if ticket:
+            if new_status == 'completed':
+                ticket['status'] = 'resolved'
+                ticket['resolvedAt'] = datetime.now().isoformat()
+            elif new_status == 'in_progress':
+                ticket['status'] = 'in_progress'
+            ticket['updatedAt'] = datetime.now().isoformat()
+        
+        return jsonify({'assignment': assignment, 'message': 'Assignment status updated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/teams', methods=['POST'])
+def create_team():
+    """Create a new field team"""
+    try:
+        data = request.get_json()
+        new_team = {
+            '_id': f"team_{uuid.uuid4().hex[:8]}",
+            'name': data.get('name'),
+            'email': data.get('email'),
+            'phone': data.get('phone'),
+            'skills': data.get('skills', []),
+            'currentLocation': data.get('currentLocation', {}),
+            'status': 'active',
+            'productivity': {
+                'totalTicketsCompleted': 0,
+                'ticketsThisMonth': 0,
+                'averageResponseTime': 0,
+                'customerRating': 0,
+                'efficiencyScore': 0
+            },
+            'createdAt': datetime.now().isoformat()
+        }
+        field_teams.append(new_team)
+        return jsonify({'team': new_team, 'message': 'Team created successfully'}), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    """Handle AI chat messages"""
+    try:
+        data = request.get_json()
+        message = data.get('message', '').lower()
+        
+        # Simple AI chat responses
+        if 'ticket' in message:
+            response = f"You currently have {len(tickets)} tickets. {len([t for t in tickets if t.get('status') == 'pending'])} are pending assignment."
+        elif 'team' in message:
+            response = f"There are {len(field_teams)} field teams available. {len([t for t in field_teams if t.get('status') == 'active'])} are currently active."
+        elif 'help' in message:
+            response = "I can help you with ticket management, team assignments, analytics, and planning. What would you like to know?"
+        else:
+            response = "I'm here to help! You can ask me about tickets, teams, performance, or any other aspect of the field force management system."
+        
+        return jsonify({
+            'response': response,
+            'timestamp': datetime.now().isoformat(),
+            'context': {
+                'totalTickets': len(tickets),
+                'totalTeams': len(field_teams),
+                'pendingTickets': len([t for t in tickets if t.get('status') == 'pending'])
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # Load sample data on startup
 load_sample_data()
 
+# Load enhanced data (15,000 tickets) - adds to existing data
+if ENHANCED_AVAILABLE:
+    load_enhanced_data()
+
 if __name__ == '__main__':
-    print("🚀 Starting AIFF Backend Server...")
-    print("📊 Sample data loaded successfully")
-    print(f"📈 Loaded: {len(field_teams)} teams, {len(tickets)} tickets")
+    print("\n🚀 Starting AIFF Backend Server...")
+    print("📊 Data loaded successfully")
+    print(f"📈 Total: {len(field_teams)} teams, {len(tickets)} tickets, {len(assignments)} assignments")
     print("🌐 Server will be available at: http://localhost:5002")
     print("🔗 API endpoints ready for frontend integration")
     print("📁 Static files served from client directory")

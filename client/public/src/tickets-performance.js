@@ -36,13 +36,45 @@ window.loadTicketsPerformanceAnalysis = async function() {
         });
         console.log('📊 [PERF] Sample state performance data:', data.states_performance?.slice(0, 3));
         
-        // Destroy old charts
+        // Aggressive chart cleanup to prevent canvas reuse errors
+        console.log('🗑️ [PERF] Destroying old charts...');
+        
+        // Method 1: Destroy from our storage
         Object.values(window.perfCharts).forEach(chart => {
             if (chart && typeof chart.destroy === 'function') {
-                chart.destroy();
+                try {
+                    chart.destroy();
+                } catch (e) {
+                    console.warn('⚠️ [PERF] Error destroying chart:', e.message);
+                }
             }
         });
         window.perfCharts = {};
+        
+        // Method 2: Destroy any Chart.js instances on our canvases
+        const canvasIds = [
+            'ticketsByStatusWeeklyChart',
+            'ticketsStatusDistributionChart',
+            'ticketsPerformanceMetricsChart',
+            'ticketsStatesOpenVsCompletedChart',
+            'ticketsStatesProductivityAvailabilityChart',
+            'ticketsStatesProductivityEfficiencyChart'
+        ];
+        
+        canvasIds.forEach(canvasId => {
+            const canvas = document.getElementById(canvasId);
+            if (canvas) {
+                const chartInstance = Chart.getChart(canvas);
+                if (chartInstance) {
+                    try {
+                        chartInstance.destroy();
+                        console.log(`✅ [PERF] Destroyed existing chart on ${canvasId}`);
+                    } catch (e) {
+                        console.warn(`⚠️ [PERF] Error destroying chart on ${canvasId}:`, e.message);
+                    }
+                }
+            }
+        });
         
         // Render all 7 charts
         renderChart1_WeeklyTrends(data.weekly_trends, data.projections);
@@ -184,7 +216,7 @@ function renderChart1_WeeklyTrends(weeklyData, projections) {
 
 // Chart 2: Status Distribution (Doughnut)
 function renderChart2_StatusDist(statusDist) {
-    const canvas = document.getElementById('statusDistributionChart');
+    const canvas = document.getElementById('ticketsStatusDistributionChart');
     if (!canvas) return;
     
     // Update counts
@@ -223,7 +255,7 @@ function renderChart2_StatusDist(statusDist) {
 
 // Chart 3: Performance Metrics (Productivity, Availability, Efficiency)
 function renderChart3_PerformanceMetrics(perfData) {
-    const canvas = document.getElementById('performanceMetricsChart');
+    const canvas = document.getElementById('ticketsPerformanceMetricsChart');
     if (!canvas) return;
     
     const labels = perfData.map(w => w.week_label);
@@ -288,7 +320,7 @@ function renderChart3_PerformanceMetrics(perfData) {
 
 // Chart 4: States Open vs Completed (Stacked Bar)
 function renderChart4_StatesOpenClosed(statesWeekly) {
-    const canvas = document.getElementById('statesOpenVsCompletedChart');
+    const canvas = document.getElementById('ticketsStatesOpenVsCompletedChart');
     if (!canvas) return;
     
     // Get selected state or aggregate all
@@ -365,7 +397,7 @@ function renderChart4_StatesOpenClosed(statesWeekly) {
 
 // Chart 5: Productivity vs Availability (Horizontal Bar)
 function renderChart5_ProdVsAvail(statesPerf) {
-    const canvas = document.getElementById('statesProductivityAvailabilityChart');
+    const canvas = document.getElementById('ticketsStatesProductivityAvailabilityChart');
     if (!canvas) return;
     
     const sorted = [...statesPerf].sort((a,b) => b.productivity - a.productivity);
@@ -402,7 +434,7 @@ function renderChart5_ProdVsAvail(statesPerf) {
 
 // Chart 6: Productivity vs Efficiency (Horizontal Bar)
 function renderChart6_ProdVsEff(statesPerf) {
-    const canvas = document.getElementById('statesProductivityEfficiencyChart');
+    const canvas = document.getElementById('ticketsStatesProductivityEfficiencyChart');
     if (!canvas) return;
     
     console.log('📊 [PERF] Chart 6 - States data:', statesPerf.slice(0, 3));

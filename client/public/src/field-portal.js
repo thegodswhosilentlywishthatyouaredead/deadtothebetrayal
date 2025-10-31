@@ -2647,15 +2647,27 @@ function populateTicketDetailsContent(ticket, assignedTeam, teamProductivity) {
                 <h4><i class="fas fa-user"></i> Customer Information</h4>
                 <div class="info-row">
                     <span class="info-label">Customer:</span>
-                    <span class="info-value">${ticket.customer?.name || 'Unknown'}</span>
+                    <span class="info-value">${ticket.customer?.name || ticket.customerInfo?.name || 'Unknown'}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Phone:</span>
-                    <span class="info-value">${ticket.customer?.phone || 'N/A'}</span>
+                    <span class="info-value">${ticket.customer?.phone || ticket.customerInfo?.phone || 'N/A'}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Email:</span>
-                    <span class="info-value">${ticket.customer?.email || 'N/A'}</span>
+                    <span class="info-value">${ticket.customer?.email || ticket.customerInfo?.email || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">State:</span>
+                    <span class="info-value">${ticket.location?.state || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">District:</span>
+                    <span class="info-value">${ticket.location?.district || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Zone:</span>
+                    <span class="info-value">${ticket.location?.zone || 'N/A'}</span>
                 </div>
                 <div class="info-row">
                     <span class="info-label">Address:</span>
@@ -2677,9 +2689,37 @@ function populateTicketDetailsContent(ticket, assignedTeam, teamProductivity) {
                     <span class="info-label">Team Efficiency:</span>
                     <span class="info-value">${teamEfficiency}%</span>
                 </div>
+            </div>
+            
+            <div class="ticket-info-card">
+                <h4><i class="fas fa-chart-line"></i> Performance Metrics</h4>
                 <div class="info-row">
-                    <span class="info-label">Zone:</span>
-                    <span class="info-value">${ticket.zone || 'Unknown'}</span>
+                    <span class="info-label">Ticket Age:</span>
+                    <span class="info-value">${ticket.agingDays !== null && ticket.agingDays !== undefined ? (ticket.agingDays === 0 ? Math.floor(ticket.agingHours || 0) + ' hours' : ticket.agingDays + ' day' + (ticket.agingDays > 1 ? 's' : '')) : 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">SLA Target:</span>
+                    <span class="info-value">${ticket.sla?.slaTarget ? ticket.sla.slaTarget + ' hours' : 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">SLA Status:</span>
+                    <span class="info-value">
+                        ${ticket.sla?.slaMetStatus ? 
+                            '<span class="badge bg-' + (ticket.sla.slaMetStatus === 'met' ? 'success' : 'danger') + '">' + ticket.sla.slaMetStatus.toUpperCase() + '</span>' 
+                            : '<span class="badge bg-secondary">Pending</span>'}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Time to Complete:</span>
+                    <span class="info-value">${ticket.sla?.timeToComplete !== null && ticket.sla?.timeToComplete !== undefined ? ticket.sla.timeToComplete.toFixed(2) + ' hours' : 'In Progress'}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Efficiency Score:</span>
+                    <span class="info-value">
+                        ${ticket.efficiencyScore !== null && ticket.efficiencyScore !== undefined ? 
+                            '<span class="badge bg-' + (ticket.efficiencyScore >= 100 ? 'success' : ticket.efficiencyScore >= 75 ? 'warning' : 'danger') + '">' + ticket.efficiencyScore.toFixed(1) + '%</span>' 
+                            : '<span class="badge bg-secondary">N/A</span>'}
+                    </span>
                 </div>
             </div>
         </div>
