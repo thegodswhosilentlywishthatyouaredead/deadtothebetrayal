@@ -523,10 +523,13 @@
 
                 <div class="demo-credentials">
                     <h6>Demo Credentials:</h6>
-                    <p><strong>Team ID:</strong> Enter any team ID from API (e.g., <code>team_76b3ad1a</code>) or team name (e.g., <code>Nurul Ibrahim</code>)</p>
+                    <p><strong>Team ID:</strong> Leave blank for auto-assignment to team with today's tickets, or enter specific team ID</p>
                     <p><strong>Password:</strong> Any password containing <code>field</code> (e.g., <code>field123</code>)</p>
                     <p class="text-muted" style="font-size: 0.85rem; margin-top: 10px;">
-                        <i class="fas fa-info-circle"></i> Login fetches real teams from backend API at port 5002
+                        <i class="fas fa-magic"></i> <strong>Smart Login:</strong> Automatically assigns you to a team with tickets created today
+                    </p>
+                    <p class="text-muted" style="font-size: 0.85rem;">
+                        <i class="fas fa-database"></i> Fetches real data from ticketv2 API at port 5002
                     </p>
                 </div>
             </div>
@@ -630,23 +633,11 @@
                     }, 500);
                 });
             } else if (formType === 'field') {
-                // Field team login - fetch real teams from API
+                // Field team login - fetch real teams WITH today's tickets from API
                 try {
-                    console.log('🔐 Authenticating field team...');
-                    
-                    // Fetch teams from backend API
-                    const response = await fetch(`${API_BASE}/teams`);
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch teams from API');
-                    }
-                    
-                    const data = await response.json();
-                    const teams = data.teams || [];
-                    
-                    console.log(`✅ Fetched ${teams.length} teams from API`);
+                    console.log('🔐 Authenticating field team and finding team with today\'s tickets...');
                     
                     // For development: Accept any password with 'field' in it
-                    // In production, you'd verify against real credentials
                     if (!credentials.password.toLowerCase().includes('field')) {
                         return { 
                             success: false, 
@@ -654,37 +645,98 @@
                         };
                     }
                     
-                    // Find team by ID or name
-                    const team = teams.find(t => 
-                        (t.id || t._id) === credentials.teamId || 
-                        (t.name || t.teamName || '').toLowerCase() === credentials.teamId.toLowerCase()
-                    );
+                    // Fetch teams and tickets from backend API
+                    const [teamsResponse, ticketsResponse] = await Promise.all([
+                        fetch(`${API_BASE}/teams`),
+                        fetch(`${API_BASE}/ticketv2?limit=20000`)
+                    ]);
                     
-                    if (team) {
-                        const teamId = team.id || team._id;
-                        const teamName = team.name || team.teamName || team.team_name;
+                    if (!teamsResponse.ok || !ticketsResponse.ok) {
+                        throw new Error('Failed to fetch data from API');
+                    }
+                    
+                    const teamsData = await teamsResponse.json();
+                    const ticketsData = await ticketsResponse.json();
+                    const teams = teamsData.teams || [];
+                    const tickets = ticketsData.tickets || [];
+                    
+                    console.log(`✅ Fetched ${teams.length} teams and ${tickets.length} tickets from API`);
+                    
+                    // Find teams that have tickets created TODAY
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    
+                    const todayTickets = tickets.filter(t => {
+                        const createdAt = t.createdAt;
+                        if (!createdAt) return false;
+                        const ticketDate = new Date(createdAt);
+                        ticketDate.setHours(0, 0, 0, 0);
+                        return ticketDate >= today;
+                    });
+                    
+                    console.log(`📅 Found ${todayTickets.length} tickets created today`);
+                    
+                    // Count tickets per team for today
+                    const teamTodayCounts = {};
+                    todayTickets.forEach(ticket => {
+                        const teamId = ticket.assignedTeam;
+                        if (teamId) {
+                            teamTodayCounts[teamId] = (teamTodayCounts[teamId] || 0) + 1;
+                        }
+                    });
+                    
+                    const teamsWithTodayTickets = Object.keys(teamTodayCounts);
+                    console.log(`✅ ${teamsWithTodayTickets.length} teams have tickets created today`);
+                    
+                    // If specific team ID provided, try to use it
+                    if (credentials.teamId && credentials.teamId.trim() !== '') {
+                        const team = teams.find(t => 
+                            (t.id || t._id) === credentials.teamId || 
+                            (t.name || t.teamName || '').toLowerCase() === credentials.teamId.toLowerCase()
+                        );
                         
-                        console.log('✅ Team found:', { id: teamId, name: teamName });
-                        
-                        // Store team data for field portal
-                        localStorage.setItem('currentTeamId', teamId);
-                        localStorage.setItem('field_team_id', teamId);
-                        localStorage.setItem('currentUser', teamName);
-                        
-                        return { 
-                            success: true, 
-                            redirect: 'field-portal.html',
-                            teamId: teamId,
-                            teamName: teamName
-                        };
-                    } else {
-                        // If no match found, randomly select a team for demo
-                        if (teams.length > 0) {
-                            const randomTeam = teams[Math.floor(Math.random() * Math.min(20, teams.length))];
-                            const teamId = randomTeam.id || randomTeam._id;
-                            const teamName = randomTeam.name || randomTeam.teamName;
+                        if (team) {
+                            const teamId = team.id || team._id;
+                            const teamName = team.name || team.teamName || team.team_name;
+                            const todayCount = teamTodayCounts[teamId] || 0;
                             
-                            console.log('⚠️ Team ID not found, randomly selected:', { id: teamId, name: teamName });
+                            console.log('✅ Team found by ID/name:', { 
+                                id: teamId, 
+                                name: teamName,
+                                todayTickets: todayCount
+                            });
+                            
+                            // Store team data for field portal
+                            localStorage.setItem('currentTeamId', teamId);
+                            localStorage.setItem('field_team_id', teamId);
+                            localStorage.setItem('currentUser', teamName);
+                            
+                            return { 
+                                success: true, 
+                                redirect: 'field-portal.html',
+                                teamId: teamId,
+                                teamName: teamName,
+                                todayTickets: todayCount
+                            };
+                        }
+                    }
+                    
+                    // No team ID provided OR team not found - Select team WITH today's tickets
+                    if (teamsWithTodayTickets.length > 0) {
+                        // Pick a random team that has tickets today
+                        const randomTeamId = teamsWithTodayTickets[Math.floor(Math.random() * teamsWithTodayTickets.length)];
+                        const selectedTeam = teams.find(t => (t.id || t._id) === randomTeamId);
+                        
+                        if (selectedTeam) {
+                            const teamId = selectedTeam.id || selectedTeam._id;
+                            const teamName = selectedTeam.name || selectedTeam.teamName;
+                            const todayCount = teamTodayCounts[teamId];
+                            
+                            console.log('✅ Auto-selected team WITH today\'s tickets:', { 
+                                id: teamId, 
+                                name: teamName,
+                                todayTickets: todayCount
+                            });
                             
                             // Store team data
                             localStorage.setItem('currentTeamId', teamId);
@@ -695,15 +747,41 @@
                                 success: true, 
                                 redirect: 'field-portal.html',
                                 teamId: teamId,
-                                teamName: teamName
+                                teamName: teamName,
+                                todayTickets: todayCount
                             };
                         }
+                    }
+                    
+                    // Fallback: Select any team
+                    if (teams.length > 0) {
+                        const randomTeam = teams[Math.floor(Math.random() * Math.min(20, teams.length))];
+                        const teamId = randomTeam.id || randomTeam._id;
+                        const teamName = randomTeam.name || randomTeam.teamName;
+                        
+                        console.log('⚠️ No teams with today\'s tickets, selected random team:', { 
+                            id: teamId, 
+                            name: teamName 
+                        });
+                        
+                        // Store team data
+                        localStorage.setItem('currentTeamId', teamId);
+                        localStorage.setItem('field_team_id', teamId);
+                        localStorage.setItem('currentUser', teamName);
                         
                         return { 
-                            success: false, 
-                            message: 'No teams available in API' 
+                            success: true, 
+                            redirect: 'field-portal.html',
+                            teamId: teamId,
+                            teamName: teamName,
+                            todayTickets: 0
                         };
                     }
+                    
+                    return { 
+                        success: false, 
+                        message: 'No teams available in API' 
+                    };
                 } catch (error) {
                     console.error('❌ Field team authentication error:', error);
                     return { 
