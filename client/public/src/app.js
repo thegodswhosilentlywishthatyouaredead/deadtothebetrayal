@@ -3533,71 +3533,99 @@ function filterTickets() {
     }, 300);
 }
 
-function performFilterTickets() {
-    const statusFilter = document.getElementById('status-filter')?.value;
-    const priorityFilter = document.getElementById('priority-filter')?.value;
-    const categoryFilter = document.getElementById('category-filter')?.value;
-    const searchTerm = document.getElementById('search-tickets')?.value.toLowerCase() || '';
+async function performFilterTickets() {
+    console.log('🔍 Performing ticket filter...');
     
-    // Map filter values to ticketv2 API values
-    const statusMapping = {
-        'open': ['OPEN'],
-        'assigned': ['OPEN', 'IN_PROGRESS'], // Assigned tickets can be open or in progress
-        'in-progress': ['IN_PROGRESS'],
-        'completed': ['COMPLETED'],
-        'cancelled': ['CANCELLED']
-    };
-    
-    const priorityMapping = {
-        'low': ['LOW'],
-        'medium': ['MEDIUM'],
-        'high': ['HIGH'],
-        'urgent': ['EMERGENCY', 'URGENT']
-    };
-    
-    const categoryMapping = {
-        'network': ['NETWORK', 'FIBER_INSTALLATION', 'EQUIPMENT_FAILURE'],
-        'customer': ['CUSTOMER_SERVICE', 'CUSTOMER_COMPLAINT'],
-        'electrical': ['ELECTRICAL', 'POWER_OUTAGE'],
-        'plumbing': ['PLUMBING', 'WATER_ISSUE']
-    };
-    
-    let filteredTickets = tickets.filter(ticket => {
-        // Status matching with mapping
-        let matchesStatus = true;
-        if (statusFilter) {
-            const mappedStatuses = statusMapping[statusFilter] || [statusFilter.toUpperCase()];
-            matchesStatus = mappedStatuses.includes(ticket.status) || 
-                           mappedStatuses.some(status => ticket.status === status);
+    try {
+        const statusFilter = document.getElementById('status-filter')?.value;
+        const priorityFilter = document.getElementById('priority-filter')?.value;
+        const categoryFilter = document.getElementById('category-filter')?.value;
+        const searchTerm = document.getElementById('search-tickets')?.value.toLowerCase() || '';
+        
+        // Fetch ALL tickets from ticketv2 API (use cache if available)
+        const cacheKey = 'all_tickets_for_filter';
+        let allTickets = DataCache.get(cacheKey);
+        
+        if (!allTickets) {
+            console.log('📡 Fetching all tickets from ticketv2 API for filtering...');
+            const response = await fetch(`${API_BASE}/ticketv2?limit=20000`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+            allTickets = data.tickets || [];
+            
+            // Cache for 30 seconds
+            DataCache.set(cacheKey, allTickets, DataCache.TTL.short);
+            console.log(`✅ Loaded ${allTickets.length} tickets for filtering`);
+        } else {
+            console.log(`✅ Using cached tickets for filtering: ${allTickets.length}`);
         }
         
-        // Priority matching with mapping
-        let matchesPriority = true;
-        if (priorityFilter) {
-            const mappedPriorities = priorityMapping[priorityFilter] || [priorityFilter.toUpperCase()];
-            matchesPriority = mappedPriorities.includes(ticket.priority) || 
-                             mappedPriorities.some(priority => ticket.priority === priority);
+        // Build filter query
+        console.log('🔍 Applying filters:', { statusFilter, priorityFilter, categoryFilter, searchTerm });
+        
+        let filteredTickets = allTickets.filter(ticket => {
+            // Status matching - ticketv2 uses lowercase status values
+            let matchesStatus = true;
+            if (statusFilter && statusFilter !== '') {
+                const ticketStatus = (ticket.status || '').toLowerCase();
+                const filterStatus = statusFilter.toLowerCase();
+                
+                // Handle special cases
+                if (filterStatus === 'assigned') {
+                    matchesStatus = ticketStatus === 'open' || ticketStatus === 'in_progress';
+                } else {
+                    matchesStatus = ticketStatus === filterStatus;
+                }
+            }
+            
+            // Priority matching - ticketv2 uses lowercase or mixed case
+            let matchesPriority = true;
+            if (priorityFilter && priorityFilter !== '') {
+                const ticketPriority = (ticket.priority || '').toLowerCase();
+                const filterPriority = priorityFilter.toLowerCase();
+                matchesPriority = ticketPriority === filterPriority || ticketPriority.includes(filterPriority);
+            }
+            
+            // Category matching - ticketv2 uses descriptive categories like "Customer - CPE"
+            let matchesCategory = true;
+            if (categoryFilter && categoryFilter !== '') {
+                const ticketCategory = (ticket.category || '').toLowerCase();
+                const filterCategory = categoryFilter.toLowerCase();
+                matchesCategory = ticketCategory.includes(filterCategory);
+            }
+            
+            // Search matching - search across multiple fields
+            const matchesSearch = !searchTerm || 
+                (ticket._id && ticket._id.toLowerCase().includes(searchTerm)) ||
+                (ticket.id && ticket.id.toLowerCase().includes(searchTerm)) ||
+                (ticket.category && ticket.category.toLowerCase().includes(searchTerm)) ||
+                (ticket.customerInfo?.name && ticket.customerInfo.name.toLowerCase().includes(searchTerm)) ||
+                (ticket.customerInfo?.contact && ticket.customerInfo.contact.toLowerCase().includes(searchTerm)) ||
+                (ticket.location?.state && ticket.location.state.toLowerCase().includes(searchTerm)) ||
+                (ticket.location?.district && ticket.location.district.toLowerCase().includes(searchTerm));
+            
+            return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
+        });
+        
+        console.log(`✅ Filter applied: ${filteredTickets.length} tickets match (from ${allTickets.length} total)`);
+        
+        displayTicketsWithPagination(filteredTickets, filteredTickets.length, 1);
+        
+    } catch (error) {
+        console.error('❌ Error filtering tickets:', error);
+        // Show error to user
+        const ticketsList = document.getElementById('tickets-list');
+        if (ticketsList) {
+            ticketsList.innerHTML = `
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error applying filters. Please try again or refresh the page.
+                </div>
+            `;
         }
-        
-        // Category matching with mapping
-        let matchesCategory = true;
-        if (categoryFilter) {
-            const mappedCategories = categoryMapping[categoryFilter] || [categoryFilter.toUpperCase()];
-            matchesCategory = mappedCategories.includes(ticket.category) || 
-                             mappedCategories.some(category => ticket.category === category);
-        }
-        
-        // Search matching
-        const matchesSearch = !searchTerm || 
-            (ticket.ticket_number && ticket.ticket_number.toLowerCase().includes(searchTerm)) ||
-            (ticket.title && ticket.title.toLowerCase().includes(searchTerm)) ||
-            (ticket.customer_name && ticket.customer_name.toLowerCase().includes(searchTerm)) ||
-            (ticket.customer_contact && ticket.customer_contact.toLowerCase().includes(searchTerm));
-        
-        return matchesStatus && matchesPriority && matchesCategory && matchesSearch;
-    });
-    
-    displayTicketsWithPagination(filteredTickets, filteredTickets.length, 1);
+    }
 }
 // Field Team functions
 async function updateFieldTeamsMetrics(teams, tickets, zonesData) {
