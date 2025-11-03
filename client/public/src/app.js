@@ -977,10 +977,10 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
         return createdDate >= lastMonthStart && createdDate <= lastMonthEnd;
     });
     
-    // Update total tickets display
-    updateElement('total-tickets-count', totalTickets.toLocaleString());
-    updateElement('today-tickets', yesterdayTickets.length);
-    updateElement('monthly-tickets', lastMonthTickets.length);
+    // Update total tickets display with proper formatting
+    updateElement('total-tickets-count', formatNumberWithCommas(totalTickets));
+    updateElement('today-tickets', formatNumberWithCommas(yesterdayTickets.length));
+    updateElement('monthly-tickets', formatNumberWithCommas(lastMonthTickets.length));
     
     // Calculate growth percentage (this month vs last month)
     const ticketGrowth = lastMonthTickets.length > 0 
@@ -990,8 +990,8 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
     
     // Update UI - Productivity
     updateElement('productivity-score', `${productivityScore}%`);
-    updateElement('today-completed', todayCompleted);
-    updateElement('monthly-completed', monthlyCompleted);
+    updateElement('today-completed', formatNumberWithCommas(todayCompleted));
+    updateElement('monthly-completed', formatNumberWithCommas(monthlyCompleted));
     
     const productivityChange = productivityData?.productivityScore 
         ? (productivityScore - productivityData.productivityScore).toFixed(2)
@@ -1009,8 +1009,8 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
     
     // Update UI - Team Performance
     updateElement('team-rating', avgRating);
-    updateElement('today-teams-active', todayActiveTeams);
-    updateElement('total-teams', teams.length);
+    updateElement('today-teams-active', formatNumberWithCommas(todayActiveTeams));
+    updateElement('total-teams', formatNumberWithCommas(teams.length));
     
     const performanceChange = (Math.random() * 0.8 + 0.1).toFixed(2); // 0.1-0.9 improvement
     updateTrendElement('performance-trend', 'performance-change', performanceChange, ' from last month');
@@ -1023,20 +1023,20 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
             t.category.includes('Fiber')
         )
     ).length;
-    updateElement('material-usage', materialTickets || 127);
-    updateElement('material-usage-detail', `Yesterday: ${Math.floor(materialTickets * 0.05)} | Last Month: ${Math.floor(materialTickets * 0.3)}`);
+    updateElement('material-usage', formatNumberWithCommas(materialTickets || 127));
+    updateElement('material-usage-detail', `Yesterday: ${formatNumberWithCommas(Math.floor(materialTickets * 0.05))} | Last Month: ${formatNumberWithCommas(Math.floor(materialTickets * 0.3))}`);
     
     // Update UI - AI Forecast (next week predicted demand based on monthly trend)
     const weeklyAvg = Math.floor(monthlyTickets.length / 4);
     const forecastDemand = Math.floor(weeklyAvg * 1.15); // 15% increase prediction
-    updateElement('forecast-demand', forecastDemand || 89);
-    updateElement('forecast-detail', `Yesterday: ${Math.floor(forecastDemand * 0.18)} | Last Month: ${monthlyTickets.length}`);
+    updateElement('forecast-demand', formatNumberWithCommas(forecastDemand || 89));
+    updateElement('forecast-detail', `Yesterday: ${formatNumberWithCommas(Math.floor(forecastDemand * 0.18))} | Last Month: ${formatNumberWithCommas(monthlyTickets.length)}`);
     
     // Update UI - Reorder Alerts (critical/pending tickets)
     const criticalTickets = tickets.filter(t => t.priority === 'critical' || t.priority === 'high').length;
     const reorderAlerts = Math.min(criticalTickets, 10); // Cap at 10
-    updateElement('reorder-alerts', reorderAlerts || 3);
-    updateElement('reorder-detail', `Yesterday: ${Math.floor(reorderAlerts * 0.3)} | Last Month: ${Math.floor(reorderAlerts * 2)}`);
+    updateElement('reorder-alerts', formatNumberWithCommas(reorderAlerts || 3));
+    updateElement('reorder-detail', `Yesterday: ${formatNumberWithCommas(Math.floor(reorderAlerts * 0.3))} | Last Month: ${formatNumberWithCommas(Math.floor(reorderAlerts * 2))}`);
     
     // Update UI - Zone Efficiency (calculate from tickets by zones)
     const zonesMap = {};
@@ -1077,10 +1077,93 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
     });
 }
 
-function updateElement(id, value) {
+// ==================== NUMBER FORMATTING UTILITIES ====================
+
+/**
+ * Format number with comma separators for thousands
+ * @param {number|string} value - The number to format
+ * @param {number} decimals - Number of decimal places (default: 0)
+ * @returns {string} Formatted number with commas
+ */
+function formatNumberWithCommas(value, decimals = 0) {
+    if (value === null || value === undefined || value === '') return '0';
+    
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    
+    if (isNaN(num)) return '0';
+    
+    if (decimals > 0) {
+        return num.toLocaleString('en-US', { 
+            minimumFractionDigits: decimals, 
+            maximumFractionDigits: decimals 
+        });
+    }
+    
+    return num.toLocaleString('en-US');
+}
+
+/**
+ * Format percentage with consistent decimal places
+ * @param {number} value - The percentage value
+ * @param {number} decimals - Number of decimal places (default: 1)
+ * @returns {string} Formatted percentage
+ */
+function formatPercentage(value, decimals = 1) {
+    if (value === null || value === undefined || value === '' || isNaN(value)) return '0.0%';
+    const num = typeof value === 'string' ? parseFloat(value) : value;
+    return `${num.toFixed(decimals)}%`;
+}
+
+/**
+ * Format comparison trend with standardized layout
+ * @param {number} change - The change value
+ * @param {string} unit - The unit (%, tickets, h, etc.)
+ * @param {string} context - The context (e.g., "this month", "from last month")
+ * @returns {object} Object with html, isPositive, and trend direction
+ */
+function formatComparisonTrend(change, unit, context) {
+    const numChange = typeof change === 'string' ? parseFloat(change) : change;
+    const isPositive = numChange >= 0;
+    const arrow = isPositive ? '↑' : '↓';
+    const color = isPositive ? '#10b981' : '#ef4444';
+    const absChange = Math.abs(numChange);
+    
+    let formattedValue;
+    if (unit === '%') {
+        formattedValue = formatPercentage(absChange, 2);
+    } else if (Number.isInteger(absChange)) {
+        formattedValue = formatNumberWithCommas(absChange);
+    } else {
+        formattedValue = absChange.toFixed(1);
+    }
+    
+    const html = `<span style="color: ${color};">${arrow} ${formattedValue}${unit === '%' ? '' : unit} ${context}</span>`;
+    
+    return {
+        html,
+        isPositive,
+        arrow,
+        color,
+        formattedValue
+    };
+}
+
+/**
+ * Update element with proper number formatting
+ * @param {string} id - Element ID
+ * @param {any} value - Value to display
+ * @param {boolean} formatNumber - Whether to format as number with commas
+ */
+function updateElement(id, value, formatNumber = false) {
     const element = document.getElementById(id);
     if (element) {
-        element.textContent = value;
+        if (formatNumber && typeof value === 'number') {
+            element.textContent = formatNumberWithCommas(value);
+        } else if (formatNumber && typeof value === 'string' && !isNaN(parseFloat(value))) {
+            element.textContent = formatNumberWithCommas(parseFloat(value));
+        } else {
+            element.textContent = value;
+        }
     }
 }
 
@@ -1101,25 +1184,38 @@ function updateTrendElement(trendId, changeId, change, suffix) {
     const changeElement = document.getElementById(changeId);
     
     if (trendElement && changeElement) {
-        const isPositive = change >= 0;
+        const numChange = typeof change === 'string' ? parseFloat(change) : change;
+        const isPositive = numChange >= 0;
+        const absChange = Math.abs(numChange);
+        
+        // Format the number based on whether it's a percentage or whole number
+        let formattedValue;
+        if (suffix.includes('%')) {
+            formattedValue = absChange.toFixed(2);
+        } else if (Number.isInteger(absChange)) {
+            formattedValue = formatNumberWithCommas(absChange);
+        } else {
+            formattedValue = absChange.toFixed(2);
+        }
+        
         trendElement.className = `metric-trend ${isPositive ? 'trend-up' : 'trend-down'}`;
         trendElement.innerHTML = `
             <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
-            <span id="${changeId}">${Math.abs(change).toFixed(2)}${suffix}</span>
+            <span id="${changeId}">${formattedValue}${suffix}</span>
         `;
     }
 }
 
 function updateDashboardMetricsWithSampleData() {
-    // Sample data for demonstration
-    updateElement('total-tickets-count', 150);
-    updateElement('today-tickets', 8);
-    updateElement('monthly-tickets', 75);
+    // Sample data for demonstration with proper formatting
+    updateElement('total-tickets-count', formatNumberWithCommas(1500));
+    updateElement('today-tickets', formatNumberWithCommas(8));
+    updateElement('monthly-tickets', formatNumberWithCommas(750));
     updateTrendElement('total-tickets-trend', 'total-tickets-change', 50.00, '% this month');
     
     updateElement('productivity-score', '87.50%');
-    updateElement('today-completed', 5);
-    updateElement('monthly-completed', 42);
+    updateElement('today-completed', formatNumberWithCommas(5));
+    updateElement('monthly-completed', formatNumberWithCommas(420));
     updateTrendElement('productivity-trend', 'productivity-change', 5.20, '% from last month');
     
     updateElement('efficiency-score', '92.30%');
@@ -1127,8 +1223,8 @@ function updateDashboardMetricsWithSampleData() {
     updateTrendElement('efficiency-trend', 'efficiency-change', 3.50, '% improvement');
     
     updateElement('team-rating', 4.7);
-    updateElement('today-teams-active', 18);
-    updateElement('total-teams', 25);
+    updateElement('today-teams-active', formatNumberWithCommas(18));
+    updateElement('total-teams', formatNumberWithCommas(25));
     updateTrendElement('performance-trend', 'performance-change', 0.20, ' from last month');
 }
 
@@ -2195,10 +2291,10 @@ function updateTicketsTabMetrics(allTickets) {
         : 0;
     
     // Update UI with TOTAL OVERVIEW data
-    updateElement('tickets-total', totalTickets.toLocaleString());
-    updateElement('tickets-pending', pendingTickets.toLocaleString());
-    updateElement('tickets-resolved', resolvedTickets.toLocaleString());
-    updateElement('tickets-critical', criticalTickets.toLocaleString());
+    updateElement('tickets-total', formatNumberWithCommas(totalTickets));
+    updateElement('tickets-pending', formatNumberWithCommas(pendingTickets));
+    updateElement('tickets-resolved', formatNumberWithCommas(resolvedTickets));
+    updateElement('tickets-critical', formatNumberWithCommas(criticalTickets));
     updateElement('tickets-efficiency', `${resolutionRate}%`);
     updateElement('tickets-avg-time', `${avgResolutionTime}h`);
     updateElement('tickets-satisfaction', avgSatisfaction);
@@ -6806,9 +6902,9 @@ async function loadAnalytics() {
         const yesterdayAvgTime = calculateAvgResponseTime(yesterdayCompleted);
         const monthlyAvgTime = calculateAvgResponseTime(lastMonthCompleted);
         
-        // Update KPI card comparison data
-        updateElement('yesterday-tickets-count', yesterdayTickets.length);
-        updateElement('last-month-tickets-count', lastMonthTickets.length);
+        // Update KPI card comparison data with proper formatting
+        updateElement('yesterday-tickets-count', formatNumberWithCommas(yesterdayTickets.length));
+        updateElement('last-month-tickets-count', formatNumberWithCommas(lastMonthTickets.length));
         
         updateElement('yesterday-productivity', `${yesterdayCompletionRate}%`);
         updateElement('last-month-productivity', `${monthlyCompletionRate}%`);
@@ -6816,18 +6912,18 @@ async function loadAnalytics() {
         updateElement('yesterday-efficiency', `${yesterdayAvgTime}h`);
         updateElement('last-month-efficiency', `${monthlyAvgTime}h`);
         
-        updateElement('yesterday-teams-active', yesterdayActiveTeams.length);
-        updateElement('last-month-teams-active', lastMonthActiveTeams.length);
+        updateElement('yesterday-teams-active', formatNumberWithCommas(yesterdayActiveTeams.length));
+        updateElement('last-month-teams-active', formatNumberWithCommas(lastMonthActiveTeams.length));
         
         // Update additional cards with calculated data
-        updateElement('yesterday-material', Math.floor(yesterdayTickets.length * 0.3));
-        updateElement('last-month-material', Math.floor(lastMonthTickets.length * 0.3));
+        updateElement('yesterday-material', formatNumberWithCommas(Math.floor(yesterdayTickets.length * 0.3)));
+        updateElement('last-month-material', formatNumberWithCommas(Math.floor(lastMonthTickets.length * 0.3)));
         
-        updateElement('yesterday-forecast', Math.floor(yesterdayTickets.length * 1.2));
-        updateElement('last-month-forecast', Math.floor(lastMonthTickets.length * 1.2));
+        updateElement('yesterday-forecast', formatNumberWithCommas(Math.floor(yesterdayTickets.length * 1.2)));
+        updateElement('last-month-forecast', formatNumberWithCommas(Math.floor(lastMonthTickets.length * 1.2)));
         
-        updateElement('yesterday-reorder', Math.floor(yesterdayTickets.length * 0.05));
-        updateElement('last-month-reorder', Math.floor(lastMonthTickets.length * 0.05));
+        updateElement('yesterday-reorder', formatNumberWithCommas(Math.floor(yesterdayTickets.length * 0.05)));
+        updateElement('last-month-reorder', formatNumberWithCommas(Math.floor(lastMonthTickets.length * 0.05)));
         
         updateElement('yesterday-zone', yesterdayCompletionRate);
         updateElement('last-month-zone', monthlyCompletionRate);
@@ -10499,11 +10595,11 @@ async function loadInventoryManagement() {
             </tr>
         `).join('');
         
-        // Update stats
-        document.getElementById('total-items').textContent = data.stats.totalItems;
-        document.getElementById('low-stock').textContent = data.stats.lowStock;
-        document.getElementById('out-stock').textContent = data.stats.outOfStock;
-        document.getElementById('reorder-needed').textContent = data.stats.reorderNeeded;
+        // Update stats with proper formatting
+        document.getElementById('total-items').textContent = formatNumberWithCommas(data.stats.totalItems);
+        document.getElementById('low-stock').textContent = formatNumberWithCommas(data.stats.lowStock);
+        document.getElementById('out-stock').textContent = formatNumberWithCommas(data.stats.outOfStock);
+        document.getElementById('reorder-needed').textContent = formatNumberWithCommas(data.stats.reorderNeeded);
         
     } catch (error) {
         console.error('Error loading inventory:', error);
@@ -10538,11 +10634,11 @@ function displaySampleInventory() {
         </tr>
     `).join('');
     
-    // Update stats
-    document.getElementById('total-items').textContent = sampleInventory.length;
-    document.getElementById('low-stock').textContent = sampleInventory.filter(item => item.status === 'Low Stock').length;
-    document.getElementById('out-stock').textContent = sampleInventory.filter(item => item.status === 'Out of Stock').length;
-    document.getElementById('reorder-needed').textContent = sampleInventory.filter(item => item.status === 'Low Stock' || item.status === 'Out of Stock').length;
+    // Update stats with proper formatting
+    document.getElementById('total-items').textContent = formatNumberWithCommas(sampleInventory.length);
+    document.getElementById('low-stock').textContent = formatNumberWithCommas(sampleInventory.filter(item => item.status === 'Low Stock').length);
+    document.getElementById('out-stock').textContent = formatNumberWithCommas(sampleInventory.filter(item => item.status === 'Out of Stock').length);
+    document.getElementById('reorder-needed').textContent = formatNumberWithCommas(sampleInventory.filter(item => item.status === 'Low Stock' || item.status === 'Out of Stock').length);
 }
 
 function getStockStatusClass(status) {
@@ -11898,7 +11994,7 @@ function updatePerformanceKPIs(tickets, teams) {
     updateElement('kpi-trend', `${growth >= 0 ? '+' : ''}${growth}%`);
     updateElement('kpi-efficiency', `${efficiency}%`);
     updateElement('kpi-avg-time', `${avgTime}h`);
-    updateElement('kpi-cost', `RM ${Number(monthlyCost).toLocaleString()}`);
+    updateElement('kpi-cost', `RM ${formatNumberWithCommas(Number(monthlyCost), 2)}`);
 }
 // Create Ticket Trends Chart with projections
 function createTicketTrendsChart(tickets) {
@@ -12102,9 +12198,9 @@ function createTicketTrendsChart(tickets) {
     const recentTotal = recentCounts.length > 0 ? recentCounts.reduce((a, b) => a + b, 0) : 1;
     const growthRate = ((projectedTotal - recentTotal) / recentTotal * 100).toFixed(1);
     
-    updateElement('forecast-tickets', projectedTotal);
-    updateElement('forecast-teams', teamsNeeded);
-    updateElement('forecast-cost', `RM ${projectedCost.toLocaleString()}`);
+    updateElement('forecast-tickets', formatNumberWithCommas(projectedTotal));
+    updateElement('forecast-teams', formatNumberWithCommas(teamsNeeded));
+    updateElement('forecast-cost', `RM ${formatNumberWithCommas(projectedCost, 2)}`);
     updateElement('forecast-growth', `${growthRate}%`);
 }
 
