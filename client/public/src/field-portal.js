@@ -1218,6 +1218,10 @@ async function loadQuickStats() {
         }
         
         // Update UI - Card 1: Total Tickets Assigned to Logged User
+        console.log('🔍 SETTING TOTAL-TICKETS TO:', userTickets.length, '(should be user\'s tickets only, not', allTickets.length, ')');
+        console.log('🔍 Current User ID:', currentUserId);
+        console.log('🔍 If total-tickets === 15000, currentUserId is NULL or filtering failed!');
+        
         updateFieldElement('total-tickets', userTickets.length);
         const yesterdayTotalTickets = allTickets.filter(ticket => {
             const assignedTeam = ticket.assignedTeam;
@@ -1237,6 +1241,10 @@ async function loadQuickStats() {
         updateFieldElement('lastmonth-total-tickets', lastMonthTotalTickets);
         
         // Update UI - Card 2: Today's Tickets Assigned to Logged User
+        console.log('🔍 SETTING TODAY-TICKETS TO:', todayTickets.length, '(from userTickets:', userTickets.length, ')');
+        console.log('🔍 If this shows 1344, filtering FAILED. Should be 0-50 for a single user.');
+        console.log('🔍 userTickets === allTickets?', userTickets.length === allTickets.length);
+        
         updateFieldElement('today-tickets', todayTickets.length);
         updateFieldElement('yesterday-tickets', yesterdayTickets.length);
         updateFieldElement('lastmonth-tickets', lastMonthTickets.length);
