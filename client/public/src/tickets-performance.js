@@ -84,14 +84,14 @@ window.loadTicketsPerformanceAnalysis = async function() {
             }
         });
         
-        // Render all 7 charts
-        renderChart1_WeeklyTrends(data.weekly_trends, data.projections);
-        renderChart2_StatusDist(data.status_distribution);
-        renderChart3_PerformanceMetrics(data.performance_metrics);
-        renderChart4_StatesOpenClosed(data.states_weekly);
-        renderChart5_ProdVsAvail(data.states_performance);
-        renderChart6_ProdVsEff(data.states_performance);
-        renderSection7_AIRecommendations(data.recommendations, data.summary);
+        // Render all 7 charts (Tickets-specific functions)
+        renderTicketsChart1_WeeklyTrends(data.weekly_trends, data.projections);
+        renderTicketsChart2_StatusDist(data.status_distribution);
+        renderTicketsChart3_PerformanceMetrics(data.performance_metrics);
+        renderTicketsChart4_StatesOpenClosed(data.states_weekly);
+        renderTicketsChart5_ProdVsAvail(data.states_performance);
+        renderTicketsChart6_ProdVsEff(data.states_performance);
+        renderTicketsSection7_AIRecommendations(data.recommendations, data.summary);
         
         console.log('✅ [PERF] All charts rendered!');
         
@@ -102,7 +102,7 @@ window.loadTicketsPerformanceAnalysis = async function() {
 };
 
 // Chart 1: Weekly Trends with 4-Week Projection
-function renderChart1_WeeklyTrends(weeklyData, projections) {
+function renderTicketsChart1_WeeklyTrends(weeklyData, projections) {
     const canvas = document.getElementById('ticketsByStatusWeeklyChart');
     if (!canvas) {
         console.warn('❌ Canvas not found: ticketsByStatusWeeklyChart');
@@ -223,7 +223,7 @@ function renderChart1_WeeklyTrends(weeklyData, projections) {
 }
 
 // Chart 2: Status Distribution (Doughnut)
-function renderChart2_StatusDist(statusDist) {
+function renderTicketsChart2_StatusDist(statusDist) {
     const canvas = document.getElementById('ticketsStatusDistributionChart');
     if (!canvas) return;
     
@@ -262,8 +262,8 @@ function renderChart2_StatusDist(statusDist) {
 }
 
 // Chart 3: Performance Metrics (Productivity, Availability, Efficiency)
-function renderChart3_PerformanceMetrics(perfData) {
-    console.log('📊 [PERF] Chart 3 - Starting renderChart3_PerformanceMetrics...');
+function renderTicketsChart3_PerformanceMetrics(perfData) {
+    console.log('📊 [PERF] Chart 3 - Starting renderTicketsChart3_PerformanceMetrics...');
     console.log('📊 [PERF] Chart 3 - perfData:', perfData);
     
     const canvas = document.getElementById('ticketsPerformanceMetricsChart');
@@ -428,7 +428,7 @@ function renderChart3_PerformanceMetrics(perfData) {
 }
 
 // Chart 4: States Open vs Completed (Stacked Bar)
-function renderChart4_StatesOpenClosed(statesWeekly) {
+function renderTicketsChart4_StatesOpenClosed(statesWeekly) {
     const canvas = document.getElementById('ticketsStatesOpenVsCompletedChart');
     if (!canvas) return;
     
@@ -505,7 +505,7 @@ function renderChart4_StatesOpenClosed(statesWeekly) {
 }
 
 // Chart 5: Productivity vs Availability (Horizontal Bar)
-function renderChart5_ProdVsAvail(statesPerf) {
+function renderTicketsChart5_ProdVsAvail(statesPerf) {
     const canvas = document.getElementById('ticketsStatesProductivityAvailabilityChart');
     if (!canvas) return;
     
@@ -542,7 +542,7 @@ function renderChart5_ProdVsAvail(statesPerf) {
 }
 
 // Chart 6: Productivity vs Efficiency (Horizontal Bar)
-function renderChart6_ProdVsEff(statesPerf) {
+function renderTicketsChart6_ProdVsEff(statesPerf) {
     const canvas = document.getElementById('ticketsStatesProductivityEfficiencyChart');
     if (!canvas) return;
     
@@ -582,7 +582,7 @@ function renderChart6_ProdVsEff(statesPerf) {
 }
 
 // Section 7: AI Recommendations
-function renderSection7_AIRecommendations(recommendations, summary) {
+function renderTicketsSection7_AIRecommendations(recommendations, summary) {
     // Update summary cards
     document.getElementById('ai-total-tickets').textContent = summary.total_tickets;
     document.getElementById('ai-completion-rate').textContent = `${summary.completion_rate}%`;
