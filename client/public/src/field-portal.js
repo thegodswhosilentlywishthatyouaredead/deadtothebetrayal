@@ -95,64 +95,56 @@ async function loadFieldPortalData() {
 
 // Set current user for field portal
 async function setCurrentUser() {
-    // Get user type from login
-    const userType = localStorage.getItem('aiff_user_type');
+    console.log('👤 Setting current user for field portal...');
     
-    if (userType === 'field_team') {
-        try {
-            // Get actual team names from backend
-            const response = await fetch(`${API_BASE}/teams`);
-            const data = await response.json();
-            const teams = data.teams || [];
+    try {
+        // Get actual team data from backend
+        const response = await fetch(`${API_BASE}/teams`);
+        const data = await response.json();
+        const teams = data.teams || [];
+        
+        if (teams.length > 0) {
+            let selectedTeam = null;
             
-            if (teams.length > 0) {
-                // Use the team ID from authentication if available
-                const teamId = localStorage.getItem('aiff_team_id');
-                let currentUser = 'Anwar Ibrahim'; // Default fallback
-                
-                if (teamId) {
-                    // Find the team by ID
-                    const team = teams.find(t => (t.id || t._id) == teamId);
-                    if (team) {
-                        currentUser = team.name || team.teamName || team.team_name;
-                        console.log('👤 Found authenticated team:', currentUser, 'from team ID:', teamId);
-                    }
-                } else {
-                    // If no team ID, use a consistent selection based on user preference
-                    const userId = localStorage.getItem('user_id') || '1';
-                    const memberIndex = parseInt(userId) % teams.length;
-                    currentUser = teams[memberIndex].name || teams[memberIndex].teamName;
-                }
-                
-                localStorage.setItem('currentUser', currentUser);
-                console.log('👤 Set current field team member from backend:', currentUser);
-            } else {
-                // Fallback to default names
-                const fieldTeamMembers = [
-                    'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
-                ];
-                
-                const userId = localStorage.getItem('user_id') || '1';
-                const memberIndex = parseInt(userId) % fieldTeamMembers.length;
-                const currentUser = fieldTeamMembers[memberIndex];
-                
-                localStorage.setItem('currentUser', currentUser);
-                console.log('👤 Set current field team member (fallback):', currentUser);
+            // Check if there's a stored team ID from login
+            const storedTeamId = localStorage.getItem('aiff_team_id') || localStorage.getItem('field_team_id');
+            
+            if (storedTeamId) {
+                // Find the team by stored ID
+                selectedTeam = teams.find(t => (t.id || t._id) === storedTeamId);
+                console.log('👤 Looking for stored team ID:', storedTeamId, 'Found:', !!selectedTeam);
             }
-        } catch (error) {
-            console.error('Error fetching team names:', error);
-            // Fallback to default names
-            const fieldTeamMembers = [
-                'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
-            ];
             
-            const userId = localStorage.getItem('user_id') || '1';
-            const memberIndex = parseInt(userId) % fieldTeamMembers.length;
-            const currentUser = fieldTeamMembers[memberIndex];
+            if (!selectedTeam) {
+                // If no stored team or team not found, select a random team
+                const randomIndex = Math.floor(Math.random() * Math.min(20, teams.length)); // Pick from first 20 teams
+                selectedTeam = teams[randomIndex];
+                console.log('👤 No stored team found, randomly selected:', selectedTeam.name);
+            }
             
-            localStorage.setItem('currentUser', currentUser);
-            console.log('👤 Set current field team member (error fallback):', currentUser);
+            // Store both team ID and name
+            const teamId = selectedTeam.id || selectedTeam._id;
+            const teamName = selectedTeam.name || selectedTeam.teamName || selectedTeam.team_name;
+            
+            localStorage.setItem('currentUser', teamName);
+            localStorage.setItem('currentTeamId', teamId);
+            localStorage.setItem('field_team_id', teamId);
+            
+            console.log('👤 Set current field team:', {
+                name: teamName,
+                id: teamId
+            });
+        } else {
+            console.warn('⚠️ No teams found in API');
+            // Set a fallback
+            localStorage.setItem('currentUser', 'Field Technician');
+            localStorage.setItem('currentTeamId', 'team_000');
         }
+    } catch (error) {
+        console.error('❌ Error setting current user:', error);
+        // Set fallback values
+        localStorage.setItem('currentUser', 'Field Technician');
+        localStorage.setItem('currentTeamId', 'team_000');
     }
 }
 
@@ -204,26 +196,39 @@ function updateChatbotWelcomeMessage(currentUser) {
 // Get current user ID from team data
 async function getCurrentUserId(currentUser) {
     try {
+        // First, try to get the stored team ID (this is the actual team ID like "team_550b620c")
+        const storedTeamId = localStorage.getItem('currentTeamId') || localStorage.getItem('field_team_id');
+        if (storedTeamId && storedTeamId !== 'team_000') {
+            console.log('👤 Using stored team ID:', storedTeamId);
+            return storedTeamId;
+        }
+        
+        // If no stored ID, fetch from API and find by name
         const response = await fetch(`${API_BASE}/teams`);
         const data = await response.json();
         const teams = data.teams || [];
         
-        const userTeam = teams.find(team => team.name === currentUser);
+        const userTeam = teams.find(team => {
+            const teamName = team.name || team.teamName || team.team_name;
+            return teamName === currentUser;
+        });
+        
         if (userTeam) {
-            console.log('👤 Found user team:', userTeam);
-            return userTeam.id;
+            const teamId = userTeam.id || userTeam._id;
+            console.log('👤 Found user team by name:', {
+                name: currentUser,
+                id: teamId
+            });
+            // Store for future use
+            localStorage.setItem('currentTeamId', teamId);
+            return teamId;
         }
         
-        // Fallback to user ID based on name hash
-        const userId = currentUser.split('').reduce((a, b) => {
-            a = ((a << 5) - a) + b.charCodeAt(0);
-            return a & a;
-        }, 0);
-        
-        return Math.abs(userId) % 10 + 1; // Return ID between 1-10
+        console.warn('⚠️ No team found for user:', currentUser);
+        return null;
     } catch (error) {
-        console.error('Error getting user ID:', error);
-        return 1; // Default fallback
+        console.error('❌ Error getting user ID:', error);
+        return null;
     }
 }
 
