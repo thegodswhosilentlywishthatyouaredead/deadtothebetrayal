@@ -171,11 +171,13 @@ class EnhancedDataGenerator:
         
         print(f"🎫 Generating {count} enhanced tickets...")
         
-        # Time distribution
-        today_count = int(count * 0.03)  # 3% today
-        week_count = int(count * 0.07)  # 7% this week
-        month_count = int(count * 0.15)  # 15% this month
+        # Time distribution - Increased today's count for better field portal testing
+        today_count = int(count * 0.10)  # 10% today (increased from 3% - ensures every team has today's tickets)
+        week_count = int(count * 0.15)  # 15% this week (increased from 7%)
+        month_count = int(count * 0.25)  # 25% this month (increased from 15%)
         historical_count = count - today_count - week_count - month_count
+        
+        print(f"📅 Time distribution: Today={today_count}, Week={week_count}, Month={month_count}, Historical={historical_count}")
         
         for i in range(count):
             ticket_number = f"TT_{str(i + 1).zfill(6)}"  # TT_000001 to TT_015000
