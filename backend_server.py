@@ -1224,12 +1224,18 @@ def get_ticketv2_performance_analytics():
             # Efficiency: % completed within SLA (assume 24 hours)
             efficient_count = 0
             for t in completed_tickets:
-                if t.get('resolvedAt'):
-                    created = datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00'))
-                    resolved = datetime.fromisoformat(t['resolvedAt'].replace('Z', '+00:00'))
-                    hours_diff = (resolved - created).total_seconds() / 3600
-                    if hours_diff <= 24:
-                        efficient_count += 1
+                # Check both resolvedAt and completedAt fields
+                resolved_time = t.get('resolvedAt') or t.get('completedAt')
+                if resolved_time:
+                    try:
+                        created = datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00'))
+                        resolved = datetime.fromisoformat(resolved_time.replace('Z', '+00:00'))
+                        hours_diff = (resolved - created).total_seconds() / 3600
+                        if hours_diff <= 24:
+                            efficient_count += 1
+                    except Exception as e:
+                        # Skip tickets with invalid dates
+                        continue
             
             efficiency = (efficient_count / completed_count * 100) if completed_count > 0 else 0
             

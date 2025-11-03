@@ -31,10 +31,18 @@ window.loadTicketsPerformanceAnalysis = async function() {
         console.log('✅ [PERF] Data loaded:', {
             weekly: data.weekly_trends?.length,
             projections: data.projections?.length,
+            performanceMetrics: data.performance_metrics?.length,
             states: Object.keys(data.states_weekly || {}).length,
             statesPerf: data.states_performance?.length
         });
+        console.log('📊 [PERF] Sample weekly trends:', data.weekly_trends?.slice(0, 2));
+        console.log('📊 [PERF] Sample performance metrics:', data.performance_metrics?.slice(0, 2));
         console.log('📊 [PERF] Sample state performance data:', data.states_performance?.slice(0, 3));
+        
+        // Validate critical data
+        if (!data.performance_metrics || data.performance_metrics.length === 0) {
+            console.error('❌ [PERF] No performance_metrics in API response!');
+        }
         
         // Aggressive chart cleanup to prevent canvas reuse errors
         console.log('🗑️ [PERF] Destroying old charts...');
@@ -255,67 +263,168 @@ function renderChart2_StatusDist(statusDist) {
 
 // Chart 3: Performance Metrics (Productivity, Availability, Efficiency)
 function renderChart3_PerformanceMetrics(perfData) {
+    console.log('📊 [PERF] Chart 3 - Starting renderChart3_PerformanceMetrics...');
+    console.log('📊 [PERF] Chart 3 - perfData:', perfData);
+    
     const canvas = document.getElementById('ticketsPerformanceMetricsChart');
-    if (!canvas) return;
+    if (!canvas) {
+        console.error('❌ [PERF] Chart 3 - Canvas not found: ticketsPerformanceMetricsChart');
+        return;
+    }
     
-    const labels = perfData.map(w => w.week_label);
-    const prodData = perfData.map(w => w.productivity);
-    const availData = perfData.map(w => w.availability);
-    const effData = perfData.map(w => w.efficiency);
+    // Handle empty or invalid data
+    if (!perfData || !Array.isArray(perfData) || perfData.length === 0) {
+        console.warn('⚠️ [PERF] Chart 3 - No performance data available, using defaults');
+        document.getElementById('avg-productivity')?.setAttribute('textContent', '0.00%');
+        document.getElementById('avg-availability')?.setAttribute('textContent', '0.00%');
+        document.getElementById('avg-efficiency')?.setAttribute('textContent', '0.00%');
+        return;
+    }
     
-    // Calculate and display averages
-    const avgProd = (prodData.reduce((a,b)=>a+b,0)/prodData.length).toFixed(2);
-    const avgAvail = (availData.reduce((a,b)=>a+b,0)/availData.length).toFixed(2);
-    const avgEff = (effData.reduce((a,b)=>a+b,0)/effData.length).toFixed(2);
+    const labels = perfData.map(w => w.week_label || 'N/A');
+    const prodData = perfData.map(w => parseFloat(w.productivity) || 0);
+    const availData = perfData.map(w => parseFloat(w.availability) || 0);
+    const effData = perfData.map(w => parseFloat(w.efficiency) || 0);
     
-    document.getElementById('avg-productivity').textContent = `${avgProd}%`;
-    document.getElementById('avg-availability').textContent = `${avgAvail}%`;
-    document.getElementById('avg-efficiency').textContent = `${avgEff}%`;
-    
-    window.perfCharts.perfMetrics = new Chart(canvas, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Productivity',
-                    data: prodData,
-                    borderColor: '#10b981',
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: 'Availability',
-                    data: availData,
-                    borderColor: '#3b82f6',
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: 'Efficiency',
-                    data: effData,
-                    borderColor: '#f59e0b',
-                    borderWidth: 3,
-                    tension: 0.4,
-                    fill: false
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top', labels: { usePointStyle: true, padding: 12, font: { size: 10 } } }
-            },
-            scales: {
-                x: { grid: { display: false } },
-                y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } }
-            }
-        }
+    console.log('📊 [PERF] Chart 3 - Data extracted:', {
+        labels: labels.length,
+        productivity: prodData,
+        availability: availData,
+        efficiency: effData
     });
-    console.log('✅ [PERF] Chart 3 rendered');
+    
+    // Calculate and display averages with fallbacks
+    const avgProd = prodData.length > 0 
+        ? (prodData.reduce((a,b)=>a+b,0)/prodData.length).toFixed(2) 
+        : '0.00';
+    const avgAvail = availData.length > 0 
+        ? (availData.reduce((a,b)=>a+b,0)/availData.length).toFixed(2) 
+        : '0.00';
+    const avgEff = effData.length > 0 
+        ? (effData.reduce((a,b)=>a+b,0)/effData.length).toFixed(2) 
+        : '0.00';
+    
+    console.log('📊 [PERF] Chart 3 - Calculated averages:', { avgProd, avgAvail, avgEff });
+    
+    // Update DOM elements
+    const prodEl = document.getElementById('avg-productivity');
+    const availEl = document.getElementById('avg-availability');
+    const effEl = document.getElementById('avg-efficiency');
+    
+    if (prodEl) {
+        prodEl.textContent = `${avgProd}%`;
+        console.log('✅ [PERF] Chart 3 - Updated avg-productivity:', prodEl.textContent);
+    } else {
+        console.error('❌ [PERF] Chart 3 - Element not found: avg-productivity');
+    }
+    
+    if (availEl) {
+        availEl.textContent = `${avgAvail}%`;
+        console.log('✅ [PERF] Chart 3 - Updated avg-availability:', availEl.textContent);
+    } else {
+        console.error('❌ [PERF] Chart 3 - Element not found: avg-availability');
+    }
+    
+    if (effEl) {
+        effEl.textContent = `${avgEff}%`;
+        console.log('✅ [PERF] Chart 3 - Updated avg-efficiency:', effEl.textContent);
+    } else {
+        console.error('❌ [PERF] Chart 3 - Element not found: avg-efficiency');
+    }
+    
+    // Render the chart
+    try {
+        window.perfCharts.perfMetrics = new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Productivity',
+                        data: prodData,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Availability',
+                        data: availData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    },
+                    {
+                        label: 'Efficiency',
+                        data: effData,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 3,
+                        pointHoverRadius: 5
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: { 
+                        position: 'top', 
+                        labels: { 
+                            usePointStyle: true, 
+                            padding: 15, 
+                            font: { size: 11, weight: '500' } 
+                        } 
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 10 } }
+                    },
+                    y: { 
+                        beginAtZero: true, 
+                        max: 100, 
+                        ticks: { 
+                            callback: v => v + '%',
+                            font: { size: 10 }
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                }
+            }
+        });
+        console.log('✅ [PERF] Chart 3 - Chart rendered successfully');
+    } catch (error) {
+        console.error('❌ [PERF] Chart 3 - Error rendering chart:', error);
+    }
+    
+    console.log('✅ [PERF] Chart 3 completed');
 }
 
 // Chart 4: States Open vs Completed (Stacked Bar)
