@@ -1424,27 +1424,30 @@
             <div class="quick-stats">
                 <div class="stat-card">
                     <div class="stat-header">
-                        <div class="stat-title">Total Tickets</div>
+                        <div class="stat-title">Total Tickets Assigned</div>
                         <div class="stat-icon blue">
                             <i class="fas fa-list"></i>
                         </div>
                     </div>
                     <div class="stat-value" id="total-tickets">0</div>
-                    <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>All assigned tickets</small>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-total-tickets">0</span> | Last Month: <span id="lastmonth-total-tickets">0</span></small>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
-                        <div class="stat-title">Today's Tickets</div>
+                        <div class="stat-title">Today's Tickets Assigned</div>
                         <div class="stat-icon green">
                             <i class="fas fa-ticket-alt"></i>
                         </div>
                     </div>
                     <div class="stat-value" id="today-tickets">0</div>
-                    <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>Created: <span id="today-tickets-created">0</span> | Completed: <span id="today-tickets-completed">0</span></small>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-tickets">0</span> | Last Month: <span id="lastmonth-tickets">0</span></small>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
+                        <small>Completed Today: <span id="today-tickets-completed">0</span></small>
                     </div>
                 </div>
 
@@ -1456,7 +1459,10 @@
                         </div>
                     </div>
                     <div class="stat-value" id="today-performance">0%</div>
-                    <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-performance">0%</span> | Last Month: <span id="lastmonth-performance">0%</span></small>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
                         <small>Efficiency: <span id="today-efficiency">0%</span> | Rating: <span id="today-rating">0.0</span></small>
                     </div>
                 </div>
@@ -1469,7 +1475,10 @@
                         </div>
                     </div>
                     <div class="stat-value" id="today-cost">RM 0</div>
-                    <div style="font-size: 0.875rem; color: #64748b; margin-top: 0.5rem;">
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-cost">RM 0</span> | Last Month: <span id="lastmonth-cost">RM 0</span></small>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
                         <small>Based on <span id="today-hours">0h</span> worked</small>
                     </div>
                 </div>
@@ -1939,3 +1948,4 @@
     </script>
 </body>
 </html>
+

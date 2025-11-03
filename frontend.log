@@ -83,3 +83,24 @@
 ::1 - - [03/Nov/2025 13:02:55] "GET /src/config.js?v=3 HTTP/1.1" 200 -
 ::1 - - [03/Nov/2025 13:02:55] "GET /src/ticket-utils.js?v=1 HTTP/1.1" 200 -
 ::1 - - [03/Nov/2025 13:02:55] "GET /src/field-portal.js?v=4 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:16:55] "GET /public/field-portal.html HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:16:55] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:16:55] "GET /src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:16:55] "GET /src/field-portal.js?v=4 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:17:04] "GET /public/index.html HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:17:04] "GET /public/src/tickets-performance.js?v=10 HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:17:04] "GET /public/src/app.js?v=135 HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:17:06] "GET /public/login.html HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:17:06] code 404, message File not found
+::1 - - [03/Nov/2025 13:17:06] "GET /favicon.ico HTTP/1.1" 404 -
+::1 - - [03/Nov/2025 13:23:18] "GET /public/field-portal.html HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:27:03] "GET /public/src/tickets-performance.js?v=10 HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:27:03] "GET /public/src/app.js?v=135 HTTP/1.1" 304 -
+::1 - - [03/Nov/2025 13:27:05] "GET /public/login.html HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:35:33] "HEAD /public/field-portal.html HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:36:02] "GET /public/field-portal.html HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:36:02] "GET /src/config.js?v=3 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:36:02] "GET /src/field-portal.js?v=4 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:36:02] "GET /src/ticket-utils.js?v=1 HTTP/1.1" 200 -
+::1 - - [03/Nov/2025 13:36:15] code 404, message File not found
+::1 - - [03/Nov/2025 13:36:15] "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404 -

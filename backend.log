@@ -5,16 +5,17 @@ Generating tickets...
 Generating tickets: 11 today, 11 this week, 53 past 12 weeks
 Generating assignments...
 Generating analytics...
-✅ Generated 25 teams, 75 tickets, 70 assignments
+✅ Generated 25 teams, 75 tickets, 75 assignments
 
 🚀 Loading enhanced dataset (15,000 tickets)...
 ============================================================
+🗑️  Clearing old ticket data to ensure fresh generation...
 ============================================================
 ENHANCED AIFF DATA GENERATOR
 ============================================================
 
 👥 Generating 150 field teams across Malaysian states...
-✅ Generated 190 teams
+✅ Generated 181 teams
 
 🎫 Generating 15000 enhanced tickets...
 🎫 Generating 15000 enhanced tickets...
@@ -52,38 +53,38 @@ ENHANCED AIFF DATA GENERATOR
   ✅ Assigned 12000/15000 tickets...
   ✅ Assigned 13000/15000 tickets...
   ✅ Assigned 14000/15000 tickets...
-✅ Assignment complete: 14229 tickets assigned
-✅ Created 14229 assignments
+✅ Assignment complete: 14258 tickets assigned
+✅ Created 14258 assignments
 
 ============================================================
 DATASET SUMMARY
 ============================================================
-📊 Teams: 190
+📊 Teams: 181
    • States covered: 16
    • Zones covered: 6
-   • Districts covered: 55
+   • Districts covered: 54
 
 🎫 Tickets: 15000
 
 📋 Status Distribution:
-   • CANCELLED: 771 (5.1%)
-   • CLOSED: 10811 (72.1%)
-   • IN_PROGRESS: 2175 (14.5%)
-   • OPEN: 1243 (8.3%)
+   • CANCELLED: 742 (4.9%)
+   • CLOSED: 10752 (71.7%)
+   • IN_PROGRESS: 2231 (14.9%)
+   • OPEN: 1275 (8.5%)
 
-🔗 Assignments: 14229
+🔗 Assignments: 14258
 ============================================================
-✅ Added 190 new teams (total: 215)
-✅ Added 15000 new tickets (total: 15075)
-✅ Added 14229 new assignments (total: 14299)
+✅ Added 181 new teams (total: 181)
+✅ Added 15000 new tickets (total: 15000)
+✅ Added 14258 new assignments (total: 14258)
 ============================================================
 ✅ Enhanced data loaded and merged successfully!
-📊 Final totals: 215 teams, 15075 tickets, 14299 assignments
+📊 Final totals: 181 teams, 15000 tickets, 14258 assignments
 ============================================================
 
 🚀 Starting AIFF Backend Server...
 📊 Data loaded successfully
-📈 Total: 215 teams, 15075 tickets, 14299 assignments
+📈 Total: 181 teams, 15000 tickets, 14258 assignments
 🌐 Server will be available at: http://localhost:5002
 🔗 API endpoints ready for frontend integration
 📁 Static files served from client directory
@@ -97,7 +98,66 @@ DATASET SUMMARY
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 113-506-992
-127.0.0.1 - - [03/Nov/2025 13:10:54] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:07] "GET /api/ticketv2?limit=1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:22] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:26] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:42] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:56] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:56] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:56] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/tickets?limit=1000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:58] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:16:59] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/ticketv2?limit=15&offset=0 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/planning/forecast HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/planning/zone-materials HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/ticketv2?limit=5000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/assignments HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:05] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:06] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:06] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:06] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:08] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/tickets?limit=1000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:10] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:11] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:11] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:11] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:11] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:11] "GET /api/teams HTTP/1.1" 200 -
  * Detected change in '/Users/thegods/Documents/GitHub/new2/backend_server.py', reloading
 ✅ Enhanced data generator available
 🔄 Generating modular sample data...
@@ -110,12 +170,13 @@ Generating analytics...
 
 🚀 Loading enhanced dataset (15,000 tickets)...
 ============================================================
+🗑️  Clearing old ticket data to ensure fresh generation...
 ============================================================
 ENHANCED AIFF DATA GENERATOR
 ============================================================
 
 👥 Generating 150 field teams across Malaysian states...
-✅ Generated 187 teams
+✅ Generated 204 teams
 
 🎫 Generating 15000 enhanced tickets...
 🎫 Generating 15000 enhanced tickets...
@@ -153,13 +214,13 @@ ENHANCED AIFF DATA GENERATOR
   ✅ Assigned 12000/15000 tickets...
   ✅ Assigned 13000/15000 tickets...
   ✅ Assigned 14000/15000 tickets...
-✅ Assignment complete: 14207 tickets assigned
-✅ Created 14207 assignments
+✅ Assignment complete: 14181 tickets assigned
+✅ Created 14181 assignments
 
 ============================================================
 DATASET SUMMARY
 ============================================================
-📊 Teams: 187
+📊 Teams: 204
    • States covered: 16
    • Zones covered: 6
    • Districts covered: 56
@@ -167,122 +228,142 @@ DATASET SUMMARY
 🎫 Tickets: 15000
 
 📋 Status Distribution:
-   • CANCELLED: 793 (5.3%)
-   • CLOSED: 10663 (71.1%)
-   • IN_PROGRESS: 2211 (14.7%)
-   • OPEN: 1333 (8.9%)
+   • CANCELLED: 819 (5.5%)
+   • CLOSED: 10732 (71.5%)
+   • IN_PROGRESS: 2178 (14.5%)
+   • OPEN: 1271 (8.5%)
 
-🔗 Assignments: 14207
+🔗 Assignments: 14181
 ============================================================
-✅ Added 187 new teams (total: 212)
-✅ Added 15000 new tickets (total: 15075)
-✅ Added 14207 new assignments (total: 14280)
+✅ Added 204 new teams (total: 204)
+✅ Added 15000 new tickets (total: 15000)
+✅ Added 14181 new assignments (total: 14181)
 ============================================================
 ✅ Enhanced data loaded and merged successfully!
-📊 Final totals: 212 teams, 15075 tickets, 14280 assignments
+📊 Final totals: 204 teams, 15000 tickets, 14181 assignments
 ============================================================
 
 🚀 Starting AIFF Backend Server...
 📊 Data loaded successfully
-📈 Total: 212 teams, 15075 tickets, 14280 assignments
+📈 Total: 204 teams, 15000 tickets, 14181 assignments
 🌐 Server will be available at: http://localhost:5002
 🔗 API endpoints ready for frontend integration
 📁 Static files served from client directory
  * Restarting with stat
  * Debugger is active!
  * Debugger PIN: 113-506-992
- * Detected change in '/Users/thegods/Documents/GitHub/new2/backend_server.py', reloading
-✅ Enhanced data generator available
-🔄 Generating modular sample data...
-Generating field teams...
-Generating tickets...
-Generating tickets: 11 today, 11 this week, 53 past 12 weeks
-Generating assignments...
-Generating analytics...
-✅ Generated 25 teams, 75 tickets, 74 assignments
-
-🚀 Loading enhanced dataset (15,000 tickets)...
-============================================================
-🗑️  Clearing old ticket data to ensure fresh generation...
-============================================================
-ENHANCED AIFF DATA GENERATOR
-============================================================
-
-👥 Generating 150 field teams across Malaysian states...
-✅ Generated 182 teams
-
-🎫 Generating 15000 enhanced tickets...
-🎫 Generating 15000 enhanced tickets...
-📅 Time distribution: Today=1500, Week=2250, Month=3750, Historical=7500
-  ✅ Generated 1000/15000 tickets...
-  ✅ Generated 2000/15000 tickets...
-  ✅ Generated 3000/15000 tickets...
-  ✅ Generated 4000/15000 tickets...
-  ✅ Generated 5000/15000 tickets...
-  ✅ Generated 6000/15000 tickets...
-  ✅ Generated 7000/15000 tickets...
-  ✅ Generated 8000/15000 tickets...
-  ✅ Generated 9000/15000 tickets...
-  ✅ Generated 10000/15000 tickets...
-  ✅ Generated 11000/15000 tickets...
-  ✅ Generated 12000/15000 tickets...
-  ✅ Generated 13000/15000 tickets...
-  ✅ Generated 14000/15000 tickets...
-  ✅ Generated 15000/15000 tickets...
-✅ Generated 15000 tickets
-
-🤖 Running intelligent assignment engine...
-🤖 Starting intelligent assignment engine...
-  ✅ Assigned 1000/15000 tickets...
-  ✅ Assigned 2000/15000 tickets...
-  ✅ Assigned 3000/15000 tickets...
-  ✅ Assigned 4000/15000 tickets...
-  ✅ Assigned 5000/15000 tickets...
-  ✅ Assigned 6000/15000 tickets...
-  ✅ Assigned 7000/15000 tickets...
-  ✅ Assigned 8000/15000 tickets...
-  ✅ Assigned 9000/15000 tickets...
-  ✅ Assigned 10000/15000 tickets...
-  ✅ Assigned 11000/15000 tickets...
-  ✅ Assigned 12000/15000 tickets...
-  ✅ Assigned 13000/15000 tickets...
-  ✅ Assigned 14000/15000 tickets...
-✅ Assignment complete: 14233 tickets assigned
-✅ Created 14233 assignments
-
-============================================================
-DATASET SUMMARY
-============================================================
-📊 Teams: 182
-   • States covered: 16
-   • Zones covered: 6
-   • Districts covered: 54
-
-🎫 Tickets: 15000
-
-📋 Status Distribution:
-   • CANCELLED: 767 (5.1%)
-   • CLOSED: 10726 (71.5%)
-   • IN_PROGRESS: 2241 (14.9%)
-   • OPEN: 1266 (8.4%)
-
-🔗 Assignments: 14233
-============================================================
-✅ Added 182 new teams (total: 182)
-✅ Added 15000 new tickets (total: 15000)
-✅ Added 14233 new assignments (total: 14233)
-============================================================
-✅ Enhanced data loaded and merged successfully!
-📊 Final totals: 182 teams, 15000 tickets, 14233 assignments
-============================================================
-
-🚀 Starting AIFF Backend Server...
-📊 Data loaded successfully
-📈 Total: 182 teams, 15000 tickets, 14233 assignments
-🌐 Server will be available at: http://localhost:5002
-🔗 API endpoints ready for frontend integration
-📁 Static files served from client directory
- * Restarting with stat
-  File "/Users/thegods/Documents/GitHub/new2/backend_server.py", line 204
-    field_teams.append(converted_team)
-IndentationError: unexpected indent
+127.0.0.1 - - [03/Nov/2025 13:17:21] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/ticketv2?limit=15&offset=0 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/planning/forecast HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/planning/zone-materials HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/ticketv2?limit=5000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/assignments HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:22] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:23] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:23] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:23] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:24] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:17:24] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:17] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:18] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:18] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:18] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/tickets?limit=1000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:19] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:20] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:23:20] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/ticketv2?limit=15&offset=0 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/planning/forecast HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/ticketv2?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/planning/zone-materials HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/ticketv2?limit=5000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/assignments HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:04] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:05] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:05] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:06] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:06] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:07] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:08] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:09] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/tickets?limit=1000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:10] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:27:11] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:08] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:08] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:08] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:14] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:14] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:14] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:40] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:40] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:40] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:41] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:41] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:29:41] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:35:33] "GET /api/ticketv2?limit=1 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:35:34] "GET /api/ticketv2?limit=20000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:03] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/tickets?limit=100 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/tickets?limit=1000 HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:05] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:06] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:06] "GET /api/teams HTTP/1.1" 200 -
+127.0.0.1 - - [03/Nov/2025 13:36:06] "GET /api/teams HTTP/1.1" 200 -
