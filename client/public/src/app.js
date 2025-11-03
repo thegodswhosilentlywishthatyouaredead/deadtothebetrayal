@@ -15,6 +15,193 @@ let filteredTickets = [];
 // API Configuration
 const API_BASE = window.API_BASE || 'http://localhost:5002/api';
 
+// ==================== PERFORMANCE OPTIMIZATION SYSTEM ====================
+
+// Global cache system with TTL (Time To Live)
+const DataCache = {
+    store: new Map(),
+    TTL: {
+        short: 30000,      // 30 seconds - for frequently changing data
+        medium: 60000,     // 1 minute - for moderately stable data
+        long: 300000,      // 5 minutes - for stable data
+        veryLong: 900000   // 15 minutes - for rarely changing data
+    },
+    
+    set(key, data, ttl = this.TTL.medium) {
+        const expiresAt = Date.now() + ttl;
+        this.store.set(key, { data, expiresAt });
+        console.log(`📦 Cached: ${key} (expires in ${ttl/1000}s)`);
+    },
+    
+    get(key) {
+        const cached = this.store.get(key);
+        if (!cached) return null;
+        
+        if (Date.now() > cached.expiresAt) {
+            this.store.delete(key);
+            console.log(`🗑️ Cache expired: ${key}`);
+            return null;
+        }
+        
+        console.log(`✅ Cache hit: ${key}`);
+        return cached.data;
+    },
+    
+    clear(key) {
+        if (key) {
+            this.store.delete(key);
+        } else {
+            this.store.clear();
+            console.log('🗑️ Cache cleared');
+        }
+    },
+    
+    has(key) {
+        const cached = this.store.get(key);
+        if (!cached) return false;
+        if (Date.now() > cached.expiresAt) {
+            this.store.delete(key);
+            return false;
+        }
+        return true;
+    }
+};
+
+// Request debouncing to prevent rapid API calls
+const RequestDebouncer = {
+    timers: new Map(),
+    
+    debounce(key, callback, delay = 300) {
+        if (this.timers.has(key)) {
+            clearTimeout(this.timers.get(key));
+        }
+        
+        const timer = setTimeout(() => {
+            this.timers.delete(key);
+            callback();
+        }, delay);
+        
+        this.timers.set(key, timer);
+    }
+};
+
+// Request throttling to limit API call frequency
+const RequestThrottler = {
+    lastCalled: new Map(),
+    
+    throttle(key, callback, delay = 1000) {
+        const now = Date.now();
+        const lastCall = this.lastCalled.get(key) || 0;
+        
+        if (now - lastCall >= delay) {
+            this.lastCalled.set(key, now);
+            callback();
+            return true;
+        }
+        
+        console.log(`⏱️ Throttled: ${key} (too soon)`);
+        return false;
+    }
+};
+
+// Mobile detection and optimization
+const MobileOptimizer = {
+    isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+    isTablet: /iPad|Android/i.test(navigator.userAgent) && window.innerWidth >= 768,
+    
+    getOptimalLimit() {
+        if (this.isMobile && !this.isTablet) {
+            return 10; // Load fewer items on mobile
+        } else if (this.isTablet) {
+            return 12;
+        }
+        return 15; // Desktop default
+    },
+    
+    shouldReduceAnimations() {
+        return this.isMobile || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    },
+    
+    getChartConfig() {
+        return {
+            responsive: true,
+            maintainAspectRatio: true,
+            animation: this.shouldReduceAnimations() ? false : {
+                duration: this.isMobile ? 500 : 750
+            },
+            plugins: {
+                legend: {
+                    display: !this.isMobile || this.isTablet,
+                    labels: {
+                        boxWidth: this.isMobile ? 10 : 12,
+                        font: {
+                            size: this.isMobile ? 10 : 12
+                        }
+                    }
+                }
+            }
+        };
+    }
+};
+
+// Lazy loading manager for heavy components
+const LazyLoader = {
+    observers: new Map(),
+    
+    observe(elementId, callback, options = {}) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    callback();
+                    observer.disconnect();
+                }
+            });
+        }, {
+            rootMargin: options.rootMargin || '50px',
+            threshold: options.threshold || 0.1
+        });
+        
+        observer.observe(element);
+        this.observers.set(elementId, observer);
+    },
+    
+    disconnect(elementId) {
+        const observer = this.observers.get(elementId);
+        if (observer) {
+            observer.disconnect();
+            this.observers.delete(elementId);
+        }
+    }
+};
+
+// Performance monitoring
+const PerformanceMonitor = {
+    marks: new Map(),
+    
+    start(key) {
+        this.marks.set(key, performance.now());
+    },
+    
+    end(key) {
+        const start = this.marks.get(key);
+        if (start) {
+            const duration = performance.now() - start;
+            console.log(`⏱️ ${key}: ${duration.toFixed(2)}ms`);
+            this.marks.delete(key);
+            return duration;
+        }
+        return 0;
+    }
+};
+
+// Optimize tickets per page based on device
+if (typeof ticketsPerPage !== 'undefined') {
+    ticketsPerPage = MobileOptimizer.getOptimalLimit();
+}
+
 // Global Chart Cleanup Utility - Prevents canvas reuse errors
 window.destroyChartSafely = function(canvasId) {
     try {
@@ -754,18 +941,20 @@ function ensureChartsRendered() {
 
 // Dashboard functions
 async function loadDashboardData() {
+    PerformanceMonitor.start('loadDashboardData');
     console.log('🔄 Loading dashboard data from', API_BASE);
     
     try {
-        // Performance optimization: Use cached data if available and fresh
-        if (window.cachedDashboardData && window.cachedDashboardData.timestamp > Date.now() - 60000) {
+        // Use new caching system with shorter TTL for dashboard
+        const cachedData = DataCache.get('dashboardData');
+        if (cachedData) {
             console.log('📊 Using cached dashboard data');
-            const cachedData = window.cachedDashboardData.data;
             updateDashboardMetrics(cachedData.tickets, cachedData.teams, cachedData.agingData, cachedData.productivityData);
             await Promise.all([
                 loadRecentTickets(),
                 loadTeamStatusOverview()
             ]);
+            PerformanceMonitor.end('loadDashboardData');
             return;
         }
         
@@ -826,10 +1015,13 @@ async function loadDashboardData() {
         });
         
         // Cache the data for 1 minute
-        window.cachedDashboardData = {
-            data: { tickets, teams, agingData, productivityData },
-            timestamp: Date.now()
-        };
+        // Cache dashboard data with DataCache system
+        DataCache.set('dashboardData', {
+            tickets,
+            teams,
+            agingData,
+            productivityData
+        }, DataCache.TTL.medium);
         
         // Update metrics with correct data
         updateDashboardMetrics(tickets, teams, agingData, productivityData);
@@ -846,6 +1038,7 @@ async function loadDashboardData() {
         console.error('❌ Error loading dashboard data:', error);
         // Show sample data on error
         updateDashboardMetricsWithSampleData();
+        PerformanceMonitor.end('loadDashboardData');
     }
 }
 function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityData) {
@@ -2095,12 +2288,24 @@ function displaySampleZonePerformance() {
     });
 }
 // Ticket functions
-async function loadTickets(page = 1, limit = 15) {
+async function loadTickets(page = 1, limit = ticketsPerPage) {
     try {
+        PerformanceMonitor.start('loadTickets');
         console.log('🔧 loadTickets: Starting with API_BASE:', API_BASE, 'Page:', page, 'Limit:', limit);
         
         // Calculate offset for pagination
         const offset = (page - 1) * limit;
+        const cacheKey = `tickets_page${page}_limit${limit}`;
+        
+        // Check cache first
+        const cachedData = DataCache.get(cacheKey);
+        if (cachedData) {
+            tickets = cachedData.tickets;
+            totalTickets = cachedData.total;
+            displayTicketsWithPagination(tickets, totalTickets, page);
+            PerformanceMonitor.end('loadTickets');
+            return;
+        }
         
         // Try ticketv2 API first for enhanced data
         let response = await fetch(`${API_BASE}/ticketv2?limit=${limit}&offset=${offset}`);
@@ -2206,9 +2411,14 @@ async function loadTickets(page = 1, limit = 15) {
             ];
         }
         
+        // Cache the successful result
+        DataCache.set(cacheKey, { tickets, total: totalTickets }, DataCache.TTL.short);
+        
         displayTicketsWithPagination(tickets, totalTickets || data.total_tickets || tickets.length, page);
+        PerformanceMonitor.end('loadTickets');
     } catch (error) {
         console.error('Error loading tickets:', error);
+        PerformanceMonitor.end('loadTickets');
         // Show sample data on error
         tickets = [
             {
@@ -3316,11 +3526,18 @@ async function assignTicketToTeam(ticketId, teamId, teamName) {
     }
 }
 
+// Debounced filter function for better performance
 function filterTickets() {
-    const statusFilter = document.getElementById('status-filter').value;
-    const priorityFilter = document.getElementById('priority-filter').value;
-    const categoryFilter = document.getElementById('category-filter').value;
-    const searchTerm = document.getElementById('search-tickets').value.toLowerCase();
+    RequestDebouncer.debounce('filterTickets', () => {
+        performFilterTickets();
+    }, 300);
+}
+
+function performFilterTickets() {
+    const statusFilter = document.getElementById('status-filter')?.value;
+    const priorityFilter = document.getElementById('priority-filter')?.value;
+    const categoryFilter = document.getElementById('category-filter')?.value;
+    const searchTerm = document.getElementById('search-tickets')?.value.toLowerCase() || '';
     
     // Map filter values to ticketv2 API values
     const statusMapping = {
