@@ -2793,7 +2793,7 @@ function createTicketElement(ticket, isCompact = false) {
                     </div>
                 ` : ''}
                 <div class="ticket-actions">
-                    <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket.id}')">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="viewTicketDetails('${ticket._id || ticket.id}')">
                         <i class="fas fa-eye me-1"></i>View Details
                     </button>
                 </div>
@@ -10947,29 +10947,40 @@ window.viewTicketDetails = async function(ticketId) {
         body.innerHTML = '<div class="text-muted">Loading...</div>';
         openTicketDetails();
         
+        // Validate ticket ID
+        if (!ticketId || ticketId === 'undefined' || ticketId === 'null') {
+            console.error('❌ Invalid ticket ID provided:', ticketId);
+            body.innerHTML = '<div class="alert alert-danger">Invalid ticket ID. Please try again.</div>';
+            return;
+        }
+        
         // Performance optimization: Use cached data if available
         if (window.cachedTicketv2Data && window.cachedTicketv2Data.timestamp > Date.now() - 30000) {
-            console.log('📊 Using cached ticketv2 data');
+            console.log('📊 Using cached ticketv2 data for ticket:', ticketId);
             const ticketv2Data = window.cachedTicketv2Data.data;
-            const tickets = ticketv2Data.tickets?.tickets || [];
-            const teams = ticketv2Data.teams?.teams || [];
+            const tickets = ticketv2Data.tickets || []; // Direct access, not nested
+            const teams = ticketv2Data.teams || [];     // Direct access, not nested
+            
+            console.log('📊 Cached data:', { tickets: tickets.length, teams: teams.length });
             
             const ticket = tickets.find(t => {
                 const tId = t._id || t.id;
-                return tId == ticketId || tId === ticketId || tId === parseInt(ticketId);
+                return tId == ticketId || tId === ticketId || String(tId) === String(ticketId);
             });
             
             if (ticket) {
-                // Use existing display logic but skip API call
+                console.log('✅ Ticket found in cache:', ticket._id);
+                
+                // Use teams data
                 const teamsArr = teams;
                 const productivityArr = teams.map(team => ({
-                    teamId: team.id,
-                    productivity: team.productivity_score || 0,
-                    efficiency: team.efficiency_score || 0,
-                    rating: team.rating || 0
+                    teamId: team._id || team.id,
+                    productivity: team.productivity_score || team.efficiencyScore || 0,
+                    efficiency: team.efficiency_score || team.efficiencyScore || 0,
+                    rating: team.rating || team.productivity?.customerRating || 0
                 }));
                 
-                const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeam || ticket.assignedTo || ticket.teamId;
+                const assignedTeamId = ticket.assignedTeam || ticket.assigned_team || ticket.assigned_team_id || ticket.assignedTo || ticket.teamId;
                 const team = teamsArr.find(tm => (tm._id || tm.id) === assignedTeamId);
                 const teamProductivity = productivityArr.find(p => p.teamId === assignedTeamId);
                 
@@ -11075,55 +11086,76 @@ window.viewTicketDetails = async function(ticketId) {
             }
         }
         
-        // Fetch comprehensive data from ticketv2 API
-        console.log('🔍 Fetching data from ticketv2 API...');
-        const ticketv2Res = await fetch(`${API_BASE}/ticketv2?limit=1000`);
+        // Fetch comprehensive data from ticketv2 API and teams API
+        console.log('🔍 Fetching fresh data from ticketv2 API...');
+        const [ticketv2Res, teamsRes] = await Promise.all([
+            fetch(`${API_BASE}/ticketv2?limit=1000`),
+            fetch(`${API_BASE}/teams`)
+        ]);
         
         if (!ticketv2Res.ok) {
             console.error('❌ Ticketv2 API error:', ticketv2Res.status, ticketv2Res.statusText);
             throw new Error(`Ticketv2 API Error: ${ticketv2Res.status}`);
         }
         
-        const ticketv2Data = await ticketv2Res.json();
+        if (!teamsRes.ok) {
+            console.error('❌ Teams API error:', teamsRes.status, teamsRes.statusText);
+            throw new Error(`Teams API Error: ${teamsRes.status}`);
+        }
         
-        // Cache the data for 30 seconds
+        const ticketv2Data = await ticketv2Res.json();
+        const teamsData = await teamsRes.json();
+        
+        // Cache the combined data for 30 seconds
         window.cachedTicketv2Data = {
-            data: ticketv2Data,
+            data: {
+                tickets: ticketv2Data.tickets || [],  // Direct structure
+                teams: teamsData.teams || []          // Direct structure
+            },
             timestamp: Date.now()
         };
         
-        const tickets = ticketv2Data.tickets?.tickets || [];
-        const teams = ticketv2Data.teams?.teams || [];
+        const tickets = ticketv2Data.tickets || [];  // Direct access
+        const teams = teamsData.teams || [];         // Direct access from teams API
         
-        console.log('📊 Ticketv2 Response Status:', {
+        console.log('📊 Fresh ticketv2 API Response:', {
             tickets: tickets.length,
             teams: teams.length,
-            status: ticketv2Res.status
+            lookingFor: ticketId
         });
         
-        // Parse data
-        const ticketsData = tickets;
-        const ticketsArr = ticketsData;
-        
-        // Handle both string and numeric IDs
-        const ticket = ticketsArr.find(t => {
+        // Find the specific ticket - handle both string and numeric IDs
+        const ticket = tickets.find(t => {
             const tId = t._id || t.id;
-            return tId == ticketId || tId === ticketId || tId === parseInt(ticketId);
+            return String(tId) === String(ticketId);
         });
         
         if (!ticket) {
-            console.error('❌ Ticket not found:', { ticketId, availableIds: ticketsArr.map(t => t._id || t.id) });
-            throw new Error(`Ticket with ID ${ticketId} not found`);
+            console.error('❌ Ticket not found:', { 
+                ticketId, 
+                totalTickets: tickets.length,
+                sampleIds: tickets.slice(0, 5).map(t => t._id || t.id)
+            });
+            body.innerHTML = '<div class="alert alert-warning">Ticket not found in system. It may have been deleted.</div>';
+            return;
         }
-        // Handle teams data from ticketv2
+        
+        console.log('✅ Ticket found:', ticket._id, ticket.title);
+        
+        // Handle teams data
         const teamsArr = teams;
         
-        // Handle productivity data from ticketv2 teams
-        const productivityArr = teams.map(team => ({
-            teamId: team.id,
-            productivity: team.productivity_score || 0,
-            efficiency: team.efficiency_score || 0,
-            rating: team.rating || 0
+        // Enrich teams with ticket counts if needed
+        const enrichedTeams = teamsArr[0]?.ticketsCompleted !== undefined ? 
+            teamsArr : enrichTeamsWithTicketCounts(teamsArr, tickets);
+        
+        // Create productivity data from enriched teams
+        const productivityArr = enrichedTeams.map(team => ({
+            teamId: team._id || team.id,
+            productivity: team.productivity?.completionRate || team.productivity_score || 0,
+            efficiency: team.efficiencyScore || team.efficiency_score || team.productivity?.efficiencyScore || 0,
+            rating: team.rating || team.productivity?.customerRating || 0,
+            ticketsCompleted: team.ticketsCompleted || team.productivity?.ticketsCompleted || 0
         }));
         
         console.log('🎫 Ticket data:', ticket);
@@ -11139,30 +11171,43 @@ window.viewTicketDetails = async function(ticketId) {
         console.log('👥 Found team:', team);
         console.log('📊 Team productivity:', teamProductivity);
         
-        // Handle location data - API returns location as string and coordinates as string
-        const locationStr = ticket.location || ticket.location?.address || 'Unknown';
-        const coordStr = ticket.coordinates || '0,0';
-        const coordParts = coordStr.split(',').map(c => parseFloat(c.trim()));
-        const lat = coordParts[1] || 0;
-        const lng = coordParts[0] || 0;
-        const slaHrs = ticket.sla_hours || 4;
+        // Handle enhanced location data from ticketv2
+        const locationObj = ticket.location || {};
+        const state = locationObj.state || ticket.state || 'N/A';
+        const district = locationObj.district || ticket.district || 'N/A';
+        const zone = locationObj.zone || ticket.zone || 'N/A';
+        const address = locationObj.address || ticket.location || 'Unknown Address';
+        const locationStr = formatEnhancedLocation(ticket);
         
-        // Fix ETA calculation
-        const createdTime = new Date(ticket.created_at || ticket.createdAt || Date.now()).getTime();
-        const currentTime = Date.now();
-        const slaTime = createdTime + (slaHrs * 3600000);
-        const etaMs = ticket.completed_at ? 0 : Math.max(0, slaTime - currentTime);
-        const etaStr = ticket.completed_at ? 'Resolved' : (etaMs > 0 ? `${Math.ceil(etaMs/3600000)}h` : 'Overdue');
+        // Coordinates
+        const coords = locationObj.coordinates || ticket.coordinates || {};
+        const lat = coords.lat || 0;
+        const lng = coords.lng || 0;
         
-        // Simple AI recommendation based on status/priority/aging
-        const openedHours = (Date.now() - new Date(ticket.created_at || ticket.createdAt).getTime())/3600000;
+        // SLA data from ticketv2
+        const slaData = ticket.sla || {};
+        const slaHrs = slaData.slaTarget || ticket.sla_hours || 4;
+        const slaStatus = slaData.slaMetStatus || 'pending';
+        const timeToComplete = slaData.timeToComplete || 0;
+        
+        // Enhanced timing data
+        const aging = formatTicketAging(ticket);
+        const efficiency = ticket.efficiencyScore || 0;
+        
+        // Simple AI recommendation based on enhanced ticketv2 data
         const priority = ticket.priority || 'medium';
+        const status = (ticket.status || 'open').toLowerCase();
+        
         let aiMsg = 'Ticket is within SLA. Continue monitoring and update progress.';
-        if (priority === 'emergency' || priority === 'high') {
-            aiMsg = 'High priority ticket: allocate experienced team and expedite troubleshooting.';
-        }
-        if (!ticket.completed_at && openedHours > slaHrs) {
-            aiMsg = 'SLA at risk/overdue: escalate to supervisor, consider adding resources and inform customer.';
+        
+        if (slaStatus === 'missed' || slaStatus === 'at_risk') {
+            aiMsg = '⚠️ SLA at risk or missed: Escalate immediately, allocate additional resources, and notify customer of delays.';
+        } else if (priority === 'emergency' || priority === 'high') {
+            aiMsg = '🚨 High priority ticket: Allocate most experienced team, expedite troubleshooting, and provide hourly updates.';
+        } else if (status === 'in_progress' && efficiency > 90) {
+            aiMsg = '✅ Excellent progress! Team efficiency is high. Expected completion within SLA.';
+        } else if (status === 'open' && ticket.agingHours > 24) {
+            aiMsg = '⏰ Ticket aging detected: Assign team immediately to prevent SLA breach.';
         }
         
         // Get customer information
@@ -11197,16 +11242,36 @@ window.viewTicketDetails = async function(ticketId) {
             }
         };
         
+        // Get team name from enriched data
+        const teamName = team?.name || team?.teamName || 
+                        (window.teamNameCache && window.teamNameCache[assignedTeamId]) || 
+                        'Unassigned';
+        
+        // Enhanced team metrics
+        const teamEfficiency = team?.efficiencyScore || team?.productivity?.efficiencyScore || 85;
+        const teamRating = team?.productivity?.customerRating || team?.rating || 4.5;
+        const teamCompleted = team?.ticketsCompleted || teamProductivity?.ticketsCompleted || 0;
+        
+        // Get availability status
+        let teamAvailability = 'Unknown';
+        if (team?.availability && typeof team.availability === 'object') {
+            teamAvailability = team.availability.status || 'unknown';
+        } else if (typeof team?.availability === 'string') {
+            teamAvailability = team.availability;
+        } else {
+            teamAvailability = team?.is_active ? 'available' : team?.status || 'unknown';
+        }
+        
         body.innerHTML = `
             <div class="mb-3">
                 <div class="small text-muted">Ticket</div>
-                <div class="fw-semibold">${ticket.ticket_number || ticket.ticketNumber || ticket.id || 'N/A'} - ${ticket.title || 'Ticket'}</div>
+                <div class="fw-semibold">${getTicketName(ticket)} - ${ticket.title || 'Ticket'}</div>
                 <div class="text-muted">${ticket.description || 'No description provided.'}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Status & Priority</div>
                 <div>
-                    <span class="badge ${getStatusColor(ticket.status)} me-2">${(ticket.status || 'unknown').toUpperCase()}</span>
+                    <span class="badge ${getStatusColor(ticket.status)} me-2">${getTicketStatus(ticket)}</span>
                     <span class="badge ${getPriorityColor(priority)}">${(priority || 'medium').toUpperCase()}</span>
                 </div>
             </div>
@@ -11217,26 +11282,33 @@ window.viewTicketDetails = async function(ticketId) {
                 <div class="text-muted">📞 ${customerPhone}</div>
             </div>
             <div class="mb-3">
-                <div class="small text-muted">Location</div>
+                <div class="small text-muted">Location (Enhanced from ticketv2)</div>
                 <div><strong>${locationStr}</strong></div>
+                <div class="text-muted">📍 State: ${state} | District: ${district} | Zone: ${zone}</div>
                 <div class="text-muted">📍 Coordinates: ${lat.toFixed(5)}, ${lng.toFixed(5)}</div>
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Assigned Team</div>
-                <div><strong>${ticket.assigned_team || team?.name || 'Unassigned'}</strong></div>
+                <div><strong>${teamName}</strong></div>
                 <div class="text-muted">
-                    ⭐ Rating: ${(teamProductivity?.productivity?.customerRating || team?.rating || 4.5).toFixed(1)} • 
-                    Status: ${team?.is_active ? '🟢 Active' : '🔴 Inactive'}
+                    ⭐ Rating: ${teamRating.toFixed(1)}/5.0 • 
+                    📊 Efficiency: ${teamEfficiency.toFixed(1)}% • 
+                    ✅ Completed: ${teamCompleted} tickets •
+                    Status: ${teamAvailability === 'available' || teamAvailability === 'busy' ? '🟢' : '🔴'} ${teamAvailability.toUpperCase()}
                 </div>
             </div>
             <div class="mb-3">
-                <div class="small text-muted">Timeline</div>
+                <div class="small text-muted">Timeline & SLA (ticketv2 Data)</div>
                 <div>📅 Created: ${createdDateStr}</div>
-                <div class="text-muted">⏱️ SLA: ${slaHrs}h • ETA: ${etaStr}</div>
+                <div>⏱️ Age: ${aging}</div>
+                <div>🎯 SLA Target: ${slaHrs}h</div>
+                <div>📊 SLA Status: ${formatSLAStatus(ticket)}</div>
+                ${timeToComplete > 0 ? `<div>✅ Completed in: ${timeToComplete.toFixed(2)}h</div>` : ''}
+                ${efficiency > 0 ? `<div>⚡ Efficiency Score: ${formatEfficiency(ticket)}</div>` : ''}
             </div>
             <div class="mb-3">
                 <div class="small text-muted">Root Cause</div>
-                <div>${extractRootCause(ticket) || 'Pending diagnosis'}</div>
+                <div>${extractRootCause(ticket) || ticket.category || 'Pending diagnosis'}</div>
             </div>
             <div class="mb-3 p-3" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
                 <div class="fw-semibold mb-1"><i class="fas fa-robot me-2"></i>AI Recommendation</div>
@@ -13934,19 +14006,23 @@ function normalizeZones(zonesObj) {
 // AI Chatbot State
 let aiChatbotOpen = false;
 let aiChatHistory = [];
+let aiCurrentLanguage = 'en'; // 'en' or 'ms' (Bahasa Malaysia)
 
 // Initialize AI Chatbot
 document.addEventListener('DOMContentLoaded', function() {
     initializeAIChatbot();
 });
 
-function initializeAIChatbot() {
+async function initializeAIChatbot() {
     const toggle = document.getElementById('ai-chatbot-toggle');
     const window = document.getElementById('ai-chatbot-window');
     
     if (toggle) {
         toggle.addEventListener('click', toggleAIChatbot);
     }
+    
+    // Load initial performance greeting
+    await loadAIPerformanceGreeting();
     
     // Auto-show chatbot after 3 seconds
     setTimeout(() => {
@@ -13977,7 +14053,7 @@ function showAINotification() {
     }
 }
 
-function clearAIChat() {
+async function clearAIChat() {
     const messagesContainer = document.getElementById('ai-chatbot-messages');
     if (messagesContainer) {
         messagesContainer.innerHTML = `
@@ -13986,12 +14062,365 @@ function clearAIChat() {
                     <i class="fas fa-robot"></i>
                 </div>
                 <div class="ai-content">
-                    <p>Chat cleared! How can I help you today?</p>
+                    <p style="text-align: center; color: #64748b; font-size: 12px;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading performance insights...
+                    </p>
                 </div>
             </div>
         `;
     }
     aiChatHistory = [];
+    await loadAIPerformanceGreeting();
+}
+
+// Switch AI Language
+function switchAILanguage(lang) {
+    aiCurrentLanguage = lang;
+    
+    // Update button states
+    const langBtns = document.querySelectorAll('.ai-lang-btn');
+    langBtns.forEach(btn => {
+        if (btn.textContent.toLowerCase() === lang.toUpperCase() || (lang === 'ms' && btn.textContent === 'BM')) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Reload greeting in new language
+    loadAIPerformanceGreeting();
+}
+
+// Load AI Performance Greeting with Real Data
+async function loadAIPerformanceGreeting() {
+    try {
+        // Fetch real performance data
+        const [ticketv2Response, teamsResponse] = await Promise.all([
+            fetch(`${API_BASE}/ticketv2?limit=20000`),
+            fetch(`${API_BASE}/teams`)
+        ]);
+        
+        const ticketv2Data = await ticketv2Response.json();
+        const teamsData = await teamsResponse.json();
+        
+        const tickets = ticketv2Data.tickets || [];
+        const teams = teamsData.teams || [];
+        
+        // Calculate performance metrics
+        const totalTickets = tickets.length;
+        const closedTickets = tickets.filter(t => t.status === 'closed').length;
+        const inProgressTickets = tickets.filter(t => t.status === 'in_progress').length;
+        const openTickets = tickets.filter(t => t.status === 'open').length;
+        const cancelledTickets = tickets.filter(t => t.status === 'cancelled').length;
+        
+        const completionRate = totalTickets > 0 ? ((closedTickets / totalTickets) * 100).toFixed(1) : 0;
+        
+        // Enrich teams with ticket counts
+        const enrichedTeams = enrichTeamsWithTicketCounts(teams, tickets);
+        
+        // Calculate team metrics
+        const activeTeams = enrichedTeams.filter(t => 
+            t.availability && (t.availability.status === 'available' || t.availability.status === 'busy')
+        ).length;
+        
+        const avgEfficiency = teams.length > 0 
+            ? (teams.reduce((sum, t) => sum + (t.efficiencyScore || 0), 0) / teams.length).toFixed(1)
+            : 0;
+        
+        const topPerformer = enrichedTeams.sort((a, b) => 
+            (b.completionRate || 0) - (a.completionRate || 0)
+        )[0];
+        
+        // Calculate average resolution time
+        const completedTicketsWithTime = tickets.filter(t => 
+            t.status === 'closed' && t.createdAt && t.completedAt
+        );
+        
+        let avgResolutionHours = 0;
+        if (completedTicketsWithTime.length > 0) {
+            const totalHours = completedTicketsWithTime.reduce((sum, t) => {
+                const created = new Date(t.createdAt);
+                const completed = new Date(t.completedAt);
+                const hours = (completed - created) / (1000 * 60 * 60);
+                return sum + hours;
+            }, 0);
+            avgResolutionHours = (totalHours / completedTicketsWithTime.length).toFixed(1);
+        }
+        
+        // Generate AI insights
+        const insights = [];
+        
+        if (completionRate >= 70) {
+            insights.push(aiCurrentLanguage === 'en' 
+                ? '✅ Excellent completion rate - team is performing well'
+                : '✅ Kadar penyiapan cemerlang - pasukan berprestasi baik'
+            );
+        } else if (completionRate >= 50) {
+            insights.push(aiCurrentLanguage === 'en'
+                ? '⚠️ Moderate completion rate - room for improvement'
+                : '⚠️ Kadar penyiapan sederhana - ruang untuk penambahbaikan'
+            );
+        } else {
+            insights.push(aiCurrentLanguage === 'en'
+                ? '🔴 Low completion rate - requires immediate attention'
+                : '🔴 Kadar penyiapan rendah - memerlukan perhatian segera'
+            );
+        }
+        
+        if (inProgressTickets > openTickets * 1.5) {
+            insights.push(aiCurrentLanguage === 'en'
+                ? '📊 High work in progress - teams are actively engaged'
+                : '📊 Kerja dalam proses tinggi - pasukan aktif terlibat'
+            );
+        }
+        
+        if (openTickets > closedTickets * 0.3) {
+            insights.push(aiCurrentLanguage === 'en'
+                ? '🎯 Consider increasing team capacity or redistributing workload'
+                : '🎯 Pertimbang penambahan kapasiti pasukan atau agihan semula beban kerja'
+            );
+        }
+        
+        // Generate recommendations
+        const recommendations = [];
+        
+        if (avgResolutionHours > 24) {
+            recommendations.push(aiCurrentLanguage === 'en'
+                ? 'Focus on reducing resolution time through better resource allocation'
+                : 'Fokus pada pengurangan masa penyelesaian melalui peruntukan sumber yang lebih baik'
+            );
+        }
+        
+        if (activeTeams < teams.length * 0.7) {
+            recommendations.push(aiCurrentLanguage === 'en'
+                ? 'Optimize team availability and scheduling for better coverage'
+                : 'Optimumkan ketersediaan dan penjadualan pasukan untuk liputan yang lebih baik'
+            );
+        }
+        
+        recommendations.push(aiCurrentLanguage === 'en'
+            ? 'Implement preventive maintenance to reduce ticket volume'
+            : 'Laksanakan penyelenggaraan pencegahan untuk mengurangkan jumlah tiket'
+        );
+        
+        recommendations.push(aiCurrentLanguage === 'en'
+            ? 'Leverage AI-driven assignment for optimal resource utilization'
+            : 'Gunakan peruntukan berasaskan AI untuk penggunaan sumber yang optimum'
+        );
+        
+        // Build greeting message
+        const greeting = generateGreetingMessage({
+            totalTickets,
+            closedTickets,
+            inProgressTickets,
+            openTickets,
+            cancelledTickets,
+            completionRate,
+            activeTeams,
+            totalTeams: teams.length,
+            avgEfficiency,
+            avgResolutionHours,
+            topPerformer,
+            insights,
+            recommendations
+        });
+        
+        // Display greeting
+        const messagesContainer = document.getElementById('ai-chatbot-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        ${greeting}
+                    </div>
+                </div>
+            `;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+    } catch (error) {
+        console.error('Error loading AI performance greeting:', error);
+        
+        // Fallback greeting
+        const messagesContainer = document.getElementById('ai-chatbot-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p>${aiCurrentLanguage === 'en' 
+                            ? 'Hello! I\'m nBOTS, your AI assistant for AIFF. How can I help you today?'
+                            : 'Helo! Saya nBOTS, pembantu AI anda untuk AIFF. Bagaimana saya boleh membantu anda hari ini?'
+                        }</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// Generate Greeting Message
+function generateGreetingMessage(data) {
+    if (aiCurrentLanguage === 'ms') {
+        return `
+            <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                👋 Selamat datang ke nBOTS AI Assistant!
+            </p>
+            <p style="margin-bottom: 16px; color: #64748b;">
+                Saya adalah pembantu pintar anda untuk sistem AIFF. Berikut adalah ringkasan prestasi terkini:
+            </p>
+            
+            <div class="ai-summary-card">
+                <div class="ai-summary-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    Gambaran Keseluruhan Tiket
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Jumlah Tiket</span>
+                        <span class="ai-metric-value">${data.totalTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Selesai</span>
+                        <span class="ai-metric-value" style="color: #10b981;">${data.closedTickets.toLocaleString()} <span class="ai-badge-success">${data.completionRate}%</span></span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Dalam Proses</span>
+                        <span class="ai-metric-value" style="color: #f59e0b;">${data.inProgressTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Terbuka</span>
+                        <span class="ai-metric-value" style="color: #0ea5e9;">${data.openTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Purata Masa Penyelesaian</span>
+                        <span class="ai-metric-value">${data.avgResolutionHours}h</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #8b5cf6;">
+                <div class="ai-summary-title" style="color: #5b21b6;">
+                    <i class="fas fa-users"></i>
+                    Prestasi Pasukan Lapangan
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Pasukan Aktif</span>
+                        <span class="ai-metric-value">${data.activeTeams} / ${data.totalTeams}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Skor Kecekapan Purata</span>
+                        <span class="ai-metric-value">${data.avgEfficiency}%</span>
+                    </div>
+                    ${data.topPerformer ? `
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Prestasi Terbaik</span>
+                        <span class="ai-metric-value">🏆 ${data.topPerformer.name || 'N/A'}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);">
+                <div class="ai-summary-title" style="color: #92400e;">
+                    <i class="fas fa-lightbulb"></i>
+                    Pandangan AI & Cadangan
+                </div>
+                <div class="ai-summary-content">
+                    ${data.insights.map(insight => `<p style="margin: 6px 0;">• ${insight}</p>`).join('')}
+                    <p style="font-weight: 600; margin-top: 12px; margin-bottom: 6px; color: #0c4a6e;">💡 Cadangan:</p>
+                    ${data.recommendations.slice(0, 2).map(rec => `<p style="margin: 6px 0; font-size: 12px;">• ${rec}</p>`).join('')}
+                </div>
+            </div>
+            
+            <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                Apa yang anda ingin ketahui? Saya boleh membantu dengan analisis, ramalan, dan penambahbaikan.
+            </p>
+        `;
+    } else {
+        return `
+            <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                👋 Welcome to nBOTS AI Assistant!
+            </p>
+            <p style="margin-bottom: 16px; color: #64748b;">
+                I'm your intelligent assistant for the AIFF system. Here's your current performance summary:
+            </p>
+            
+            <div class="ai-summary-card">
+                <div class="ai-summary-title">
+                    <i class="fas fa-ticket-alt"></i>
+                    Ticket Overview
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Total Tickets</span>
+                        <span class="ai-metric-value">${data.totalTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Completed</span>
+                        <span class="ai-metric-value" style="color: #10b981;">${data.closedTickets.toLocaleString()} <span class="ai-badge-success">${data.completionRate}%</span></span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">In Progress</span>
+                        <span class="ai-metric-value" style="color: #f59e0b;">${data.inProgressTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Open</span>
+                        <span class="ai-metric-value" style="color: #0ea5e9;">${data.openTickets.toLocaleString()}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Avg Resolution Time</span>
+                        <span class="ai-metric-value">${data.avgResolutionHours}h</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #8b5cf6;">
+                <div class="ai-summary-title" style="color: #5b21b6;">
+                    <i class="fas fa-users"></i>
+                    Field Team Performance
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Active Teams</span>
+                        <span class="ai-metric-value">${data.activeTeams} / ${data.totalTeams}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Avg Efficiency Score</span>
+                        <span class="ai-metric-value">${data.avgEfficiency}%</span>
+                    </div>
+                    ${data.topPerformer ? `
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Top Performer</span>
+                        <span class="ai-metric-value">🏆 ${data.topPerformer.name || 'N/A'}</span>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);">
+                <div class="ai-summary-title" style="color: #92400e;">
+                    <i class="fas fa-lightbulb"></i>
+                    AI Insights & Recommendations
+                </div>
+                <div class="ai-summary-content">
+                    ${data.insights.map(insight => `<p style="margin: 6px 0;">• ${insight}</p>`).join('')}
+                    <p style="font-weight: 600; margin-top: 12px; margin-bottom: 6px; color: #0c4a6e;">💡 Recommendations:</p>
+                    ${data.recommendations.slice(0, 2).map(rec => `<p style="margin: 6px 0; font-size: 12px;">• ${rec}</p>`).join('')}
+                </div>
+            </div>
+            
+            <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                What would you like to know? I can help with analytics, forecasts, and optimization.
+            </p>
+        `;
+    }
 }
 
 function handleAIChatbotKeyPress(event) {

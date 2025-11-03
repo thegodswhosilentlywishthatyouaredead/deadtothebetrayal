@@ -1757,8 +1757,8 @@
             position: absolute;
             bottom: 80px;
             right: 0;
-            width: 380px;
-            height: 500px;
+            width: 520px;
+            height: 680px;
             background: white;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
@@ -2222,8 +2222,8 @@
             }
 
             .ai-chatbot-window {
-                width: 340px;
-                height: 400px;
+                width: 90vw;
+                height: 70vh;
                 right: -15px;
             }
 
@@ -2235,6 +2235,110 @@
             .ai-chatbot-toggle i {
                 font-size: 20px;
             }
+        }
+        
+        .ai-language-toggle {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        
+        .ai-lang-btn {
+            padding: 4px 10px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .ai-lang-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .ai-lang-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .ai-summary-card {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+            border-left: 4px solid #0ea5e9;
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 8px;
+        }
+        
+        .ai-summary-title {
+            font-weight: 600;
+            color: #0c4a6e;
+            font-size: 13px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .ai-summary-content {
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .ai-metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .ai-metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .ai-metric-label {
+            color: #64748b;
+            font-size: 12px;
+        }
+        
+        .ai-metric-value {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 12px;
+        }
+        
+        .ai-badge-success {
+            background: #10b981;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .ai-badge-warning {
+            background: #f59e0b;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .ai-badge-info {
+            background: #0ea5e9;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
         }
 
         .zone-section-title {
@@ -8394,6 +8498,10 @@
                 <div class="ai-chatbot-title">
                     <i class="fas fa-robot"></i>
                     <span>nBOTS</span>
+                    <div class="ai-language-toggle">
+                        <button class="ai-lang-btn active" onclick="switchAILanguage('en')">EN</button>
+                        <button class="ai-lang-btn" onclick="switchAILanguage('ms')">BM</button>
+                    </div>
                 </div>
                 <div class="ai-chatbot-actions">
                     <button class="ai-chatbot-btn" onclick="clearAIChat()" title="Clear Chat">
@@ -8411,15 +8519,9 @@
                         <i class="fas fa-robot"></i>
                     </div>
                     <div class="ai-content">
-                        <p>Hello! I'm nBOTS, your AI assistant for AIFF. I can help you with:</p>
-                        <ul>
-                            <li>📊 Real-time system analytics</li>
-                            <li>👥 Team performance insights</li>
-                            <li>🎫 Ticket optimization</li>
-                            <li>📦 Material forecasting</li>
-                            <li>💡 Operational recommendations</li>
-                        </ul>
-                        <p>What would you like to know?</p>
+                        <p style="text-align: center; color: #64748b; font-size: 12px;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading performance insights...
+                        </p>
                     </div>
                 </div>
             </div>
