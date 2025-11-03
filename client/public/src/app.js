@@ -2633,12 +2633,12 @@ function addPaginationControls(totalCount, currentPageNum, receivedCount) {
     const paginationDiv = document.createElement('div');
     paginationDiv.className = 'pagination-container mt-4 d-flex justify-content-between align-items-center';
     
-    // Page info
+    // Page info with formatted numbers
     const startItem = (currentPageNum - 1) * ticketsPerPage + 1;
     const endItem = Math.min(currentPageNum * ticketsPerPage, totalCount);
     const pageInfo = document.createElement('div');
-    pageInfo.className = 'page-info text-muted';
-    pageInfo.innerHTML = `Showing ${startItem}-${endItem} of ${totalCount} tickets`;
+    pageInfo.className = 'page-info';
+    pageInfo.innerHTML = `Showing ${formatNumberWithCommas(startItem)}-${formatNumberWithCommas(endItem)} of ${formatNumberWithCommas(totalCount)} tickets`;
     
     // Pagination buttons
     const paginationButtons = document.createElement('div');
