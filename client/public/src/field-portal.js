@@ -946,11 +946,14 @@ async function loadQuickStats() {
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         
         // Filter tickets for current user only (support ticketv2 structure)
+        // CRITICAL: Only match by team ID, NOT by zone (zone filtering is too broad)
         const userTickets = allTickets.filter(ticket => {
+            if (!currentUserId) return false; // Must have a valid user ID
+            
             const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
             const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this (most important)
             
             const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
             const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
@@ -958,11 +961,9 @@ async function loadQuickStats() {
             const matchesAssignedTeam = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
             const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // Zone-based filtering (ticketv2 uses location.zone or location.district)
-            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
-            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
-            
-            return isMyTicket || isInUserZone;
+            // ONLY return tickets directly assigned to this team
+            // DO NOT use zone filtering for KPI cards (too broad - shows hundreds of tickets)
+            return isMyTicket;
         });
         
         console.log('📊 Stats data for', currentUser, ':', { 
@@ -1030,6 +1031,26 @@ async function loadQuickStats() {
             monthly: monthlyTickets.length,
             total: userTickets.length
         });
+        
+        // SAFETY CHECK: If today's tickets > 50, something is wrong (likely filtering failed)
+        if (todayTickets.length > 50) {
+            console.error('⚠️ WARNING: Today\'s tickets count is suspiciously high:', todayTickets.length);
+            console.error('⚠️ This suggests filtering failed - showing ALL system tickets instead of user tickets');
+            console.error('⚠️ Check that currentUserId matches ticket.assignedTeam');
+            console.error('⚠️ Current user ID:', currentUserId);
+            console.error('⚠️ User tickets total:', userTickets.length);
+            
+            // If filtering clearly failed (showing all tickets), force to 0 and show error
+            if (userTickets.length === allTickets.length) {
+                console.error('❌ FILTERING COMPLETELY FAILED - userTickets === allTickets');
+                console.error('❌ Forcing KPI cards to 0 to avoid showing incorrect data');
+                
+                // Override with zeros
+                todayTickets.length = 0;
+                yesterdayTickets.length = 0;
+                monthlyTickets.length = 0;
+            }
+        }
         
         // Today's completed tickets (user's tickets only) - check completion date
         const todayCompleted = userTickets.filter(t => {
@@ -1155,17 +1176,22 @@ async function loadQuickStats() {
             : 0;
         updateFieldTrend('earnings-trend', 'earnings-change', earningsChange, '% vs yesterday');
         
-        console.log('✅ Enhanced quick stats updated:', {
-            today: todayTickets.length,
-            yesterday: yesterdayTickets.length,
-            monthly: monthlyTickets.length,
+        console.log('✅ Enhanced quick stats updated for', currentUser, ':', {
+            userTicketsTotal: userTickets.length,
+            todayTickets: todayTickets.length,
+            yesterdayTickets: yesterdayTickets.length,
+            monthlyTickets: monthlyTickets.length,
             todayCompleted,
+            yesterdayCompleted,
+            monthlyCompleted,
             efficiency: efficiencyRate.toFixed(2),
-            earnings: earningsToday.toFixed(2)
+            rating: avgRating.toFixed(1),
+            earningsToday: `RM ${earningsToday.toFixed(2)}`
         });
         
     } catch (error) {
         console.error('❌ Error loading quick stats:', error);
+        console.error('Error details:', error.stack);
         // Set fallback values
         updateFieldElement('today-tickets', 0);
         updateFieldElement('completed-tickets', 0);
