@@ -155,18 +155,19 @@ def load_enhanced_data():
     print("=" * 60)
     
     try:
-        # Generate enhanced data (adds to existing, doesn't replace)
+        # CLEAR OLD DATA before regenerating for fresh today's data
+        print("🗑️  Clearing old ticket data to ensure fresh generation...")
+        tickets.clear()
+        field_teams.clear()
+        assignments.clear()
+        
+        # Generate enhanced data (fresh generation)
         enhanced_data = generate_enhanced_dataset(num_tickets=15000, num_teams=150)
         
-        # Keep track of existing IDs to avoid duplicates
-        existing_team_ids = {team['_id'] for team in field_teams}
-        existing_ticket_ids = {ticket['_id'] for ticket in tickets}
-        
-        # Add new teams (merge with existing)
+        # Add all teams (fresh generation after clear)
         new_teams_added = 0
         for team in enhanced_data['field_teams']:
-            if team['id'] not in existing_team_ids:
-                converted_team = {
+            converted_team = {
                     "_id": team["id"],
                     "teamNumber": team.get("teamNumber", f"T{len(field_teams) + 1:04d}"),
                     "name": team["name"],
@@ -205,11 +206,10 @@ def load_enhanced_data():
         
         print(f"✅ Added {new_teams_added} new teams (total: {len(field_teams)})")
         
-        # Add new tickets (merge with existing)
+        # Add all tickets (fresh generation after clear)
         new_tickets_added = 0
         for ticket in enhanced_data['tickets']:
-            if ticket['id'] not in existing_ticket_ids:
-                converted_ticket = {
+            converted_ticket = {
                     "_id": ticket["id"],
                     "ticketNumber": ticket["ticketNumber"],
                     "title": ticket["title"],
@@ -260,8 +260,8 @@ def load_enhanced_data():
                     # Efficiency
                     "efficiencyScore": ticket.get("efficiencyScore")
                 }
-                tickets.append(converted_ticket)
-                new_tickets_added += 1
+            tickets.append(converted_ticket)
+            new_tickets_added += 1
         
         print(f"✅ Added {new_tickets_added} new tickets (total: {len(tickets)})")
         
