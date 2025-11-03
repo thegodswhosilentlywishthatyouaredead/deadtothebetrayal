@@ -329,11 +329,29 @@ def get_tickets():
 
 @app.route('/api/ticketv2', methods=['GET'])
 def get_tickets_v2():
-    """Get all tickets (v2 API with limit support)"""
+    """Get all tickets (v2 API with limit and offset support for pagination)"""
     try:
         limit = request.args.get('limit', type=int)
-        result_tickets = tickets[:limit] if limit else tickets
-        return jsonify({"tickets": result_tickets, "total": len(result_tickets)})
+        offset = request.args.get('offset', type=int, default=0)
+        
+        # Get total count before pagination
+        total_count = len(tickets)
+        
+        # Apply offset and limit for pagination
+        if limit:
+            start_idx = offset
+            end_idx = offset + limit
+            result_tickets = tickets[start_idx:end_idx]
+        else:
+            result_tickets = tickets
+        
+        return jsonify({
+            "tickets": result_tickets, 
+            "total": total_count,
+            "limit": limit,
+            "offset": offset,
+            "count": len(result_tickets)
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

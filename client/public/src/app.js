@@ -2107,16 +2107,27 @@ async function loadTickets(page = 1, limit = 15) {
         let data = await response.json();
         
         console.log('🔧 loadTickets: Ticketv2 response status:', response.status);
+        console.log('🔧 loadTickets: Ticketv2 data structure:', data);
         
-        // Use ticketv2 data if available
-        if (data.tickets && data.tickets.tickets) {
-            tickets = (data.tickets.tickets || []).slice().sort((a, b) => {
+        // Use ticketv2 data if available (handle both nested and flat structures)
+        if (data.tickets && Array.isArray(data.tickets)) {
+            // Flat structure: { tickets: [...] }
+            tickets = data.tickets.slice().sort((a, b) => {
+                const da = new Date(a.created_at || a.createdAt || 0).getTime();
+                const db = new Date(b.created_at || b.createdAt || 0).getTime();
+                return db - da; // newest first
+            });
+            totalTickets = data.total || data.total_tickets || tickets.length;
+            console.log('🎫 Loading tickets from ticketv2 API (flat):', tickets.length, 'total:', totalTickets);
+        } else if (data.tickets && data.tickets.tickets && Array.isArray(data.tickets.tickets)) {
+            // Nested structure: { tickets: { tickets: [...] } }
+            tickets = data.tickets.tickets.slice().sort((a, b) => {
                 const da = new Date(a.created_at || a.createdAt || 0).getTime();
                 const db = new Date(b.created_at || b.createdAt || 0).getTime();
                 return db - da; // newest first
             });
             totalTickets = data.total_tickets || data.tickets.total || data.total || tickets.length;
-            console.log('🎫 Loading tickets from ticketv2 API:', tickets.length);
+            console.log('🎫 Loading tickets from ticketv2 API (nested):', tickets.length, 'total:', totalTickets);
         } else {
             // Fallback to regular tickets API
             response = await fetch(`${API_BASE}/tickets?limit=${limit}&offset=${offset}`);
