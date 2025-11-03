@@ -168,41 +168,41 @@ def load_enhanced_data():
         new_teams_added = 0
         for team in enhanced_data['field_teams']:
             converted_team = {
-                    "_id": team["id"],
-                    "teamNumber": team.get("teamNumber", f"T{len(field_teams) + 1:04d}"),
-                    "name": team["name"],
-                    "email": team["email"],
-                    "phone": team["phone"],
-                    "state": team["state"],
-                    "zone": team["zone"],
-                    "district": team.get("district", team["state"]),
-                    "currentLocation": {
-                        "address": team["location"]["address"],
-                        "latitude": team["location"]["coordinates"]["lat"],
-                        "longitude": team["location"]["coordinates"]["lng"]
-                    },
-                    "availability": team.get("availability", {
-                        "status": "available",
-                        "currentCapacity": 0,
-                        "maxDailyCapacity": 5,
-                        "todayAssigned": 0,
-                        "availableSlots": 5
-                    }),
-                    "productivity": {
-                        "totalTicketsCompleted": team["productivity"]["ticketsCompleted"],
-                        "ticketsThisMonth": team["productivity"].get("ticketsThisMonth", 0),
-                        "averageResponseTime": team["productivity"].get("responseTime", 100),
-                        "customerRating": team["productivity"]["customerRating"],
-                        "efficiencyScore": team["productivity"]["efficiencyScore"],
-                        "averageCompletionTime": team["productivity"]["averageCompletionTime"]
-                    },
-                    "skills": team.get("skills", []),
-                    "status": team.get("status", "active"),
-                    "hourlyRate": team.get("hourlyRate", 45.00),
-                    "currentTickets": team.get("currentTickets", [])
-                }
-                field_teams.append(converted_team)
-                new_teams_added += 1
+                "_id": team["id"],
+                "teamNumber": team.get("teamNumber", f"T{len(field_teams) + 1:04d}"),
+                "name": team["name"],
+                "email": team["email"],
+                "phone": team["phone"],
+                "state": team["state"],
+                "zone": team["zone"],
+                "district": team.get("district", team["state"]),
+                "currentLocation": {
+                    "address": team["location"]["address"],
+                    "latitude": team["location"]["coordinates"]["lat"],
+                    "longitude": team["location"]["coordinates"]["lng"]
+                },
+                "availability": team.get("availability", {
+                    "status": "available",
+                    "currentCapacity": 0,
+                    "maxDailyCapacity": 5,
+                    "todayAssigned": 0,
+                    "availableSlots": 5
+                }),
+                "productivity": {
+                    "totalTicketsCompleted": team["productivity"]["ticketsCompleted"],
+                    "ticketsThisMonth": team["productivity"].get("ticketsThisMonth", 0),
+                    "averageResponseTime": team["productivity"].get("responseTime", 100),
+                    "customerRating": team["productivity"]["customerRating"],
+                    "efficiencyScore": team["productivity"]["efficiencyScore"],
+                    "averageCompletionTime": team["productivity"]["averageCompletionTime"]
+                },
+                "skills": team.get("skills", []),
+                "status": team.get("status", "active"),
+                "hourlyRate": team.get("hourlyRate", 45.00),
+                "currentTickets": team.get("currentTickets", [])
+            }
+            field_teams.append(converted_team)
+            new_teams_added += 1
         
         print(f"✅ Added {new_teams_added} new teams (total: {len(field_teams)})")
         
@@ -210,8 +210,8 @@ def load_enhanced_data():
         new_tickets_added = 0
         for ticket in enhanced_data['tickets']:
             converted_ticket = {
-                    "_id": ticket["id"],
-                    "ticketNumber": ticket["ticketNumber"],
+                "_id": ticket["id"],
+                "ticketNumber": ticket["ticketNumber"],
                     "title": ticket["title"],
                     "description": ticket["description"],
                     "category": ticket["category"],
