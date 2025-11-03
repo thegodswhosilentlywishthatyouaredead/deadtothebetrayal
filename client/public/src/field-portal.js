@@ -947,8 +947,29 @@ async function loadQuickStats() {
         
         // Filter tickets for current user only (support ticketv2 structure)
         // CRITICAL: Only match by team ID, NOT by zone (zone filtering is too broad)
+        console.log('🔍 Filtering tickets for user:', {
+            currentUser,
+            currentUserId,
+            totalTickets: allTickets.length
+        });
+        
+        // DEBUG: Log first 3 tickets to see their structure
+        if (allTickets.length > 0) {
+            console.log('📋 Sample tickets (first 3):', allTickets.slice(0, 3).map(t => ({
+                id: t._id || t.id,
+                assignedTeam: t.assignedTeam,
+                assigned_team: t.assigned_team,
+                assigned_team_id: t.assigned_team_id,
+                status: t.status,
+                createdAt: t.createdAt
+            })));
+        }
+        
         const userTickets = allTickets.filter(ticket => {
-            if (!currentUserId) return false; // Must have a valid user ID
+            if (!currentUserId) {
+                console.warn('⚠️ No currentUserId - cannot filter tickets');
+                return false;
+            }
             
             const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
             const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
@@ -966,15 +987,22 @@ async function loadQuickStats() {
             return isMyTicket;
         });
         
+        console.log('✅ Filtered tickets:', {
+            userTickets: userTickets.length,
+            matchedBy: userTickets.length > 0 ? 'team ID match' : 'no matches found'
+        });
+        
         console.log('📊 Stats data for', currentUser, ':', { 
             totalTickets: allTickets.length, 
             userTickets: userTickets.length, 
             teams: allTeams.length,
-            currentUserId: currentUserId
+            currentUserId: currentUserId,
+            currentUserIdType: typeof currentUserId
         });
         
         // DEBUG: Log sample assignments
         if (userTickets.length > 0) {
+            console.log('✅ Found', userTickets.length, 'tickets for user');
             console.log('📊 Sample user ticket:', {
                 id: userTickets[0]._id || userTickets[0].id,
                 assignedTeam: userTickets[0].assignedTeam,
@@ -982,14 +1010,30 @@ async function loadQuickStats() {
                 status: userTickets[0].status
             });
         } else {
-            console.log('⚠️ No tickets found for user:', currentUser, 'with ID:', currentUserId);
-            // Log sample tickets to debug
+            console.error('❌ NO TICKETS FOUND FOR USER:', currentUser);
+            console.error('❌ Current user ID:', currentUserId, '(type:', typeof currentUserId, ')');
+            
+            // Log sample tickets to debug the mismatch
             if (allTickets.length > 0) {
-                console.log('📊 Sample ticket from all tickets:', {
-                    id: allTickets[0]._id || allTickets[0].id,
-                    assignedTeam: allTickets[0].assignedTeam,
-                    createdAt: allTickets[0].createdAt
+                console.error('🔍 Checking why no match - Sample from all tickets:');
+                allTickets.slice(0, 5).forEach((ticket, i) => {
+                    const assignedTeam = ticket.assignedTeam;
+                    const matches = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
+                    console.error(`  Ticket ${i+1}:`, {
+                        id: ticket._id?.substring(0, 15),
+                        assignedTeam: assignedTeam,
+                        assignedTeamType: typeof assignedTeam,
+                        currentUserId: currentUserId,
+                        matches: matches,
+                        comparison: `"${assignedTeam}" === "${currentUserId}"`
+                    });
                 });
+                
+                // Check if ANY ticket matches
+                const matchingTickets = allTickets.filter(t => 
+                    t.assignedTeam === currentUserId || String(t.assignedTeam) === String(currentUserId)
+                );
+                console.error('🔍 Tickets matching currentUserId:', matchingTickets.length);
             }
         }
         
