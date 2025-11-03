@@ -346,11 +346,11 @@ async function loadMyTickets() {
         const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Current user:', currentUser);
         
-        // Optimize API call - reduce limit for faster loading
-        const response = await fetch(`${API_BASE}/tickets?limit=100`);
+        // Fetch from ticketv2 API
+        const response = await fetch(`${API_BASE}/ticketv2?limit=20000`);
         const data = await response.json();
         
-        console.log('✅ Received tickets:', data.tickets ? data.tickets.length : 0);
+        console.log('✅ Received tickets from ticketv2:', data.tickets ? data.tickets.length : 0);
         
         // Filter tickets assigned to current user only
         const allTickets = data.tickets || [];
@@ -364,21 +364,23 @@ async function loadMyTickets() {
         console.log('🌍 Current user zone:', userZone);
         
         const myAssignedTickets = allTickets.filter(ticket => {
-            // Check multiple assignment fields
-            const assignedUserId = ticket.assigned_user_id;
-            const assignedTeamId = ticket.assigned_team_id;
+            // Check multiple assignment fields (support both old and ticketv2 structure)
+            const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
+            const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
             
             // Match by user ID or team ID
-            const matchesUser = assignedUserId === currentUserId;
-            const matchesTeam = assignedTeamId === currentUserId;
+            const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
+            const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
             const matchesName = assignedTo === currentUser;
+            const matchesAssignedTeam = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
             
             // More specific matching for logged user
-            const isMyTicket = matchesUser || matchesTeam || matchesName;
+            const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // Zone-based filtering: only show tickets from user's zone
-            const ticketZone = ticket.zone;
+            // Zone-based filtering: only show tickets from user's zone (ticketv2 uses location.zone)
+            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
             const isInUserZone = userZone && ticketZone && ticketZone === userZone;
             
             // Ticket must be either assigned to user OR in user's zone
@@ -399,20 +401,23 @@ async function loadMyTickets() {
             })));
         }
         
-        // Get tickets by status for current user with mixed statuses (handle both cases)
-        const openTickets = myAssignedTickets.filter(t => 
-            t.status === 'open' || t.status === 'OPEN' || t.status === 'assigned'
-        );
-        const inProgressTickets = myAssignedTickets.filter(t => 
-            t.status === 'in_progress' || t.status === 'IN_PROGRESS'
-        );
-        const resolvedTickets = myAssignedTickets.filter(t => 
-            t.status === 'resolved' || t.status === 'closed' || 
-            t.status === 'completed' || t.status === 'COMPLETED'
-        );
-        const cancelledTickets = myAssignedTickets.filter(t => 
-            t.status === 'cancelled' || t.status === 'CANCELLED'
-        );
+        // Get tickets by status for current user (ticketv2 uses lowercase: open, in_progress, completed, cancelled)
+        const openTickets = myAssignedTickets.filter(t => {
+            const status = (t.status || '').toLowerCase();
+            return status === 'open' || status === 'assigned';
+        });
+        const inProgressTickets = myAssignedTickets.filter(t => {
+            const status = (t.status || '').toLowerCase();
+            return status === 'in_progress' || status === 'in-progress';
+        });
+        const resolvedTickets = myAssignedTickets.filter(t => {
+            const status = (t.status || '').toLowerCase();
+            return status === 'resolved' || status === 'closed' || status === 'completed';
+        });
+        const cancelledTickets = myAssignedTickets.filter(t => {
+            const status = (t.status || '').toLowerCase();
+            return status === 'cancelled';
+        });
         
         // Mix the tickets to show realistic distribution - include more completed tickets
         myTickets = [
@@ -921,8 +926,8 @@ async function loadQuickStats() {
         // Get current user
         const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         
-        // Get tickets data
-        const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
+        // Get tickets data from ticketv2 API
+        const ticketsResponse = await fetch(`${API_BASE}/ticketv2?limit=20000`);
         const ticketsData = await ticketsResponse.json();
         const allTickets = ticketsData.tickets || [];
         
@@ -935,18 +940,22 @@ async function loadQuickStats() {
         const currentUserId = await getCurrentUserId(currentUser);
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         
-        // Filter tickets for current user only
+        // Filter tickets for current user only (support ticketv2 structure)
         const userTickets = allTickets.filter(ticket => {
-            const assignedUserId = ticket.assigned_user_id;
-            const assignedTeamId = ticket.assigned_team_id;
+            const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
+            const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
             
-            const matchesUser = assignedUserId === currentUserId;
-            const matchesTeam = assignedTeamId === currentUserId;
+            const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
+            const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
             const matchesName = assignedTo === currentUser;
-            const isMyTicket = matchesUser || matchesTeam || matchesName;
+            const matchesAssignedTeam = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
+            const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            const isInUserZone = userZone && ticket.zone && ticket.zone === userZone;
+            // Zone-based filtering (ticketv2 uses location.zone or location.district)
+            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
+            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
             
             return isMyTicket || isInUserZone;
         });
@@ -1149,8 +1158,8 @@ async function loadRouteData() {
         const currentUser = localStorage.getItem('currentUser') || 'Anwar Ibrahim';
         console.log('👤 Loading routes for user:', currentUser);
         
-        // Fetch tickets for route planning
-        const response = await fetch(`${API_BASE}/tickets?limit=100`);
+        // Fetch tickets from ticketv2 API for route planning
+        const response = await fetch(`${API_BASE}/ticketv2?limit=20000`);
         const data = await response.json();
         const allTickets = data.tickets || [];
         
@@ -1167,26 +1176,29 @@ async function loadRouteData() {
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         console.log('🌍 User zone for routing:', userZone);
         
-        // Filter for current user's open tickets with zone-based fallback
+        // Filter for current user's open tickets with zone-based fallback (support ticketv2 structure)
         let assignedTickets = allTickets.filter(ticket => {
-            // Check if ticket is assigned to current user
-            const assignedUserId = ticket.assigned_user_id;
-            const assignedTeamId = ticket.assigned_team_id;
+            // Check if ticket is assigned to current user (support ticketv2 structure)
+            const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
+            const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
             
-            const matchesUser = assignedUserId === currentUserId;
-            const matchesTeam = assignedTeamId === currentUserId;
+            const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
+            const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
             const matchesName = assignedTo === currentUser;
+            const matchesAssignedTeam = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
             
-            const isMyTicket = matchesUser || matchesTeam || matchesName;
+            const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // Zone-based assignment: if no specific assignment, check if ticket is in user's zone
-            const isInUserZone = userZone && ticket.zone && ticket.zone === userZone;
+            // Zone-based assignment: if no specific assignment, check if ticket is in user's zone (ticketv2 uses location.zone)
+            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
+            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
             
-            // Only show open/in-progress tickets assigned to current user OR in user's zone
-            const isOpenTicket = ticket.status === 'open' || ticket.status === 'OPEN' || 
-                                ticket.status === 'assigned' || ticket.status === 'in_progress' || 
-                                ticket.status === 'IN_PROGRESS';
+            // Only show open/in-progress tickets assigned to current user OR in user's zone (ticketv2 uses lowercase)
+            const ticketStatus = (ticket.status || '').toLowerCase();
+            const isOpenTicket = ticketStatus === 'open' || ticketStatus === 'assigned' || 
+                                ticketStatus === 'in_progress' || ticketStatus === 'in-progress';
             
             return (isMyTicket || isInUserZone) && isOpenTicket;
         });
@@ -2154,7 +2166,7 @@ async function sendFieldAIMessage(customQuery = null) {
 async function getFieldTeamContext() {
     // Get current context for AI
     try {
-        const ticketsResponse = await fetch(`${API_BASE}/tickets?limit=1000`);
+        const ticketsResponse = await fetch(`${API_BASE}/ticketv2?limit=20000`);
         const ticketsData = await ticketsResponse.json();
         
         const teamsResponse = await fetch(`${API_BASE}/teams`);
