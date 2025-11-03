@@ -7315,113 +7315,132 @@ function initializeMap() {
     console.log('✅ Enhanced map initialized');
 }
 
-// Load ticket data for map - only open tickets
-function loadTicketData() {
-    console.log('🎫 Loading open ticket data for map...');
+// Load ticket data for map - from ticketv2 API
+async function loadTicketData() {
+    console.log('🎫 Loading open ticket data for map from ticketv2 API...');
     
-    // Clear existing markers
-    if (map) {
-        map.eachLayer(layer => {
-            if (layer instanceof L.Marker) {
-                map.removeLayer(layer);
-            }
-        });
-    }
-    
-    // Add sample open tickets only
-    const openTickets = [
-        { 
-            id: 'T001', 
-            title: 'Network Outage - KL Central', 
-            lat: 3.1390, 
-            lng: 101.6869, 
-            priority: 'high', 
-            status: 'open',
-            assignedTeam: 'Team KL',
-            created: '2024-01-15',
-            location: 'Kuala Lumpur, Malaysia'
-        },
-        { 
-            id: 'T004', 
-            title: 'Equipment Check - Perak', 
-            lat: 4.5921, 
-            lng: 101.0901, 
-            priority: 'critical', 
-            status: 'open',
-            assignedTeam: 'Team Perak',
-            created: '2024-01-15',
-            location: 'Perak, Malaysia'
-        },
-        { 
-            id: 'T005', 
-            title: 'Fiber Repair - Selangor', 
-            lat: 3.0733, 
-            lng: 101.5185, 
-            priority: 'medium', 
-            status: 'open',
-            assignedTeam: 'Team Selangor',
-            created: '2024-01-14',
-            location: 'Selangor, Malaysia'
+    try {
+        // Clear existing markers
+        if (map) {
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
         }
-    ];
-    
-    openTickets.forEach(ticket => {
-        const color = ticket.priority === 'critical' ? '#dc3545' : 
-                     ticket.priority === 'high' ? '#fd7e14' : 
-                     ticket.priority === 'medium' ? '#ffc107' : '#28a745';
         
-        // Create better ticket icon
-        const marker = L.marker([ticket.lat, ticket.lng], {
-            icon: L.divIcon({
-                className: 'ticket-marker',
-                html: `
-                    <div class="ticket-icon" style="
-                        background: ${color}; 
-                        color: white; 
-                        border-radius: 8px; 
-                        width: 32px; 
-                        height: 32px; 
-                        display: flex; 
-                        align-items: center; 
-                        justify-content: center; 
-                        font-size: 14px; 
-                        font-weight: bold;
-                        border: 2px solid white;
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                        transition: all 0.3s ease;
-                    ">
-                        🎫
-                    </div>
-                `,
-                iconSize: [32, 32],
-                iconAnchor: [16, 16]
-            })
-        }).addTo(map);
+        // Fetch open tickets from ticketv2 API
+        const response = await fetch(`${API_BASE}/ticketv2?limit=5000`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
-        // Enhanced popup
-        marker.bindPopup(`
-            <div class="ticket-popup">
-                <h6 style="color: ${color}; margin-bottom: 8px;">${ticket.title}</h6>
-                <p><strong>Priority:</strong> <span style="color: ${color};">${ticket.priority.toUpperCase()}</span></p>
-                <p><strong>Status:</strong> ${ticket.status}</p>
-                <p><strong>Assigned Team:</strong> ${ticket.assignedTeam}</p>
-                <p><strong>Location:</strong> ${ticket.location}</p>
-                <p><strong>Created:</strong> ${ticket.created}</p>
-            </div>
-        `);
+        const data = await response.json();
+        const allTickets = data.tickets || [];
         
-        // Add click effect to show ticket details
-        marker.on('click', function() {
-            showTicketDetails(ticket);
+        // Filter for open and in_progress tickets only
+        const openTickets = allTickets.filter(t => 
+            t.status === 'open' || t.status === 'in_progress'
+        );
+        
+        console.log(`📍 Displaying ${openTickets.length} open/in-progress tickets on map (from ${allTickets.length} total)`);
+        
+        openTickets.forEach(ticket => {
+            // Determine priority color
+            const priority = ticket.priority || 'medium';
+            const color = priority === 'critical' || priority === 'urgent' ? '#dc3545' : 
+                         priority === 'high' ? '#fd7e14' : 
+                         priority === 'medium' ? '#ffc107' : '#28a745';
+            
+            // Get coordinates from ticket location
+            const lat = ticket.location?.coordinates?.lat || ticket.location?.lat || 
+                       (ticket.location?.state === 'Selangor' ? 3.0733 : 
+                        ticket.location?.state === 'Perak' ? 4.5921 :
+                        ticket.location?.state === 'Johor' ? 1.4854 :
+                        ticket.location?.state === 'Penang' ? 5.4164 :
+                        ticket.location?.state === 'Sabah' ? 5.9788 :
+                        ticket.location?.state === 'Sarawak' ? 1.5533 :
+                        3.1390); // Default to KL
+            
+            const lng = ticket.location?.coordinates?.lng || ticket.location?.lng || 
+                       (ticket.location?.state === 'Selangor' ? 101.5185 : 
+                        ticket.location?.state === 'Perak' ? 101.0901 :
+                        ticket.location?.state === 'Johor' ? 103.7618 :
+                        ticket.location?.state === 'Penang' ? 100.3327 :
+                        ticket.location?.state === 'Sabah' ? 116.0753 :
+                        ticket.location?.state === 'Sarawak' ? 110.3593 :
+                        101.6869); // Default to KL
+            
+            // Create ticket marker
+            const marker = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: 'ticket-marker',
+                    html: `
+                        <div class="ticket-icon" style="
+                            background: ${color}; 
+                            color: white; 
+                            border-radius: 8px; 
+                            width: 32px; 
+                            height: 32px; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            font-size: 14px; 
+                            font-weight: bold;
+                            border: 2px solid white;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                            transition: all 0.3s ease;
+                        ">
+                            🎫
+                        </div>
+                    `,
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16]
+                })
+            }).addTo(map);
+            
+            // Get team name if available
+            const assignedTeamName = ticket.assigned_team_name || 
+                                    (window.teamNameCache && window.teamNameCache[ticket.assignedTeam]) || 
+                                    ticket.assignedTeam || 
+                                    'Unassigned';
+            
+            // Enhanced popup with real data
+            const locationStr = `${ticket.location?.district || ''}, ${ticket.location?.state || ''}`.trim().replace(/^,\s*/, '');
+            const createdDate = ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : 'N/A';
+            
+            marker.bindPopup(`
+                <div class="ticket-popup">
+                    <h6 style="color: ${color}; margin-bottom: 8px;">${ticket.category || ticket.title || 'Ticket'}</h6>
+                    <p><strong>ID:</strong> ${ticket._id || ticket.id}</p>
+                    <p><strong>Priority:</strong> <span style="color: ${color};">${(priority || 'medium').toUpperCase()}</span></p>
+                    <p><strong>Status:</strong> ${(ticket.status || 'open').toUpperCase()}</p>
+                    <p><strong>Assigned Team:</strong> ${assignedTeamName}</p>
+                    <p><strong>Location:</strong> ${locationStr || 'Malaysia'}</p>
+                    <p><strong>Created:</strong> ${createdDate}</p>
+                    ${ticket.agingDays ? `<p><strong>Aging:</strong> ${ticket.agingDays} days</p>` : ''}
+                </div>
+            `);
+            
+            // Add click effect to show ticket details
+            marker.on('click', function() {
+                if (window.viewTicketDetails) {
+                    window.viewTicketDetails(ticket._id || ticket.id);
+                }
+            });
+            
+            // Add hover effect
+            marker.on('mouseover', function() {
+                this.openPopup();
+            });
         });
         
-        // Add hover effect
-        marker.on('mouseover', function() {
-            this.openPopup();
-        });
-    });
-    
-    console.log('✅ Open ticket data loaded');
+        console.log('✅ Open ticket data loaded from ticketv2 API');
+        
+    } catch (error) {
+        console.error('❌ Error loading ticket data for map:', error);
+        console.log('🔄 Map will use fallback data if available');
+    }
 }
 
 // Show ticket details in table
@@ -7874,22 +7893,22 @@ function getStatusColor(status) {
 function updateLiveMetrics() {
     const tickets = window.allTickets || [];
     const openTickets = tickets.filter(t => t.status === 'open' || t.status === 'in_progress');
-    const assignedTickets = tickets.filter(t => t.assigned_team_id);
-    const activeTeams = new Set(assignedTickets.map(t => t.assigned_team_id)).size;
+    const assignedTickets = tickets.filter(t => t.assignedTeam || t.assigned_team_id);
+    const activeTeams = new Set(assignedTickets.map(t => t.assignedTeam || t.assigned_team_id)).size;
     
-    // Update metrics
-    updateElement('live-active-teams', activeTeams);
-    updateElement('live-active-tickets', openTickets.length);
-    updateElement('live-active-routes', Math.floor(activeTeams * 0.7)); // Simulate routes
+    // Update metrics with proper formatting
+    updateElement('live-active-teams', formatNumberWithCommas(activeTeams));
+    updateElement('live-active-tickets', formatNumberWithCommas(openTickets.length));
+    updateElement('live-active-routes', formatNumberWithCommas(Math.floor(activeTeams * 0.7))); // Simulate routes
     updateElement('live-last-update', new Date().toLocaleTimeString());
     
-    // Update trend indicators
-    updateElement('live-teams-trend', `+${activeTeams} live tracking`);
-    updateElement('live-tickets-trend', `+${openTickets.length} in progress`);
-    updateElement('live-routes-trend', `+${Math.floor(activeTeams * 0.7)} en route`);
+    // Update trend indicators with proper formatting
+    updateElement('live-teams-trend', `+${formatNumberWithCommas(activeTeams)} live tracking`);
+    updateElement('live-tickets-trend', `+${formatNumberWithCommas(openTickets.length)} in progress`);
+    updateElement('live-routes-trend', `+${formatNumberWithCommas(Math.floor(activeTeams * 0.7))} en route`);
     updateElement('live-update-status', 'live real-time');
     
-    console.log('📊 Live metrics updated:', {
+    console.log('📊 Live metrics updated from ticketv2:', {
         activeTeams,
         openTickets: openTickets.length,
         totalTickets: tickets.length
@@ -7969,10 +7988,10 @@ function initializeMapOptimized() {
 
 // Simple data loading
 async function loadTicketDataOptimized() {
-    console.log('📡 Loading ticket data...');
+    console.log('📡 Loading ticket data from ticketv2 API...');
     
     try {
-        const response = await fetch(`${API_BASE}/tickets?limit=20000`);
+        const response = await fetch(`${API_BASE}/ticketv2?limit=20000`);
         
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
@@ -7982,7 +8001,7 @@ async function loadTicketDataOptimized() {
         const tickets = data.tickets || [];
         
         window.allTickets = tickets;
-        console.log('✅ Ticket data loaded:', tickets.length);
+        console.log('✅ Ticket data loaded from ticketv2 API:', tickets.length);
         return tickets;
         
     } catch (error) {
@@ -8028,7 +8047,7 @@ function generateSampleTickets() {
 }
 
 async function loadLiveTrackingData() {
-    console.log('📡 Loading live tracking data from backend...');
+    console.log('📡 Loading live tracking data from ticketv2 API...');
     
     try {
         // Check cache first (10 second cache for better performance)
@@ -8038,8 +8057,8 @@ async function loadLiveTrackingData() {
             return liveTrackingData;
         }
         
-        // Load live teams data from backend with timeout
-        const teamsResponse = await fetch(`${API_BASE}/live-tracking/teams`, {
+        // Load teams data from ticketv2 API with timeout
+        const teamsResponse = await fetch(`${API_BASE}/teams`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -8053,10 +8072,10 @@ async function loadLiveTrackingData() {
         }
         
         const teamsData = await teamsResponse.json();
-        liveTrackingData.teams = teamsData.teams || [];
+        liveTrackingData.teams = teamsData.teams || teamsData || [];
         
-        // Load live tickets data from backend with timeout
-        const ticketsResponse = await fetch(`${API_BASE}/live-tracking/tickets`, {
+        // Load tickets data from ticketv2 API with timeout (limit for performance)
+        const ticketsResponse = await fetch(`${API_BASE}/ticketv2?limit=5000`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -8070,24 +8089,21 @@ async function loadLiveTrackingData() {
         }
         
         const ticketsData = await ticketsResponse.json();
-        liveTrackingData.tickets = ticketsData.tickets || [];
+        liveTrackingData.tickets = ticketsData.tickets || ticketsData || [];
         
-        // Load live routes data from backend with timeout
-        const routesResponse = await fetch(`${API_BASE}/live-tracking/routes`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache'
-            },
-            signal: AbortSignal.timeout(5000) // 5 second timeout
-        });
-        
-        if (!routesResponse.ok) {
-            throw new Error(`Routes API error: ${routesResponse.status}`);
-        }
-        
-        const routesData = await routesResponse.json();
-        liveTrackingData.routes = routesData.routes || [];
+        // Generate routes from active team assignments (no separate API needed)
+        const activeTeams = liveTrackingData.teams.filter(t => 
+            t.availability?.status === 'available' || 
+            t.availability === 'available' ||
+            (t.ticketsInProgress && t.ticketsInProgress > 0)
+        );
+        liveTrackingData.routes = activeTeams.map(team => ({
+            teamId: team._id || team.id,
+            teamName: team.name,
+            status: 'active',
+            currentLocation: team.currentLocation || team.location,
+            assignedTickets: team.ticketsInProgress || team.currentTickets?.length || 0
+        }));
         
         liveTrackingData.lastUpdate = new Date();
         liveTrackingCache.lastUpdate = now;
@@ -8095,14 +8111,14 @@ async function loadLiveTrackingData() {
         // Update Malaysia zones with live data
         updateMalaysiaZones(liveTrackingData.teams, liveTrackingData.tickets);
         
-        console.log('✅ Live tracking data loaded from backend:', {
+        console.log('✅ Live tracking data loaded from ticketv2 API:', {
             teams: liveTrackingData.teams.length,
             tickets: liveTrackingData.tickets.length,
             routes: liveTrackingData.routes.length
         });
         
     } catch (error) {
-        console.error('❌ Error loading live tracking data from backend:', error);
+        console.error('❌ Error loading live tracking data from ticketv2 API:', error);
         console.log('🔄 Falling back to simulated data...');
         
         // Fallback to simulated data
