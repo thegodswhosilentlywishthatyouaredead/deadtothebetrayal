@@ -1188,6 +1188,9 @@ function updateTrendElement(trendId, changeId, change, suffix) {
         const isPositive = numChange >= 0;
         const absChange = Math.abs(numChange);
         
+        // Determine arrow symbol
+        const arrow = isPositive ? '↑' : '↓';
+        
         // Format the number based on whether it's a percentage or whole number
         let formattedValue;
         if (suffix.includes('%')) {
@@ -1200,8 +1203,8 @@ function updateTrendElement(trendId, changeId, change, suffix) {
         
         trendElement.className = `metric-trend ${isPositive ? 'trend-up' : 'trend-down'}`;
         trendElement.innerHTML = `
-            <i class="fas fa-arrow-${isPositive ? 'up' : 'down'}"></i>
-            <span id="${changeId}">${formattedValue}${suffix}</span>
+            <span style="font-size: 0.875rem; font-weight: 600;">${arrow}</span>
+            <span id="${changeId}" style="font-size: 0.8125rem; font-weight: 500;">${formattedValue}${suffix}</span>
         `;
     }
 }
