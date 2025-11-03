@@ -523,8 +523,11 @@
 
                 <div class="demo-credentials">
                     <h6>Demo Credentials:</h6>
-                    <p><strong>Team ID:</strong> <code>team001</code></p>
-                    <p><strong>Password:</strong> <code>field123</code></p>
+                    <p><strong>Team ID:</strong> Enter any team ID from API (e.g., <code>team_76b3ad1a</code>) or team name (e.g., <code>Nurul Ibrahim</code>)</p>
+                    <p><strong>Password:</strong> Any password containing <code>field</code> (e.g., <code>field123</code>)</p>
+                    <p class="text-muted" style="font-size: 0.85rem; margin-top: 10px;">
+                        <i class="fas fa-info-circle"></i> Login fetches real teams from backend API at port 5002
+                    </p>
                 </div>
             </div>
         </div>
@@ -612,25 +615,103 @@
             }
         }
 
-        function authenticate(formType, credentials) {
-            return new Promise((resolve) => {
-                // Simulate API call
-                setTimeout(() => {
-                    if (formType === 'hq') {
+        async function authenticate(formType, credentials) {
+            const API_BASE = 'http://localhost:5002/api';
+            
+            if (formType === 'hq') {
+                // HQ login - simple hardcoded check
+                return new Promise((resolve) => {
+                    setTimeout(() => {
                         if (credentials.username === 'admin' && credentials.password === 'admin123') {
                             resolve({ success: true, redirect: 'index.html' });
                         } else {
                             resolve({ success: false, message: 'Invalid username or password' });
                         }
-                    } else if (formType === 'field') {
-                        if (credentials.teamId === 'team001' && credentials.password === 'field123') {
-                            resolve({ success: true, redirect: 'field-portal.html' });
-                        } else {
-                            resolve({ success: false, message: 'Invalid team ID or password' });
-                        }
+                    }, 500);
+                });
+            } else if (formType === 'field') {
+                // Field team login - fetch real teams from API
+                try {
+                    console.log('🔐 Authenticating field team...');
+                    
+                    // Fetch teams from backend API
+                    const response = await fetch(`${API_BASE}/teams`);
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch teams from API');
                     }
-                }, 1500);
-            });
+                    
+                    const data = await response.json();
+                    const teams = data.teams || [];
+                    
+                    console.log(`✅ Fetched ${teams.length} teams from API`);
+                    
+                    // For development: Accept any password with 'field' in it
+                    // In production, you'd verify against real credentials
+                    if (!credentials.password.toLowerCase().includes('field')) {
+                        return { 
+                            success: false, 
+                            message: 'Invalid password. Use password containing "field"' 
+                        };
+                    }
+                    
+                    // Find team by ID or name
+                    const team = teams.find(t => 
+                        (t.id || t._id) === credentials.teamId || 
+                        (t.name || t.teamName || '').toLowerCase() === credentials.teamId.toLowerCase()
+                    );
+                    
+                    if (team) {
+                        const teamId = team.id || team._id;
+                        const teamName = team.name || team.teamName || team.team_name;
+                        
+                        console.log('✅ Team found:', { id: teamId, name: teamName });
+                        
+                        // Store team data for field portal
+                        localStorage.setItem('currentTeamId', teamId);
+                        localStorage.setItem('field_team_id', teamId);
+                        localStorage.setItem('currentUser', teamName);
+                        
+                        return { 
+                            success: true, 
+                            redirect: 'field-portal.html',
+                            teamId: teamId,
+                            teamName: teamName
+                        };
+                    } else {
+                        // If no match found, randomly select a team for demo
+                        if (teams.length > 0) {
+                            const randomTeam = teams[Math.floor(Math.random() * Math.min(20, teams.length))];
+                            const teamId = randomTeam.id || randomTeam._id;
+                            const teamName = randomTeam.name || randomTeam.teamName;
+                            
+                            console.log('⚠️ Team ID not found, randomly selected:', { id: teamId, name: teamName });
+                            
+                            // Store team data
+                            localStorage.setItem('currentTeamId', teamId);
+                            localStorage.setItem('field_team_id', teamId);
+                            localStorage.setItem('currentUser', teamName);
+                            
+                            return { 
+                                success: true, 
+                                redirect: 'field-portal.html',
+                                teamId: teamId,
+                                teamName: teamName
+                            };
+                        }
+                        
+                        return { 
+                            success: false, 
+                            message: 'No teams available in API' 
+                        };
+                    }
+                } catch (error) {
+                    console.error('❌ Field team authentication error:', error);
+                    return { 
+                        success: false, 
+                        message: 'Failed to connect to backend API at port 5002' 
+                    };
+                }
+            }
         }
 
         // HQ Login Form Handler
