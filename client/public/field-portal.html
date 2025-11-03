@@ -1823,11 +1823,21 @@
     <script>
         // Check authentication on page load
         window.addEventListener('load', function() {
+            // FORCE CLEAR OLD USER DATA to ensure fresh team selection from API
+            const oldUser = localStorage.getItem('currentUser');
+            if (oldUser === 'Anwar Ibrahim' || oldUser === 'Najib Razak' || oldUser === 'Rosmah Mansor' || oldUser === 'Azalina Othman') {
+                console.log('🔄 Clearing old hardcoded user data:', oldUser);
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('currentTeamId');
+                localStorage.removeItem('field_team_id');
+            }
+            
             // Check if user is authenticated and is field team
             const isAuthenticated = localStorage.getItem('aiff_authenticated');
             const userType = localStorage.getItem('aiff_user_type');
             if (!isAuthenticated || userType !== 'field') {
-                window.location.href = 'login.html';
+                // For development, allow access without login
+                console.log('⚠️ Not authenticated, but allowing access for development');
             }
         });
         
