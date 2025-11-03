@@ -968,38 +968,76 @@ async function loadQuickStats() {
         console.log('📊 Stats data for', currentUser, ':', { 
             totalTickets: allTickets.length, 
             userTickets: userTickets.length, 
-            teams: allTeams.length 
+            teams: allTeams.length,
+            currentUserId: currentUserId
         });
         
-        // Calculate date ranges
+        // DEBUG: Log sample assignments
+        if (userTickets.length > 0) {
+            console.log('📊 Sample user ticket:', {
+                id: userTickets[0]._id || userTickets[0].id,
+                assignedTeam: userTickets[0].assignedTeam,
+                createdAt: userTickets[0].createdAt,
+                status: userTickets[0].status
+            });
+        } else {
+            console.log('⚠️ No tickets found for user:', currentUser, 'with ID:', currentUserId);
+            // Log sample tickets to debug
+            if (allTickets.length > 0) {
+                console.log('📊 Sample ticket from all tickets:', {
+                    id: allTickets[0]._id || allTickets[0].id,
+                    assignedTeam: allTickets[0].assignedTeam,
+                    createdAt: allTickets[0].createdAt
+                });
+            }
+        }
+        
+        // Calculate date ranges - use UTC to avoid timezone issues
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
         
         // Filter tickets by date (using user's tickets only)
         const todayTickets = userTickets.filter(t => {
-            const date = new Date(t.created_at || t.createdAt);
-            return date >= today;
+            const createdAt = t.created_at || t.createdAt;
+            if (!createdAt) return false;
+            const date = new Date(createdAt);
+            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return ticketDate >= today;
         });
         
         const yesterdayTickets = userTickets.filter(t => {
-            const date = new Date(t.created_at || t.createdAt);
-            return date >= yesterday && date < today;
+            const createdAt = t.created_at || t.createdAt;
+            if (!createdAt) return false;
+            const date = new Date(createdAt);
+            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return ticketDate >= yesterday && ticketDate < today;
         });
         
         const monthlyTickets = userTickets.filter(t => {
-            const date = new Date(t.created_at || t.createdAt);
-            return date >= monthStart;
+            const createdAt = t.created_at || t.createdAt;
+            if (!createdAt) return false;
+            const date = new Date(createdAt);
+            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return ticketDate >= monthStart;
         });
         
-        // Today's completed tickets (user's tickets only)
+        console.log('📊 Date filtering results:', {
+            today: todayTickets.length,
+            yesterday: yesterdayTickets.length,
+            monthly: monthlyTickets.length,
+            total: userTickets.length
+        });
+        
+        // Today's completed tickets (user's tickets only) - check completion date
         const todayCompleted = userTickets.filter(t => {
-            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
+            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            return date >= today;
+            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return completionDate >= today;
         }).length;
         
         // Yesterday's completed (user's tickets only)
@@ -1007,7 +1045,8 @@ async function loadQuickStats() {
             const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            return date >= yesterday && date < today;
+            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return completionDate >= yesterday && completionDate < today;
         }).length;
         
         // Monthly completed (user's tickets only)
@@ -1015,8 +1054,15 @@ async function loadQuickStats() {
             const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            return date >= monthStart;
+            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+            return completionDate >= monthStart;
         }).length;
+        
+        console.log('📊 Completion stats:', {
+            todayCompleted,
+            yesterdayCompleted,
+            monthlyCompleted
+        });
         
         // Calculate efficiency with better data handling (user's tickets only)
         const resolvedTickets = userTickets.filter(t => t.resolved_at || t.resolvedAt);
@@ -1048,10 +1094,17 @@ async function loadQuickStats() {
             efficiencyRate = allTeams.length > 0 ? (teamProductivity / allTeams.length) : 85;
         }
         
-        // Calculate average rating
-        const avgRating = allTeams.length > 0 
-            ? allTeams.reduce((sum, team) => sum + (team.rating || 4.5), 0) / allTeams.length
-            : 4.50;
+        // Calculate average rating from teams or user's team specifically
+        let avgRating = 4.50;
+        if (allTeams.length > 0) {
+            const userTeam = allTeams.find(t => (t.id || t._id) === currentUserId);
+            if (userTeam && userTeam.productivity) {
+                avgRating = userTeam.productivity.customerRating || 4.50;
+            } else {
+                avgRating = allTeams.reduce((sum, team) => 
+                    sum + (team.productivity?.customerRating || team.rating || 4.5), 0) / allTeams.length;
+            }
+        }
         
         // Calculate earnings
         const hourlyRate = allTeams[0]?.hourlyRate || 45.00;
