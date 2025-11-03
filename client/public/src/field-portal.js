@@ -1177,70 +1177,63 @@ async function loadQuickStats() {
         const earningsYesterday = yesterdayCompleted * hourlyRate * 1.5;
         const earningsMonthly = monthlyCompleted * hourlyRate * 1.5;
         
-        // Update UI - Today's Tickets
-        updateFieldElement('today-tickets', todayTickets.length);
-        updateFieldElement('yesterday-tickets', yesterdayTickets.length);
-        updateFieldElement('monthly-tickets-stat', monthlyTickets.length);
-        
-        const ticketChange = yesterdayTickets.length > 0 
-            ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
+        // Calculate completion rate for today (performance metric)
+        const todayCompletionRate = todayTickets.length > 0 
+            ? (todayCompleted / todayTickets.length * 100) 
             : 0;
-        updateFieldTrend('today-tickets-trend', 'today-tickets-change', ticketChange, '% vs yesterday');
         
-        // Update UI - Completed
-        updateFieldElement('completed-tickets', todayCompleted);
-        updateFieldElement('yesterday-completed', yesterdayCompleted);
-        updateFieldElement('monthly-completed-stat', monthlyCompleted);
+        // Calculate today's working hours
+        const todayHoursWorked = todayCompleted * avgResolutionTime;
         
-        const completedChange = yesterdayCompleted > 0
-            ? ((todayCompleted - yesterdayCompleted) / yesterdayCompleted * 100)
-            : 0;
-        updateFieldTrend('completed-trend', 'completed-change', completedChange, '% vs yesterday');
+        // Calculate today's cost
+        const todayCost = todayHoursWorked * hourlyRate;
         
         // Ensure efficiency rate is not 0
         if (efficiencyRate === 0) {
             efficiencyRate = Math.random() * 20 + 75; // Random between 75-95%
         }
         
-        // Update UI - Performance
-        updateFieldElement('avg-rating', avgRating.toFixed(1));
-        updateFieldElement('efficiency-rate', `${efficiencyRate.toFixed(2)}%`);
-        updateFieldElement('avg-time', `${avgResolutionTime.toFixed(2)}h`);
+        // Update UI - Card 1: Total Tickets
+        updateFieldElement('total-tickets', userTickets.length);
         
-        const ratingChange = 0.2; // Sample change
-        updateFieldTrend('rating-trend', 'rating-change', ratingChange, ' points this month');
+        // Update UI - Card 2: Today's Tickets
+        updateFieldElement('today-tickets', todayTickets.length);
+        updateFieldElement('today-tickets-created', todayTickets.length);
+        updateFieldElement('today-tickets-completed', todayCompleted);
         
-        // Update UI - Earnings
-        updateFieldElement('earnings-today', `RM ${earningsToday.toFixed(2)}`);
-        updateFieldElement('yesterday-earnings', `RM ${earningsYesterday.toFixed(2)}`);
-        updateFieldElement('monthly-earnings', `RM ${earningsMonthly.toFixed(2)}`);
+        // Update UI - Card 3: Today's Performance
+        updateFieldElement('today-performance', `${todayCompletionRate.toFixed(1)}%`);
+        updateFieldElement('today-efficiency', `${efficiencyRate.toFixed(1)}%`);
+        updateFieldElement('today-rating', avgRating.toFixed(1));
         
-        const earningsChange = earningsYesterday > 0
-            ? ((earningsToday - earningsYesterday) / earningsYesterday * 100)
-            : 0;
-        updateFieldTrend('earnings-trend', 'earnings-change', earningsChange, '% vs yesterday');
+        // Update UI - Card 4: Today's Cost
+        updateFieldElement('today-cost', `RM ${todayCost.toFixed(2)}`);
+        updateFieldElement('today-hours', `${todayHoursWorked.toFixed(1)}h`);
         
-        console.log('✅ Enhanced quick stats updated for', currentUser, ':', {
-            userTicketsTotal: userTickets.length,
+        console.log('✅ Simplified KPI cards updated for', currentUser, ':', {
+            totalTickets: userTickets.length,
             todayTickets: todayTickets.length,
-            yesterdayTickets: yesterdayTickets.length,
-            monthlyTickets: monthlyTickets.length,
-            todayCompleted,
-            yesterdayCompleted,
-            monthlyCompleted,
-            efficiency: efficiencyRate.toFixed(2),
-            rating: avgRating.toFixed(1),
-            earningsToday: `RM ${earningsToday.toFixed(2)}`
+            todayCompleted: todayCompleted,
+            todayCompletionRate: todayCompletionRate.toFixed(1) + '%',
+            todayEfficiency: efficiencyRate.toFixed(1) + '%',
+            todayRating: avgRating.toFixed(1),
+            todayCost: `RM ${todayCost.toFixed(2)}`,
+            todayHours: todayHoursWorked.toFixed(1) + 'h'
         });
         
     } catch (error) {
         console.error('❌ Error loading quick stats:', error);
         console.error('Error details:', error.stack);
-        // Set fallback values
+        // Set fallback values for simplified KPI cards
+        updateFieldElement('total-tickets', 0);
         updateFieldElement('today-tickets', 0);
-        updateFieldElement('completed-tickets', 0);
-        updateFieldElement('avg-rating', '4.50');
-        updateFieldElement('earnings-today', 'RM 0.00');
+        updateFieldElement('today-tickets-created', 0);
+        updateFieldElement('today-tickets-completed', 0);
+        updateFieldElement('today-performance', '0%');
+        updateFieldElement('today-efficiency', '0%');
+        updateFieldElement('today-rating', '0.0');
+        updateFieldElement('today-cost', 'RM 0.00');
+        updateFieldElement('today-hours', '0h');
     }
 }
 
