@@ -424,12 +424,33 @@ async function loadMyTickets() {
             return status === 'cancelled';
         });
         
-        // Mix the tickets to show realistic distribution - include more completed tickets
+        // Filter for TODAY's tickets only (user requested only today's tickets in basket)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const todayOpenTickets = openTickets.filter(t => {
+            const created = new Date(t.created_at || t.createdAt);
+            created.setHours(0, 0, 0, 0);
+            return created >= today;
+        });
+        
+        const todayInProgressTickets = inProgressTickets.filter(t => {
+            const created = new Date(t.created_at || t.createdAt);
+            created.setHours(0, 0, 0, 0);
+            return created >= today;
+        });
+        
+        console.log('🎫 Today\'s tickets for user:', {
+            todayOpen: todayOpenTickets.length,
+            todayInProgress: todayInProgressTickets.length,
+            totalOpen: openTickets.length,
+            totalInProgress: inProgressTickets.length
+        });
+        
+        // Show TODAY's OPEN and IN_PROGRESS tickets (user requested only today's open tickets)
         myTickets = [
-            ...openTickets.slice(0, Math.min(5, openTickets.length)), // More open tickets
-            ...inProgressTickets.slice(0, Math.min(3, inProgressTickets.length)), // More in-progress
-            ...resolvedTickets.slice(0, Math.min(15, resolvedTickets.length)), // More completed tickets
-            ...cancelledTickets.slice(0, Math.min(2, cancelledTickets.length)) // Some cancelled
+            ...todayOpenTickets,
+            ...todayInProgressTickets
         ];
         
         // If no completed tickets from backend, generate some sample completed tickets
@@ -438,14 +459,13 @@ async function loadMyTickets() {
             myTickets = [...myTickets, ...sampleCompletedTickets];
         }
         
-        console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
-            open: openTickets.length,
-            inProgress: inProgressTickets.length,
-            resolved: resolvedTickets.length,
-            allStatuses: [...new Set(myTickets.map(t => t.status))]
+        console.log('🎫 Field portal myTickets array set to:', myTickets.length, 'tickets (TODAY ONLY)', {
+            todayOpen: todayOpenTickets.length,
+            todayInProgress: todayInProgressTickets.length
         });
         
         if (myTickets.length === 0) {
+            console.warn('⚠️ No tickets for user today - creating fallback sample tickets');
             // Show sample data
             myTickets = [
                 {
@@ -566,7 +586,8 @@ async function loadMyTickets() {
             ];
         }
         
-        displayMyTickets();
+        // Display OPEN tickets by default (as requested by user)
+        displayMyTickets('open');
     } catch (error) {
         console.error('Error loading my tickets:', error);
         showSampleData();
@@ -576,11 +597,13 @@ async function loadMyTickets() {
 // Display my tickets
 let currentTicketFilter = 'all';
 
-function displayMyTickets(filter = 'all') {
+function displayMyTickets(filter = 'open') {  // DEFAULT to 'open' to show only open tickets
     const container = document.getElementById('my-tickets-list');
     if (!container) return;
     
     container.innerHTML = '';
+    
+    console.log('🎫 displayMyTickets called with filter:', filter, '| Total myTickets:', myTickets.length);
     
     // Filter tickets based on status with improved matching
     let filteredTickets = myTickets;
@@ -945,11 +968,29 @@ async function loadQuickStats() {
         const currentUserId = await getCurrentUserId(currentUser);
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         
+        // CRITICAL CHECK: If currentUserId is null/undefined, we cannot filter!
+        if (!currentUserId || currentUserId === 'null' || currentUserId === 'undefined') {
+            console.error('❌ CRITICAL ERROR: currentUserId is NULL/INVALID!');
+            console.error('❌ Cannot filter tickets without valid user ID');
+            console.error('❌ currentUser:', currentUser);
+            console.error('❌ currentUserId:', currentUserId);
+            console.error('❌ localStorage.currentTeamId:', localStorage.getItem('currentTeamId'));
+            console.error('❌ This will cause ALL tickets to be shown!');
+            
+            // Force set fallback values
+            updateFieldElement('total-tickets', 0);
+            updateFieldElement('today-tickets', 0);
+            updateFieldElement('today-performance', '0%');
+            updateFieldElement('today-cost', 'RM 0.00');
+            return; // Exit early
+        }
+        
         // Filter tickets for current user only (support ticketv2 structure)
         // CRITICAL: Only match by team ID, NOT by zone (zone filtering is too broad)
         console.log('🔍 Filtering tickets for user:', {
             currentUser,
             currentUserId,
+            currentUserIdType: typeof currentUserId,
             totalTickets: allTickets.length
         });
         
@@ -1363,13 +1404,15 @@ async function loadRouteData() {
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         console.log('🌍 User zone for routing:', userZone);
         
-        // Filter for current user's open tickets with zone-based fallback (support ticketv2 structure)
+        // Filter for OPEN tickets assigned to current user ONLY (no zone filtering for routes)
         let assignedTickets = allTickets.filter(ticket => {
+            if (!currentUserId) return false;
+            
             // Check if ticket is assigned to current user (support ticketv2 structure)
             const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
             const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this (most important)
             
             const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
             const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
@@ -1378,17 +1421,14 @@ async function loadRouteData() {
             
             const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // Zone-based assignment: if no specific assignment, check if ticket is in user's zone (ticketv2 uses location.zone)
-            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
-            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
-            
-            // Only show open/in-progress tickets assigned to current user OR in user's zone (ticketv2 uses lowercase)
+            // Only show OPEN tickets assigned to this user (no zone filtering)
             const ticketStatus = (ticket.status || '').toLowerCase();
-            const isOpenTicket = ticketStatus === 'open' || ticketStatus === 'assigned' || 
-                                ticketStatus === 'in_progress' || ticketStatus === 'in-progress';
+            const isOpenTicket = ticketStatus === 'open' || ticketStatus === 'assigned';
             
-            return (isMyTicket || isInUserZone) && isOpenTicket;
+            return isMyTicket && isOpenTicket;
         });
+        
+        console.log('🗺️ Route tickets (OPEN only for logged user):', assignedTickets.length);
         
         console.log('🗺️ Found', assignedTickets.length, 'open tickets for', currentUser);
         
@@ -2134,7 +2174,7 @@ function startTicket(ticketId) {
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'in-progress';
-        displayMyTickets();
+        displayMyTickets('open');  // Show only open tickets after action
         showNotification('Ticket started successfully!', 'success');
     }
 }
@@ -2144,7 +2184,7 @@ function completeTicket(ticketId) {
     if (ticket) {
         ticket.status = 'completed';
         ticket.completedAt = new Date().toISOString();
-        displayMyTickets();
+        displayMyTickets('open');  // Show only open tickets after completing
         loadQuickStats();
         showNotification('Ticket completed successfully!', 'success');
     }
@@ -2154,7 +2194,7 @@ function pauseTicket(ticketId) {
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'assigned';
-        displayMyTickets();
+        displayMyTickets('open');  // Show only open tickets after pausing
         showNotification('Ticket paused', 'info');
     }
 }
