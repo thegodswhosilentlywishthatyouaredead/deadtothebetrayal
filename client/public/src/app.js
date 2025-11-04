@@ -2453,135 +2453,152 @@ async function loadTickets(page = 1, limit = ticketsPerPage) {
 function updateTicketsTabMetrics(allTickets) {
     console.log('📊 Updating Tickets tab metrics...', allTickets.length);
     
-    // Use ALL tickets for total overview calculations
-    const totalTickets = allTickets.length;
+    // CRITICAL FIX: Filter for TODAY's tickets only
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
-    // Calculate status breakdown from ALL tickets
-    const resolvedTickets = allTickets.filter(t => 
+    const todayTickets = allTickets.filter(ticket => {
+        if (!ticket.createdAt && !ticket.created_at) return false;
+        const ticketDate = new Date(ticket.createdAt || ticket.created_at);
+        ticketDate.setHours(0, 0, 0, 0);
+        return ticketDate.getTime() === today.getTime();
+    });
+    
+    console.log('📅 Today filter:', {
+        allTickets: allTickets.length,
+        todayTickets: todayTickets.length,
+        todayDate: today.toISOString()
+    });
+    
+    // TOTAL TICKETS = CUMULATIVE (all tickets assigned to teams)
+    const totalTicketsAssigned = allTickets.filter(t => t.assignedTeam || t.assigned_team || t.assigned_team_id).length;
+    
+    // Calculate TODAY's status breakdown (from todayTickets ONLY)
+    const todayResolved = todayTickets.filter(t => 
         t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || 
         t.status === 'completed' || t.status === 'resolved' || t.status === 'closed'
     ).length;
     
-    const pendingTickets = allTickets.filter(t => 
+    const todayPending = todayTickets.filter(t => 
         t.status === 'OPEN' || t.status === 'IN_PROGRESS' || 
         t.status === 'open' || t.status === 'in_progress'
     ).length;
     
-    const criticalTickets = allTickets.filter(t => 
+    const todayCritical = todayTickets.filter(t => 
         t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'CRITICAL' ||
         t.priority === 'emergency' || t.priority === 'high' || t.priority === 'critical'
     ).length;
     
-    console.log('📊 Total overview metrics:', {
-        total: totalTickets,
-        resolved: resolvedTickets,
-        pending: pendingTickets,
-        critical: criticalTickets
+    console.log('📊 Today metrics calculated:', {
+        todayTotal: todayTickets.length,
+        todayResolved: todayResolved,
+        todayPending: todayPending,
+        todayCritical: todayCritical
     });
     
-    // Calculate overall resolution rate from ALL tickets
-    const resolutionRate = totalTickets > 0 
-        ? ((resolvedTickets / totalTickets) * 100).toFixed(2)
+    // Calculate TODAY's resolution rate (from todayTickets ONLY)
+    const todayResolutionRate = todayTickets.length > 0 
+        ? ((todayResolved / todayTickets.length) * 100).toFixed(2)
         : 0;
     
-    // Calculate average resolution time from ALL resolved tickets
-    const resolvedWithTime = allTickets.filter(t => 
+    // Calculate TODAY's average resolution time (from TODAY's resolved tickets ONLY)
+    const todayResolvedWithTime = todayTickets.filter(t => 
         (t.resolvedAt || t.resolved_at || t.completed_at || t.completedAt) &&
         (t.status === 'resolved' || t.status === 'closed' || t.status === 'completed')
     );
     
-    let avgResolutionTime = 0;
-    if (resolvedWithTime.length > 0) {
-        const totalTime = resolvedWithTime.reduce((sum, t) => {
+    let todayAvgResolutionTime = 0;
+    if (todayResolvedWithTime.length > 0) {
+        const totalTime = todayResolvedWithTime.reduce((sum, t) => {
             const created = new Date(t.createdAt || t.created_at);
             const resolved = new Date(t.resolvedAt || t.resolved_at || t.completed_at || t.completedAt);
             const hours = (resolved - created) / (1000 * 60 * 60);
             return sum + hours;
         }, 0);
-        avgResolutionTime = (totalTime / resolvedWithTime.length).toFixed(2);
+        todayAvgResolutionTime = (totalTime / todayResolvedWithTime.length).toFixed(2);
     } else {
-        avgResolutionTime = 2.5;  // Default fallback
+        todayAvgResolutionTime = 0;  // No resolved tickets today yet
     }
     
-    // Calculate average customer satisfaction from teams
-    const avgSatisfaction = window.fieldTeams && window.fieldTeams.length > 0
-        ? (window.fieldTeams.reduce((sum, t) => sum + (t.productivity?.customerRating || t.rating || 4.5), 0) / window.fieldTeams.length).toFixed(1)
-        : 4.5;
-    
-    // Calculate assigned percentage from ALL tickets
-    const assignedTickets = allTickets.filter(t => t.assigned_team_id || t.assignedTeam).length;
-    const assignedRate = totalTickets > 0
-        ? ((assignedTickets / totalTickets) * 100).toFixed(2)
+    // Calculate TODAY's customer satisfaction (from TODAY's tickets)
+    const todayWithRatings = todayTickets.filter(t => t.customerRating || t.rating);
+    const todayAvgSatisfaction = todayWithRatings.length > 0
+        ? (todayWithRatings.reduce((sum, t) => sum + (t.customerRating || t.rating || 0), 0) / todayWithRatings.length).toFixed(1)
         : 0;
     
-    // Update UI with TOTAL OVERVIEW data
-    updateElement('tickets-total', formatNumberWithCommas(totalTickets));
-    updateElement('tickets-pending', formatNumberWithCommas(pendingTickets));
-    updateElement('tickets-resolved', formatNumberWithCommas(resolvedTickets));
-    updateElement('tickets-critical', formatNumberWithCommas(criticalTickets));
-    updateElement('tickets-efficiency', `${resolutionRate}%`);
-    updateElement('tickets-avg-time', `${avgResolutionTime}h`);
-    updateElement('tickets-satisfaction', avgSatisfaction);
-    updateElement('tickets-assigned', `${assignedRate}%`);
+    // Calculate TODAY's auto-assigned percentage (from todayTickets ONLY)
+    const todayAssigned = todayTickets.filter(t => t.assigned_team_id || t.assignedTeam).length;
+    const todayAutoAssignedRate = todayTickets.length > 0
+        ? ((todayAssigned / todayTickets.length) * 100).toFixed(2)
+        : 0;
     
-    // Calculate comparison data (vs yesterday)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Update UI with TODAY's data (not cumulative)
+    updateElement('tickets-total', formatNumberWithCommas(totalTicketsAssigned));  // ONLY cumulative one
+    updateElement('tickets-pending', formatNumberWithCommas(todayPending));  // TODAY only
+    updateElement('tickets-resolved', formatNumberWithCommas(todayResolved));  // TODAY only
+    updateElement('tickets-critical', formatNumberWithCommas(todayCritical));  // TODAY only
+    updateElement('tickets-efficiency', `${todayResolutionRate}%`);  // TODAY only
+    updateElement('tickets-avg-time', `${todayAvgResolutionTime}h`);  // TODAY only
+    updateElement('tickets-satisfaction', todayAvgSatisfaction);  // TODAY only
+    updateElement('tickets-assigned', `${todayAutoAssignedRate}%`);  // TODAY only
+    
+    // Calculate comparison data (today vs yesterday)
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     
     const yesterdayTickets = allTickets.filter(ticket => {
+        if (!ticket.createdAt && !ticket.created_at) return false;
         const ticketDate = new Date(ticket.created_at || ticket.createdAt);
         ticketDate.setHours(0, 0, 0, 0);
         return ticketDate.getTime() === yesterday.getTime();
     });
     
     const yesterdayTotal = yesterdayTickets.length;
-    const yesterdayResolved = yesterdayTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || t.status === 'completed').length;
+    const yesterdayResolved = yesterdayTickets.filter(t => t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || t.status === 'completed' || t.status === 'resolved' || t.status === 'closed').length;
     const yesterdayPending = yesterdayTickets.filter(t => t.status === 'OPEN' || t.status === 'IN_PROGRESS' || t.status === 'open' || t.status === 'in_progress').length;
-    const yesterdayCritical = yesterdayTickets.filter(t => t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'emergency' || t.priority === 'high').length;
+    const yesterdayCritical = yesterdayTickets.filter(t => t.priority === 'EMERGENCY' || t.priority === 'HIGH' || t.priority === 'CRITICAL' || t.priority === 'emergency' || t.priority === 'high' || t.priority === 'critical').length;
     const yesterdayResolutionRate = yesterdayTotal > 0 ? ((yesterdayResolved / yesterdayTotal) * 100).toFixed(2) : 0;
-    const yesterdayAssignedTickets = yesterdayTickets.filter(t => t.assigned_team_id).length;
+    const yesterdayAssignedTickets = yesterdayTickets.filter(t => t.assigned_team_id || t.assignedTeam).length;
     const yesterdayAutoAssignedRate = yesterdayTotal > 0 ? ((yesterdayAssignedTickets / yesterdayTotal) * 100).toFixed(2) : 0;
     
-    // Calculate trend changes (total overview vs yesterday)
-    const totalChange = yesterdayTotal > 0 && totalTickets > yesterdayTotal 
-        ? (((yesterdayTotal) / totalTickets) * 100).toFixed(1) 
-        : 0;
+    // Calculate trend changes (today vs yesterday)
     const pendingChange = yesterdayPending > 0 
-        ? (((pendingTickets - yesterdayPending) / yesterdayPending) * 100).toFixed(1) 
-        : 0;
+        ? (((todayPending - yesterdayPending) / yesterdayPending) * 100).toFixed(1) 
+        : todayPending > 0 ? '+100' : '0';
     const resolvedChange = yesterdayResolved > 0 
-        ? (((resolvedTickets - yesterdayResolved) / yesterdayResolved) * 100).toFixed(1) 
-        : 0;
+        ? (((todayResolved - yesterdayResolved) / yesterdayResolved) * 100).toFixed(1) 
+        : todayResolved > 0 ? '+100' : '0';
     const criticalChange = yesterdayCritical > 0 
-        ? (criticalTickets - yesterdayCritical) 
-        : criticalTickets;
+        ? (todayCritical - yesterdayCritical) 
+        : todayCritical;
     const efficiencyChange = yesterdayResolutionRate > 0 
-        ? (resolutionRate - yesterdayResolutionRate).toFixed(1) 
-        : resolutionRate;
+        ? (todayResolutionRate - yesterdayResolutionRate).toFixed(1) 
+        : todayResolutionRate;
+    const assignedChange = yesterdayAutoAssignedRate > 0
+        ? (todayAutoAssignedRate - yesterdayAutoAssignedRate).toFixed(1)
+        : todayAutoAssignedRate;
     
     // Update trend indicators
-    updateElement('tickets-total-change', `Total system tickets`);
-    updateElement('tickets-pending-change', `${pendingChange >= 0 ? '+' : ''}${pendingChange}% change`);
-    updateElement('tickets-resolved-change', `${resolvedChange >= 0 ? '+' : ''}${resolvedChange}% change`);
-    updateElement('tickets-critical-change', `${criticalChange >= 0 ? '+' : ''}${criticalChange} change`);
-    updateElement('tickets-efficiency-change', `${efficiencyChange >= 0 ? '+' : ''}${efficiencyChange}% overall`);
-    updateElement('tickets-avg-time-change', `${avgResolutionTime}h avg time`);
-    updateElement('tickets-satisfaction-change', `${avgSatisfaction} rating`);
-    updateElement('tickets-assigned-change', `${assignedRate}% assigned`);
+    updateElement('tickets-total-change', `Total assigned to teams`);
+    updateElement('tickets-pending-change', `${pendingChange >= 0 ? '+' : ''}${pendingChange}% vs yesterday`);
+    updateElement('tickets-resolved-change', `${resolvedChange >= 0 ? '+' : ''}${resolvedChange}% vs yesterday`);
+    updateElement('tickets-critical-change', `${criticalChange >= 0 ? '+' : ''}${criticalChange} vs yesterday`);
+    updateElement('tickets-efficiency-change', `${efficiencyChange >= 0 ? '+' : ''}${efficiencyChange}% vs yesterday`);
+    updateElement('tickets-avg-time-change', `${todayAvgResolutionTime}h today`);
+    updateElement('tickets-satisfaction-change', `${todayAvgSatisfaction} today`);
+    updateElement('tickets-assigned-change', `${assignedChange >= 0 ? '+' : ''}${assignedChange}% vs yesterday`);
     
-    // Update comparison data
+    // Update comparison data (yesterday and last month)
     updateTicketsComparisonData(allTickets);
     
-    console.log('✅ Total tickets overview metrics updated:', {
-        total: totalTickets,
-        resolved: resolvedTickets,
-        pending: pendingTickets,
-        critical: criticalTickets,
-        resolutionRate: resolutionRate,
-        avgTime: avgResolutionTime,
-        assignedRate: assignedRate
+    console.log('✅ Tickets tab metrics updated (TODAY only):', {
+        totalAssigned: totalTicketsAssigned,  // CUMULATIVE
+        todayPending: todayPending,  // TODAY
+        todayResolved: todayResolved,  // TODAY
+        todayCritical: todayCritical,  // TODAY
+        todayResolutionRate: todayResolutionRate,  // TODAY
+        todayAvgTime: todayAvgResolutionTime,  // TODAY
+        todayAutoAssigned: todayAutoAssignedRate  // TODAY
     });
 }
 

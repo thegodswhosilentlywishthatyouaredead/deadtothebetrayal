@@ -38,6 +38,15 @@ except ImportError:
     ENHANCED_AVAILABLE = False
     print("⚠️  Enhanced data generator not available, using sample data only")
 
+# Try to import intelligent assignment engine
+try:
+    from intelligent_assignment_engine import IntelligentAssignmentEngine
+    INTELLIGENT_ASSIGNMENT_AVAILABLE = True
+    print("✅ Intelligent Assignment Engine available")
+except ImportError:
+    INTELLIGENT_ASSIGNMENT_AVAILABLE = False
+    print("⚠️  Intelligent Assignment Engine not available")
+
 app = Flask(__name__)
 CORS(app)
 
@@ -1830,12 +1839,301 @@ def generate_intelligent_response(message, context, language='en'):
         else:
             return f"<p>👋 Helo! Saya nBOTS, pembantu AI anda.</p><p>Anda boleh tanya saya tentang:</p><ul><li>📈 Prestasi dan metrik anda</li><li>🎫 Tiket dan tugasan anda</li><li>💡 Petua pengoptimuman</li><li>🔧 Panduan penyelesaian masalah</li></ul><p>Penilaian semasa anda: ⭐ {context['rating']}/5</p>"
 
+# ============================================================================
+# INTELLIGENT ASSIGNMENT SYSTEM - Daily Ticket Assignment Microservice
+# ============================================================================
+
+@app.route('/api/assignment/daily/run', methods=['POST'])
+def run_daily_assignment():
+    """
+    Trigger daily intelligent ticket assignment
+    
+    POST /api/assignment/daily/run
+    Body (optional): {
+        "date": "2025-11-04",  // Optional: specific date (default: today)
+        "force": false         // Optional: force reassignment of existing
+    }
+    
+    Returns: Assignment results with statistics
+    """
+    try:
+        if not INTELLIGENT_ASSIGNMENT_AVAILABLE:
+            return jsonify({
+                'error': 'Intelligent Assignment Engine not available',
+                'message': 'Please ensure intelligent_assignment_engine.py is in the project directory'
+            }), 503
+        
+        data = request.get_json() if request.is_json else {}
+        
+        # Get assignment date
+        assignment_date_str = data.get('date')
+        if assignment_date_str:
+            assignment_date = datetime.fromisoformat(assignment_date_str)
+        else:
+            assignment_date = datetime.now()
+        
+        force_reassign = data.get('force', False)
+        
+        print(f"\n🚀 API: Running daily assignment for {assignment_date.strftime('%Y-%m-%d')}")
+        
+        # Create engine instance
+        engine = IntelligentAssignmentEngine(tickets, field_teams)
+        
+        # Run assignment
+        result = engine.run_daily_assignment(assignment_date)
+        
+        # Update global assignments if successful
+        if result['success'] and result['assignments']:
+            # Merge new assignments into global list
+            new_assignments = result['assignments']
+            
+            if force_reassign:
+                # Clear existing assignments for the day
+                global assignments
+                assignment_date_start = assignment_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                assignments = [a for a in assignments if a.get('assignedAt', '') < assignment_date_start.isoformat()]
+            
+            assignments.extend(new_assignments)
+            
+            print(f"✅ Added {len(new_assignments)} new assignments")
+            print(f"📊 Total assignments now: {len(assignments)}")
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"❌ Error in daily assignment: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/assignment/daily/status', methods=['GET'])
+def get_daily_assignment_status():
+    """
+    Get status of daily assignments
+    
+    GET /api/assignment/daily/status?date=2025-11-04
+    
+    Returns: Statistics about assignments for the day
+    """
+    try:
+        # Get date parameter
+        date_str = request.args.get('date')
+        if date_str:
+            target_date = datetime.fromisoformat(date_str)
+        else:
+            target_date = datetime.now()
+        
+        date_start = target_date.replace(hour=0, minute=0, second=0, microsecond=0)
+        date_end = date_start + timedelta(days=1)
+        
+        # Filter assignments for the day
+        daily_assignments = [
+            a for a in assignments 
+            if a.get('assignedAt') and 
+            date_start.isoformat() <= a['assignedAt'] < date_end.isoformat()
+        ]
+        
+        # Calculate statistics
+        team_counts = {}
+        zone_counts = {}
+        priority_counts = {}
+        
+        for assignment in daily_assignments:
+            # Count by team
+            team_id = assignment.get('teamId')
+            team_counts[team_id] = team_counts.get(team_id, 0) + 1
+            
+            # Count by zone
+            zone = assignment.get('location', {}).get('zone', 'Unknown')
+            zone_counts[zone] = zone_counts.get(zone, 0) + 1
+            
+            # Count by priority
+            priority = assignment.get('priority', 'medium')
+            priority_counts[priority] = priority_counts.get(priority, 0) + 1
+        
+        stats = {
+            'date': target_date.strftime('%Y-%m-%d'),
+            'total_assignments': len(daily_assignments),
+            'teams_utilized': len(team_counts),
+            'teams_at_capacity': sum(1 for count in team_counts.values() if count >= 5),
+            'by_zone': zone_counts,
+            'by_priority': priority_counts,
+            'team_distribution': {
+                'min': min(team_counts.values()) if team_counts else 0,
+                'max': max(team_counts.values()) if team_counts else 0,
+                'avg': round(sum(team_counts.values()) / len(team_counts), 2) if team_counts else 0
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'date': target_date.isoformat(),
+            'statistics': stats,
+            'assignments': daily_assignments[:100]  # Return first 100 for preview
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/assignment/daily/schedule', methods=['POST'])
+def schedule_daily_assignment():
+    """
+    Schedule daily assignment to run automatically
+    
+    POST /api/assignment/daily/schedule
+    Body: {
+        "enabled": true,
+        "time": "06:00",  // Time to run daily (24-hour format)
+        "timezone": "Asia/Kuala_Lumpur"
+    }
+    
+    Returns: Scheduling status
+    """
+    try:
+        data = request.get_json()
+        enabled = data.get('enabled', True)
+        run_time = data.get('time', '06:00')
+        timezone = data.get('timezone', 'Asia/Kuala_Lumpur')
+        
+        # For now, return configuration (actual scheduling would use APScheduler or cron)
+        return jsonify({
+            'success': True,
+            'message': 'Daily assignment scheduler configured',
+            'schedule': {
+                'enabled': enabled,
+                'time': run_time,
+                'timezone': timezone,
+                'next_run': f"{datetime.now().strftime('%Y-%m-%d')} {run_time}:00"
+            },
+            'note': 'For production, use system cron or APScheduler for automated runs'
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/assignment/analyze', methods=['POST'])
+def analyze_assignment_potential():
+    """
+    Analyze assignment potential before running
+    
+    POST /api/assignment/analyze
+    Body: {
+        "date": "2025-11-04",
+        "teamId": "team_123"  // Optional: analyze specific team
+    }
+    
+    Returns: Analysis of what would happen if assignment runs
+    """
+    try:
+        if not INTELLIGENT_ASSIGNMENT_AVAILABLE:
+            return jsonify({'error': 'Intelligent Assignment Engine not available'}), 503
+        
+        data = request.get_json() if request.is_json else {}
+        
+        # Get parameters
+        assignment_date_str = data.get('date')
+        if assignment_date_str:
+            assignment_date = datetime.fromisoformat(assignment_date_str)
+        else:
+            assignment_date = datetime.now()
+        
+        specific_team_id = data.get('teamId')
+        
+        # Create engine for analysis
+        engine = IntelligentAssignmentEngine(tickets, field_teams)
+        
+        # Analyze (dry run)
+        unassigned = len([t for t in tickets if not t.get('assignedTeam') or t.get('status') == 'open'])
+        available_teams = len([t for t in field_teams if t.get('availability', {}).get('status') in ['available', 'busy']])
+        
+        # Calculate capacity
+        total_capacity = available_teams * 5  # Max 5 per team
+        
+        # Zone analysis
+        zone_demand = {}
+        for ticket in tickets:
+            if ticket.get('status') in ['open', 'in_progress']:
+                state = ticket.get('location', {}).get('state', 'Unknown')
+                zone = engine._get_zone_for_state(state)
+                if zone:
+                    zone_demand[zone] = zone_demand.get(zone, 0) + 1
+        
+        analysis = {
+            'date': assignment_date.strftime('%Y-%m-%d'),
+            'unassigned_tickets': unassigned,
+            'available_teams': available_teams,
+            'total_capacity': total_capacity,
+            'capacity_utilization': round((unassigned / total_capacity * 100), 2) if total_capacity > 0 else 0,
+            'zone_demand': zone_demand,
+            'estimated_assignments': min(unassigned, total_capacity),
+            'recommendation': _get_assignment_recommendation(unassigned, total_capacity)
+        }
+        
+        # Specific team analysis
+        if specific_team_id:
+            team = next((t for t in field_teams if t['_id'] == specific_team_id), None)
+            if team:
+                team_tickets = [t for t in tickets if t.get('assignedTeam') == specific_team_id]
+                analysis['team_analysis'] = {
+                    'team_id': specific_team_id,
+                    'team_name': team.get('name'),
+                    'current_tickets': len(team_tickets),
+                    'completed_today': len([t for t in team_tickets if t.get('status') == 'closed']),
+                    'remaining_capacity': 5 - team.get('availability', {}).get('todayAssigned', 0),
+                    'efficiency': team.get('efficiencyScore', 0),
+                    'zone': team.get('zone')
+                }
+        
+        return jsonify({
+            'success': True,
+            'analysis': analysis,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+def _get_assignment_recommendation(unassigned: int, capacity: int) -> str:
+    """Generate recommendation based on capacity analysis"""
+    if capacity == 0:
+        return "❌ No teams available - cannot assign tickets"
+    elif unassigned > capacity * 1.2:
+        return "⚠️  High demand - consider adding more teams or extending capacity"
+    elif unassigned > capacity:
+        return "⚠️  Demand exceeds capacity - some tickets may be delayed"
+    elif unassigned < capacity * 0.5:
+        return "✅ Low demand - teams have spare capacity for additional work"
+    else:
+        return "✅ Demand matches capacity - optimal assignment possible"
+
 # Load sample data on startup
 load_sample_data()
 
 # Load enhanced data (15,000 tickets) - adds to existing data
 if ENHANCED_AVAILABLE:
     load_enhanced_data()
+
+# Run daily assignment on startup (optional - can be disabled)
+def run_assignment_on_startup():
+    """Run intelligent assignment when server starts"""
+    if INTELLIGENT_ASSIGNMENT_AVAILABLE:
+        try:
+            print("\n🤖 Running Intelligent Assignment Engine on startup...")
+            engine = IntelligentAssignmentEngine(tickets, field_teams)
+            result = engine.run_daily_assignment()
+            
+            if result['success']:
+                assignments.extend(result['assignments'])
+                print(f"✅ Startup assignment complete: {result['statistics']['total_assignments']} tickets assigned")
+            else:
+                print("⚠️  Startup assignment returned no results")
+        except Exception as e:
+            print(f"⚠️  Startup assignment error: {e}")
+            print("   Continuing with existing data...")
+
+# Optionally run assignment on startup (comment out to disable)
+# run_assignment_on_startup()
 
 if __name__ == '__main__':
     print("\n🚀 Starting AIFF Backend Server...")
@@ -1844,5 +2142,9 @@ if __name__ == '__main__':
     print("🌐 Server will be available at: http://localhost:5002")
     print("🔗 API endpoints ready for frontend integration")
     print("📁 Static files served from client directory")
+    print("\n📋 Intelligent Assignment System:")
+    print("   Trigger manually: POST http://localhost:5002/api/assignment/daily/run")
+    print("   Check status: GET http://localhost:5002/api/assignment/daily/status")
+    print("   Analyze: POST http://localhost:5002/api/assignment/analyze")
     
     app.run(host='0.0.0.0', port=5002, debug=True)
