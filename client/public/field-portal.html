@@ -1424,62 +1424,69 @@
             <div class="quick-stats">
                 <div class="stat-card">
                     <div class="stat-header">
-                        <div class="stat-title">Total Tickets Assigned</div>
+                        <div class="stat-title">Today's Tickets</div>
                         <div class="stat-icon blue">
-                            <i class="fas fa-list"></i>
-                        </div>
-                    </div>
-                    <div class="stat-value" id="total-tickets">0</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>Yesterday: <span id="yesterday-total-tickets">0</span> | Last Month: <span id="lastmonth-total-tickets">0</span></small>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-title">Today's Tickets Assigned</div>
-                        <div class="stat-icon green">
                             <i class="fas fa-ticket-alt"></i>
                         </div>
                     </div>
                     <div class="stat-value" id="today-tickets">0</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>Yesterday: <span id="yesterday-tickets">0</span> | Last Month: <span id="lastmonth-tickets">0</span></small>
+                    <div class="stat-change positive" id="today-tickets-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="today-tickets-change">Loading...</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
-                        <small>Completed Today: <span id="today-tickets-completed">0</span></small>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-tickets">0</span> | Monthly: <span id="monthly-tickets-stat">0</span></small>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
-                        <div class="stat-title">Today's Performance</div>
-                        <div class="stat-icon orange">
-                            <i class="fas fa-chart-line"></i>
+                        <div class="stat-title">Completed Today</div>
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
                         </div>
                     </div>
-                    <div class="stat-value" id="today-performance">0%</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>Yesterday: <span id="yesterday-performance">0%</span> | Last Month: <span id="lastmonth-performance">0%</span></small>
+                    <div class="stat-value" id="completed-tickets">0</div>
+                    <div class="stat-change positive" id="completed-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="completed-change">Loading...</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
-                        <small>Efficiency: <span id="today-efficiency">0%</span> | Rating: <span id="today-rating">0.0</span></small>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-completed">0</span> | Monthly: <span id="monthly-completed-stat">0</span></small>
                     </div>
                 </div>
 
                 <div class="stat-card">
                     <div class="stat-header">
-                        <div class="stat-title">Today's Cost</div>
+                        <div class="stat-title">Customer Rating</div>
+                        <div class="stat-icon orange">
+                            <i class="fas fa-star"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="avg-rating">0.0</div>
+                    <div class="stat-change positive" id="rating-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="rating-change">Loading...</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Efficiency: <span id="efficiency-rate">0%</span> | Avg Time: <span id="avg-time">0h</span></small>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-title">Earnings Today</div>
                         <div class="stat-icon red">
                             <i class="fas fa-money-bill-wave"></i>
                         </div>
                     </div>
-                    <div class="stat-value" id="today-cost">RM 0</div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
-                        <small>Yesterday: <span id="yesterday-cost">RM 0</span> | Last Month: <span id="lastmonth-cost">RM 0</span></small>
+                    <div class="stat-value" id="earnings-today">RM 0</div>
+                    <div class="stat-change positive" id="earnings-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span id="earnings-change">Loading...</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.25rem;">
-                        <small>Based on <span id="today-hours">0h</span> worked</small>
+                    <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">
+                        <small>Yesterday: <span id="yesterday-earnings">RM 0</span> | Monthly: <span id="monthly-earnings">RM 0</span></small>
                     </div>
                 </div>
             </div>
@@ -1816,21 +1823,11 @@
     <script>
         // Check authentication on page load
         window.addEventListener('load', function() {
-            // FORCE CLEAR OLD USER DATA to ensure fresh team selection from API
-            const oldUser = localStorage.getItem('currentUser');
-            if (oldUser === 'Anwar Ibrahim' || oldUser === 'Najib Razak' || oldUser === 'Rosmah Mansor' || oldUser === 'Azalina Othman') {
-                console.log('🔄 Clearing old hardcoded user data:', oldUser);
-                localStorage.removeItem('currentUser');
-                localStorage.removeItem('currentTeamId');
-                localStorage.removeItem('field_team_id');
-            }
-            
             // Check if user is authenticated and is field team
             const isAuthenticated = localStorage.getItem('aiff_authenticated');
             const userType = localStorage.getItem('aiff_user_type');
             if (!isAuthenticated || userType !== 'field') {
-                // For development, allow access without login
-                console.log('⚠️ Not authenticated, but allowing access for development');
+                window.location.href = 'login.html';
             }
         });
         
@@ -1844,7 +1841,7 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/field-portal.js?v=22"></script>
+    <script src="/src/field-portal.js?v=4"></script>
     
     <!-- Fallback functions in case scripts don't load -->
     <script>
@@ -1948,4 +1945,3 @@
     </script>
 </body>
 </html>
-

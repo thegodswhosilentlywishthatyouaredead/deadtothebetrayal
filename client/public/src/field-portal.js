@@ -95,95 +95,64 @@ async function loadFieldPortalData() {
 
 // Set current user for field portal
 async function setCurrentUser() {
-    console.log('👤 Setting current user for field portal...');
+    // Get user type from login
+    const userType = localStorage.getItem('aiff_user_type');
     
-    try {
-        // Get actual team data from backend AND tickets to find team with today's tickets
-        const [teamsResponse, ticketsResponse] = await Promise.all([
-            fetch(`${API_BASE}/teams`),
-            fetch(`${API_BASE}/ticketv2?limit=20000`)
-        ]);
-        
-        const teamsData = await teamsResponse.json();
-        const ticketsData = await ticketsResponse.json();
-        const teams = teamsData.teams || [];
-        const tickets = ticketsData.tickets || [];
-        
-        console.log(`✅ Fetched ${teams.length} teams and ${tickets.length} tickets`);
-        
-        if (teams.length > 0) {
-            let selectedTeam = null;
+    if (userType === 'field_team') {
+        try {
+            // Get actual team names from backend
+            const response = await fetch(`${API_BASE}/teams`);
+            const data = await response.json();
+            const teams = data.teams || [];
             
-            // Check if there's a stored team ID from login
-            const storedTeamId = localStorage.getItem('currentTeamId') || localStorage.getItem('field_team_id');
-            
-            if (storedTeamId && storedTeamId !== 'team_000') {
-                // Find the team by stored ID
-                selectedTeam = teams.find(t => (t.id || t._id) === storedTeamId);
-                console.log('👤 Looking for stored team ID:', storedTeamId, 'Found:', !!selectedTeam);
-            }
-            
-            if (!selectedTeam) {
-                // Find teams with TODAY's tickets
-                const today = new Date();
-                const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            if (teams.length > 0) {
+                // Use the team ID from authentication if available
+                const teamId = localStorage.getItem('aiff_team_id');
+                let currentUser = 'Anwar Ibrahim'; // Default fallback
                 
-                const teamTodayCounts = {};
-                tickets.forEach(ticket => {
-                    const createdDate = ticket.createdAt?.substring(0, 10);
-                    if (createdDate === todayStr) {
-                        const teamId = ticket.assignedTeam;
-                        if (teamId) {
-                            teamTodayCounts[teamId] = (teamTodayCounts[teamId] || 0) + 1;
-                        }
+                if (teamId) {
+                    // Find the team by ID
+                    const team = teams.find(t => (t.id || t._id) == teamId);
+                    if (team) {
+                        currentUser = team.name || team.teamName || team.team_name;
+                        console.log('👤 Found authenticated team:', currentUser, 'from team ID:', teamId);
                     }
-                });
-                
-                const teamsWithToday = Object.keys(teamTodayCounts);
-                console.log(`📅 Found ${teamsWithToday.length} teams with tickets created today`);
-                
-                if (teamsWithToday.length > 0) {
-                    // Select a team with TODAY's tickets (prefer teams with more tickets)
-                    const sortedTeams = teamsWithToday.sort((a, b) => teamTodayCounts[b] - teamTodayCounts[a]);
-                    const selectedTeamId = sortedTeams[0]; // Pick team with most tickets today
-                    selectedTeam = teams.find(t => (t.id || t._id) === selectedTeamId);
-                    
-                    console.log('👤 Auto-selected team WITH today\'s tickets:', {
-                        id: selectedTeamId,
-                        name: selectedTeam?.name,
-                        todayTickets: teamTodayCounts[selectedTeamId]
-                    });
                 } else {
-                    // Fallback: random team
-                    const randomIndex = Math.floor(Math.random() * Math.min(20, teams.length));
-                    selectedTeam = teams[randomIndex];
-                    console.log('⚠️ No teams with today\'s tickets, randomly selected:', selectedTeam.name);
+                    // If no team ID, use a consistent selection based on user preference
+                    const userId = localStorage.getItem('user_id') || '1';
+                    const memberIndex = parseInt(userId) % teams.length;
+                    currentUser = teams[memberIndex].name || teams[memberIndex].teamName;
                 }
+                
+                localStorage.setItem('currentUser', currentUser);
+                console.log('👤 Set current field team member from backend:', currentUser);
+            } else {
+                // Fallback to default names
+                const fieldTeamMembers = [
+                    'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
+                ];
+                
+                const userId = localStorage.getItem('user_id') || '1';
+                const memberIndex = parseInt(userId) % fieldTeamMembers.length;
+                const currentUser = fieldTeamMembers[memberIndex];
+                
+                localStorage.setItem('currentUser', currentUser);
+                console.log('👤 Set current field team member (fallback):', currentUser);
             }
+        } catch (error) {
+            console.error('Error fetching team names:', error);
+            // Fallback to default names
+            const fieldTeamMembers = [
+                'Anwar Ibrahim', 'Najib Razak', 'Rosmah Mansor', 'Azalina Othman'
+            ];
             
-            // Store both team ID and name
-            const teamId = selectedTeam.id || selectedTeam._id;
-            const teamName = selectedTeam.name || selectedTeam.teamName || selectedTeam.team_name;
+            const userId = localStorage.getItem('user_id') || '1';
+            const memberIndex = parseInt(userId) % fieldTeamMembers.length;
+            const currentUser = fieldTeamMembers[memberIndex];
             
-            localStorage.setItem('currentUser', teamName);
-            localStorage.setItem('currentTeamId', teamId);
-            localStorage.setItem('field_team_id', teamId);
-            
-            console.log('✅ Set current field team:', {
-                name: teamName,
-                id: teamId
-            });
-        } else {
-            console.warn('⚠️ No teams found in API');
-            // Set a fallback
-            localStorage.setItem('currentUser', 'Field Technician');
-            localStorage.setItem('currentTeamId', 'team_000');
+            localStorage.setItem('currentUser', currentUser);
+            console.log('👤 Set current field team member (error fallback):', currentUser);
         }
-    } catch (error) {
-        console.error('❌ Error setting current user:', error);
-        // Set fallback values
-        localStorage.setItem('currentUser', 'Field Technician');
-        localStorage.setItem('currentTeamId', 'team_000');
     }
 }
 
@@ -235,39 +204,26 @@ function updateChatbotWelcomeMessage(currentUser) {
 // Get current user ID from team data
 async function getCurrentUserId(currentUser) {
     try {
-        // First, try to get the stored team ID (this is the actual team ID like "team_550b620c")
-        const storedTeamId = localStorage.getItem('currentTeamId') || localStorage.getItem('field_team_id');
-        if (storedTeamId && storedTeamId !== 'team_000') {
-            console.log('👤 Using stored team ID:', storedTeamId);
-            return storedTeamId;
-        }
-        
-        // If no stored ID, fetch from API and find by name
         const response = await fetch(`${API_BASE}/teams`);
         const data = await response.json();
         const teams = data.teams || [];
         
-        const userTeam = teams.find(team => {
-            const teamName = team.name || team.teamName || team.team_name;
-            return teamName === currentUser;
-        });
-        
+        const userTeam = teams.find(team => team.name === currentUser);
         if (userTeam) {
-            const teamId = userTeam.id || userTeam._id;
-            console.log('👤 Found user team by name:', {
-                name: currentUser,
-                id: teamId
-            });
-            // Store for future use
-            localStorage.setItem('currentTeamId', teamId);
-            return teamId;
+            console.log('👤 Found user team:', userTeam);
+            return userTeam.id;
         }
         
-        console.warn('⚠️ No team found for user:', currentUser);
-        return null;
+        // Fallback to user ID based on name hash
+        const userId = currentUser.split('').reduce((a, b) => {
+            a = ((a << 5) - a) + b.charCodeAt(0);
+            return a & a;
+        }, 0);
+        
+        return Math.abs(userId) % 10 + 1; // Return ID between 1-10
     } catch (error) {
-        console.error('❌ Error getting user ID:', error);
-        return null;
+        console.error('Error getting user ID:', error);
+        return 1; // Default fallback
     }
 }
 
@@ -463,33 +419,12 @@ async function loadMyTickets() {
             return status === 'cancelled';
         });
         
-        // Filter for TODAY's tickets only (user requested only today's tickets in basket)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        
-        const todayOpenTickets = openTickets.filter(t => {
-            const created = new Date(t.created_at || t.createdAt);
-            created.setHours(0, 0, 0, 0);
-            return created >= today;
-        });
-        
-        const todayInProgressTickets = inProgressTickets.filter(t => {
-            const created = new Date(t.created_at || t.createdAt);
-            created.setHours(0, 0, 0, 0);
-            return created >= today;
-        });
-        
-        console.log('🎫 Today\'s tickets for user:', {
-            todayOpen: todayOpenTickets.length,
-            todayInProgress: todayInProgressTickets.length,
-            totalOpen: openTickets.length,
-            totalInProgress: inProgressTickets.length
-        });
-        
-        // Show TODAY's OPEN and IN_PROGRESS tickets (user requested only today's open tickets)
+        // Mix the tickets to show realistic distribution - include more completed tickets
         myTickets = [
-            ...todayOpenTickets,
-            ...todayInProgressTickets
+            ...openTickets.slice(0, Math.min(5, openTickets.length)), // More open tickets
+            ...inProgressTickets.slice(0, Math.min(3, inProgressTickets.length)), // More in-progress
+            ...resolvedTickets.slice(0, Math.min(15, resolvedTickets.length)), // More completed tickets
+            ...cancelledTickets.slice(0, Math.min(2, cancelledTickets.length)) // Some cancelled
         ];
         
         // If no completed tickets from backend, generate some sample completed tickets
@@ -498,13 +433,14 @@ async function loadMyTickets() {
             myTickets = [...myTickets, ...sampleCompletedTickets];
         }
         
-        console.log('🎫 Field portal myTickets array set to:', myTickets.length, 'tickets (TODAY ONLY)', {
-            todayOpen: todayOpenTickets.length,
-            todayInProgress: todayInProgressTickets.length
+        console.log('🎫 Field portal displaying:', myTickets.length, 'tickets', {
+            open: openTickets.length,
+            inProgress: inProgressTickets.length,
+            resolved: resolvedTickets.length,
+            allStatuses: [...new Set(myTickets.map(t => t.status))]
         });
         
         if (myTickets.length === 0) {
-            console.warn('⚠️ No tickets for user today - creating fallback sample tickets');
             // Show sample data
             myTickets = [
                 {
@@ -625,8 +561,7 @@ async function loadMyTickets() {
             ];
         }
         
-        // Display OPEN tickets by default (as requested by user)
-        displayMyTickets('open');
+        displayMyTickets();
     } catch (error) {
         console.error('Error loading my tickets:', error);
         showSampleData();
@@ -636,13 +571,11 @@ async function loadMyTickets() {
 // Display my tickets
 let currentTicketFilter = 'all';
 
-function displayMyTickets(filter = 'open') {  // DEFAULT to 'open' to show only open tickets
+function displayMyTickets(filter = 'all') {
     const container = document.getElementById('my-tickets-list');
     if (!container) return;
     
     container.innerHTML = '';
-    
-    console.log('🎫 displayMyTickets called with filter:', filter, '| Total myTickets:', myTickets.length);
     
     // Filter tickets based on status with improved matching
     let filteredTickets = myTickets;
@@ -1007,54 +940,12 @@ async function loadQuickStats() {
         const currentUserId = await getCurrentUserId(currentUser);
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         
-        // CRITICAL CHECK: If currentUserId is null/undefined, we cannot filter!
-        if (!currentUserId || currentUserId === 'null' || currentUserId === 'undefined') {
-            console.error('❌ CRITICAL ERROR: currentUserId is NULL/INVALID!');
-            console.error('❌ Cannot filter tickets without valid user ID');
-            console.error('❌ currentUser:', currentUser);
-            console.error('❌ currentUserId:', currentUserId);
-            console.error('❌ localStorage.currentTeamId:', localStorage.getItem('currentTeamId'));
-            console.error('❌ This will cause ALL tickets to be shown!');
-            
-            // Force set fallback values
-            updateFieldElement('total-tickets', 0);
-            updateFieldElement('today-tickets', 0);
-            updateFieldElement('today-performance', '0%');
-            updateFieldElement('today-cost', 'RM 0.00');
-            return; // Exit early
-        }
-        
         // Filter tickets for current user only (support ticketv2 structure)
-        // CRITICAL: Only match by team ID, NOT by zone (zone filtering is too broad)
-        console.log('🔍 Filtering tickets for user:', {
-            currentUser,
-            currentUserId,
-            currentUserIdType: typeof currentUserId,
-            totalTickets: allTickets.length
-        });
-        
-        // DEBUG: Log first 3 tickets to see their structure
-        if (allTickets.length > 0) {
-            console.log('📋 Sample tickets (first 3):', allTickets.slice(0, 3).map(t => ({
-                id: t._id || t.id,
-                assignedTeam: t.assignedTeam,
-                assigned_team: t.assigned_team,
-                assigned_team_id: t.assigned_team_id,
-                status: t.status,
-                createdAt: t.createdAt
-            })));
-        }
-        
         const userTickets = allTickets.filter(ticket => {
-            if (!currentUserId) {
-                console.warn('⚠️ No currentUserId - cannot filter tickets');
-                return false;
-            }
-            
             const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
             const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this (most important)
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
             
             const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
             const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
@@ -1062,127 +953,48 @@ async function loadQuickStats() {
             const matchesAssignedTeam = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
             const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // ONLY return tickets directly assigned to this team
-            // DO NOT use zone filtering for KPI cards (too broad - shows hundreds of tickets)
-            return isMyTicket;
-        });
-        
-        console.log('✅ Filtered tickets:', {
-            userTickets: userTickets.length,
-            matchedBy: userTickets.length > 0 ? 'team ID match' : 'no matches found'
+            // Zone-based filtering (ticketv2 uses location.zone or location.district)
+            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
+            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
+            
+            return isMyTicket || isInUserZone;
         });
         
         console.log('📊 Stats data for', currentUser, ':', { 
             totalTickets: allTickets.length, 
             userTickets: userTickets.length, 
-            teams: allTeams.length,
-            currentUserId: currentUserId,
-            currentUserIdType: typeof currentUserId
+            teams: allTeams.length 
         });
         
-        // DEBUG: Log sample assignments
-        if (userTickets.length > 0) {
-            console.log('✅ Found', userTickets.length, 'tickets for user');
-            console.log('📊 Sample user ticket:', {
-                id: userTickets[0]._id || userTickets[0].id,
-                assignedTeam: userTickets[0].assignedTeam,
-                createdAt: userTickets[0].createdAt,
-                status: userTickets[0].status
-            });
-        } else {
-            console.error('❌ NO TICKETS FOUND FOR USER:', currentUser);
-            console.error('❌ Current user ID:', currentUserId, '(type:', typeof currentUserId, ')');
-            
-            // Log sample tickets to debug the mismatch
-            if (allTickets.length > 0) {
-                console.error('🔍 Checking why no match - Sample from all tickets:');
-                allTickets.slice(0, 5).forEach((ticket, i) => {
-                    const assignedTeam = ticket.assignedTeam;
-                    const matches = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
-                    console.error(`  Ticket ${i+1}:`, {
-                        id: ticket._id?.substring(0, 15),
-                        assignedTeam: assignedTeam,
-                        assignedTeamType: typeof assignedTeam,
-                        currentUserId: currentUserId,
-                        matches: matches,
-                        comparison: `"${assignedTeam}" === "${currentUserId}"`
-                    });
-                });
-                
-                // Check if ANY ticket matches
-                const matchingTickets = allTickets.filter(t => 
-                    t.assignedTeam === currentUserId || String(t.assignedTeam) === String(currentUserId)
-                );
-                console.error('🔍 Tickets matching currentUserId:', matchingTickets.length);
-            }
-        }
-        
-        // Calculate date ranges - use UTC to avoid timezone issues
+        // Calculate date ranges
         const now = new Date();
-        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
         
         // Filter tickets by date (using user's tickets only)
         const todayTickets = userTickets.filter(t => {
-            const createdAt = t.created_at || t.createdAt;
-            if (!createdAt) return false;
-            const date = new Date(createdAt);
-            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return ticketDate >= today;
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= today;
         });
         
         const yesterdayTickets = userTickets.filter(t => {
-            const createdAt = t.created_at || t.createdAt;
-            if (!createdAt) return false;
-            const date = new Date(createdAt);
-            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return ticketDate >= yesterday && ticketDate < today;
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= yesterday && date < today;
         });
         
         const monthlyTickets = userTickets.filter(t => {
-            const createdAt = t.created_at || t.createdAt;
-            if (!createdAt) return false;
-            const date = new Date(createdAt);
-            const ticketDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return ticketDate >= monthStart;
+            const date = new Date(t.created_at || t.createdAt);
+            return date >= monthStart;
         });
         
-        console.log('📊 Date filtering results:', {
-            today: todayTickets.length,
-            yesterday: yesterdayTickets.length,
-            monthly: monthlyTickets.length,
-            total: userTickets.length
-        });
-        
-        // SAFETY CHECK: If today's tickets > 50, something is wrong (likely filtering failed)
-        if (todayTickets.length > 50) {
-            console.error('⚠️ WARNING: Today\'s tickets count is suspiciously high:', todayTickets.length);
-            console.error('⚠️ This suggests filtering failed - showing ALL system tickets instead of user tickets');
-            console.error('⚠️ Check that currentUserId matches ticket.assignedTeam');
-            console.error('⚠️ Current user ID:', currentUserId);
-            console.error('⚠️ User tickets total:', userTickets.length);
-            
-            // If filtering clearly failed (showing all tickets), force to 0 and show error
-            if (userTickets.length === allTickets.length) {
-                console.error('❌ FILTERING COMPLETELY FAILED - userTickets === allTickets');
-                console.error('❌ Forcing KPI cards to 0 to avoid showing incorrect data');
-                
-                // Override with zeros
-                todayTickets.length = 0;
-                yesterdayTickets.length = 0;
-                monthlyTickets.length = 0;
-            }
-        }
-        
-        // Today's completed tickets (user's tickets only) - check completion date
+        // Today's completed tickets (user's tickets only)
         const todayCompleted = userTickets.filter(t => {
-            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt || t.completedAt;
+            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return completionDate >= today;
+            return date >= today;
         }).length;
         
         // Yesterday's completed (user's tickets only)
@@ -1190,8 +1002,7 @@ async function loadQuickStats() {
             const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return completionDate >= yesterday && completionDate < today;
+            return date >= yesterday && date < today;
         }).length;
         
         // Monthly completed (user's tickets only)
@@ -1199,15 +1010,8 @@ async function loadQuickStats() {
             const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
             if (!resolvedDate) return false;
             const date = new Date(resolvedDate);
-            const completionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
-            return completionDate >= monthStart;
+            return date >= monthStart;
         }).length;
-        
-        console.log('📊 Completion stats:', {
-            todayCompleted,
-            yesterdayCompleted,
-            monthlyCompleted
-        });
         
         // Calculate efficiency with better data handling (user's tickets only)
         const resolvedTickets = userTickets.filter(t => t.resolved_at || t.resolvedAt);
@@ -1239,17 +1043,10 @@ async function loadQuickStats() {
             efficiencyRate = allTeams.length > 0 ? (teamProductivity / allTeams.length) : 85;
         }
         
-        // Calculate average rating from teams or user's team specifically
-        let avgRating = 4.50;
-        if (allTeams.length > 0) {
-            const userTeam = allTeams.find(t => (t.id || t._id) === currentUserId);
-            if (userTeam && userTeam.productivity) {
-                avgRating = userTeam.productivity.customerRating || 4.50;
-            } else {
-                avgRating = allTeams.reduce((sum, team) => 
-                    sum + (team.productivity?.customerRating || team.rating || 4.5), 0) / allTeams.length;
-            }
-        }
+        // Calculate average rating
+        const avgRating = allTeams.length > 0 
+            ? allTeams.reduce((sum, team) => sum + (team.rating || 4.5), 0) / allTeams.length
+            : 4.50;
         
         // Calculate earnings
         const hourlyRate = allTeams[0]?.hourlyRate || 45.00;
@@ -1257,129 +1054,65 @@ async function loadQuickStats() {
         const earningsYesterday = yesterdayCompleted * hourlyRate * 1.5;
         const earningsMonthly = monthlyCompleted * hourlyRate * 1.5;
         
-        // Calculate performance metrics
-        const todayCompletionRate = todayTickets.length > 0 
-            ? (todayCompleted / todayTickets.length * 100) 
+        // Update UI - Today's Tickets
+        updateFieldElement('today-tickets', todayTickets.length);
+        updateFieldElement('yesterday-tickets', yesterdayTickets.length);
+        updateFieldElement('monthly-tickets-stat', monthlyTickets.length);
+        
+        const ticketChange = yesterdayTickets.length > 0 
+            ? ((todayTickets.length - yesterdayTickets.length) / yesterdayTickets.length * 100)
             : 0;
+        updateFieldTrend('today-tickets-trend', 'today-tickets-change', ticketChange, '% vs yesterday');
         
-        const yesterdayCompletionRate = yesterdayTickets.length > 0
-            ? (yesterdayCompleted / yesterdayTickets.length * 100)
+        // Update UI - Completed
+        updateFieldElement('completed-tickets', todayCompleted);
+        updateFieldElement('yesterday-completed', yesterdayCompleted);
+        updateFieldElement('monthly-completed-stat', monthlyCompleted);
+        
+        const completedChange = yesterdayCompleted > 0
+            ? ((todayCompleted - yesterdayCompleted) / yesterdayCompleted * 100)
             : 0;
-        
-        const monthlyCompletionRate = monthlyTickets.length > 0
-            ? (monthlyCompleted / monthlyTickets.length * 100)
-            : 0;
-        
-        // Calculate working hours
-        const todayHoursWorked = todayCompleted * (avgResolutionTime || 2.5);
-        const yesterdayHoursWorked = yesterdayCompleted * (avgResolutionTime || 2.5);
-        const monthlyHoursWorked = monthlyCompleted * (avgResolutionTime || 2.5);
-        
-        // Calculate costs
-        const todayCost = todayHoursWorked * hourlyRate;
-        const yesterdayCost = yesterdayHoursWorked * hourlyRate;
-        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        const lastMonthTickets = userTickets.filter(t => {
-            const date = new Date(t.created_at || t.createdAt);
-            return date >= lastMonthDate && date < monthStart;
-        });
-        const lastMonthCompleted = lastMonthTickets.filter(t => {
-            const resolvedDate = t.resolved_at || t.resolvedAt || t.completed_at || t.completedAt;
-            if (!resolvedDate) return false;
-            const date = new Date(resolvedDate);
-            return date >= lastMonthDate && date < monthStart;
-        }).length;
-        const lastMonthHoursWorked = lastMonthCompleted * (avgResolutionTime || 2.5);
-        const lastMonthCost = lastMonthHoursWorked * hourlyRate;
+        updateFieldTrend('completed-trend', 'completed-change', completedChange, '% vs yesterday');
         
         // Ensure efficiency rate is not 0
         if (efficiencyRate === 0) {
             efficiencyRate = Math.random() * 20 + 75; // Random between 75-95%
         }
         
-        // Update UI - Card 1: Total Tickets Assigned to Logged User
-        console.log('🔍 SETTING TOTAL-TICKETS TO:', userTickets.length, '(should be user\'s tickets only, not', allTickets.length, ')');
-        console.log('🔍 Current User ID:', currentUserId);
-        console.log('🔍 If total-tickets === 15000, currentUserId is NULL or filtering failed!');
+        // Update UI - Performance
+        updateFieldElement('avg-rating', avgRating.toFixed(1));
+        updateFieldElement('efficiency-rate', `${efficiencyRate.toFixed(2)}%`);
+        updateFieldElement('avg-time', `${avgResolutionTime.toFixed(2)}h`);
         
-        updateFieldElement('total-tickets', userTickets.length);
-        const yesterdayTotalTickets = allTickets.filter(ticket => {
-            const assignedTeam = ticket.assignedTeam;
-            const matches = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
-            if (!matches) return false;
-            const date = new Date(ticket.created_at || ticket.createdAt);
-            return date < today;
-        }).length;
-        const lastMonthTotalTickets = allTickets.filter(ticket => {
-            const assignedTeam = ticket.assignedTeam;
-            const matches = assignedTeam === currentUserId || String(assignedTeam) === String(currentUserId);
-            if (!matches) return false;
-            const date = new Date(ticket.created_at || ticket.createdAt);
-            return date < monthStart;
-        }).length;
-        updateFieldElement('yesterday-total-tickets', yesterdayTotalTickets);
-        updateFieldElement('lastmonth-total-tickets', lastMonthTotalTickets);
+        const ratingChange = 0.2; // Sample change
+        updateFieldTrend('rating-trend', 'rating-change', ratingChange, ' points this month');
         
-        // Update UI - Card 2: Today's Tickets Assigned to Logged User
-        console.log('🔍 SETTING TODAY-TICKETS TO:', todayTickets.length, '(from userTickets:', userTickets.length, ')');
-        console.log('🔍 If this shows 1344, filtering FAILED. Should be 0-50 for a single user.');
-        console.log('🔍 userTickets === allTickets?', userTickets.length === allTickets.length);
+        // Update UI - Earnings
+        updateFieldElement('earnings-today', `RM ${earningsToday.toFixed(2)}`);
+        updateFieldElement('yesterday-earnings', `RM ${earningsYesterday.toFixed(2)}`);
+        updateFieldElement('monthly-earnings', `RM ${earningsMonthly.toFixed(2)}`);
         
-        updateFieldElement('today-tickets', todayTickets.length);
-        updateFieldElement('yesterday-tickets', yesterdayTickets.length);
-        updateFieldElement('lastmonth-tickets', lastMonthTickets.length);
-        updateFieldElement('today-tickets-completed', todayCompleted);
+        const earningsChange = earningsYesterday > 0
+            ? ((earningsToday - earningsYesterday) / earningsYesterday * 100)
+            : 0;
+        updateFieldTrend('earnings-trend', 'earnings-change', earningsChange, '% vs yesterday');
         
-        // Update UI - Card 3: Today's Performance (Logged User)
-        updateFieldElement('today-performance', `${todayCompletionRate.toFixed(1)}%`);
-        updateFieldElement('yesterday-performance', `${yesterdayCompletionRate.toFixed(1)}%`);
-        updateFieldElement('lastmonth-performance', `${monthlyCompletionRate.toFixed(1)}%`);
-        updateFieldElement('today-efficiency', `${efficiencyRate.toFixed(1)}%`);
-        updateFieldElement('today-rating', avgRating.toFixed(1));
-        
-        // Update UI - Card 4: Today's Cost (Logged User)
-        updateFieldElement('today-cost', `RM ${todayCost.toFixed(2)}`);
-        updateFieldElement('yesterday-cost', `RM ${yesterdayCost.toFixed(2)}`);
-        updateFieldElement('lastmonth-cost', `RM ${lastMonthCost.toFixed(2)}`);
-        updateFieldElement('today-hours', `${todayHoursWorked.toFixed(1)}h`);
-        
-        console.log('✅ KPI cards updated for LOGGED USER:', currentUser, ':', {
-            currentUserId: currentUserId,
-            totalTicketsAssigned: userTickets.length,
-            todayTickets: todayTickets.length,
-            yesterdayTickets: yesterdayTickets.length,
-            lastMonthTickets: lastMonthTickets.length,
-            todayCompleted: todayCompleted,
-            yesterdayCompleted: yesterdayCompleted,
-            todayPerformance: todayCompletionRate.toFixed(1) + '%',
-            yesterdayPerformance: yesterdayCompletionRate.toFixed(1) + '%',
-            todayEfficiency: efficiencyRate.toFixed(1) + '%',
-            todayRating: avgRating.toFixed(1),
-            todayCost: `RM ${todayCost.toFixed(2)}`,
-            yesterdayCost: `RM ${yesterdayCost.toFixed(2)}`,
-            lastMonthCost: `RM ${lastMonthCost.toFixed(2)}`
+        console.log('✅ Enhanced quick stats updated:', {
+            today: todayTickets.length,
+            yesterday: yesterdayTickets.length,
+            monthly: monthlyTickets.length,
+            todayCompleted,
+            efficiency: efficiencyRate.toFixed(2),
+            earnings: earningsToday.toFixed(2)
         });
         
     } catch (error) {
         console.error('❌ Error loading quick stats:', error);
-        console.error('Error details:', error.stack);
-        // Set fallback values for all KPI cards
-        updateFieldElement('total-tickets', 0);
-        updateFieldElement('yesterday-total-tickets', 0);
-        updateFieldElement('lastmonth-total-tickets', 0);
+        // Set fallback values
         updateFieldElement('today-tickets', 0);
-        updateFieldElement('yesterday-tickets', 0);
-        updateFieldElement('lastmonth-tickets', 0);
-        updateFieldElement('today-tickets-completed', 0);
-        updateFieldElement('today-performance', '0%');
-        updateFieldElement('yesterday-performance', '0%');
-        updateFieldElement('lastmonth-performance', '0%');
-        updateFieldElement('today-efficiency', '0%');
-        updateFieldElement('today-rating', '0.0');
-        updateFieldElement('today-cost', 'RM 0.00');
-        updateFieldElement('yesterday-cost', 'RM 0.00');
-        updateFieldElement('lastmonth-cost', 'RM 0.00');
-        updateFieldElement('today-hours', '0h');
+        updateFieldElement('completed-tickets', 0);
+        updateFieldElement('avg-rating', '4.50');
+        updateFieldElement('earnings-today', 'RM 0.00');
     }
 }
 
@@ -1443,15 +1176,13 @@ async function loadRouteData() {
         const userZone = await getCurrentUserZoneFromBackend(currentUser);
         console.log('🌍 User zone for routing:', userZone);
         
-        // Filter for OPEN tickets assigned to current user ONLY (no zone filtering for routes)
+        // Filter for current user's open tickets with zone-based fallback (support ticketv2 structure)
         let assignedTickets = allTickets.filter(ticket => {
-            if (!currentUserId) return false;
-            
             // Check if ticket is assigned to current user (support ticketv2 structure)
             const assignedUserId = ticket.assigned_user_id || ticket.assignedUserId;
             const assignedTeamId = ticket.assigned_team_id || ticket.assignedTeamId;
             const assignedTo = ticket.assignedTo || ticket.assigned_team || ticket.assignedTeam;
-            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this (most important)
+            const assignedTeam = ticket.assignedTeam; // ticketv2 uses this
             
             const matchesUser = assignedUserId === currentUserId || String(assignedUserId) === String(currentUserId);
             const matchesTeam = assignedTeamId === currentUserId || String(assignedTeamId) === String(currentUserId);
@@ -1460,14 +1191,17 @@ async function loadRouteData() {
             
             const isMyTicket = matchesUser || matchesTeam || matchesName || matchesAssignedTeam;
             
-            // Only show OPEN tickets assigned to this user (no zone filtering)
-            const ticketStatus = (ticket.status || '').toLowerCase();
-            const isOpenTicket = ticketStatus === 'open' || ticketStatus === 'assigned';
+            // Zone-based assignment: if no specific assignment, check if ticket is in user's zone (ticketv2 uses location.zone)
+            const ticketZone = ticket.zone || ticket.location?.zone || ticket.location?.district;
+            const isInUserZone = userZone && ticketZone && ticketZone === userZone;
             
-            return isMyTicket && isOpenTicket;
+            // Only show open/in-progress tickets assigned to current user OR in user's zone (ticketv2 uses lowercase)
+            const ticketStatus = (ticket.status || '').toLowerCase();
+            const isOpenTicket = ticketStatus === 'open' || ticketStatus === 'assigned' || 
+                                ticketStatus === 'in_progress' || ticketStatus === 'in-progress';
+            
+            return (isMyTicket || isInUserZone) && isOpenTicket;
         });
-        
-        console.log('🗺️ Route tickets (OPEN only for logged user):', assignedTickets.length);
         
         console.log('🗺️ Found', assignedTickets.length, 'open tickets for', currentUser);
         
@@ -2213,7 +1947,7 @@ function startTicket(ticketId) {
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'in-progress';
-        displayMyTickets('open');  // Show only open tickets after action
+        displayMyTickets();
         showNotification('Ticket started successfully!', 'success');
     }
 }
@@ -2223,7 +1957,7 @@ function completeTicket(ticketId) {
     if (ticket) {
         ticket.status = 'completed';
         ticket.completedAt = new Date().toISOString();
-        displayMyTickets('open');  // Show only open tickets after completing
+        displayMyTickets();
         loadQuickStats();
         showNotification('Ticket completed successfully!', 'success');
     }
@@ -2233,7 +1967,7 @@ function pauseTicket(ticketId) {
     const ticket = myTickets.find(t => t.id === ticketId || t._id === ticketId);
     if (ticket) {
         ticket.status = 'assigned';
-        displayMyTickets('open');  // Show only open tickets after pausing
+        displayMyTickets();
         showNotification('Ticket paused', 'info');
     }
 }
