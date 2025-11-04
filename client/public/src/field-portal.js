@@ -98,28 +98,67 @@ async function setCurrentUser() {
     console.log('👤 Setting current user for field portal...');
     
     try {
-        // Get actual team data from backend
-        const response = await fetch(`${API_BASE}/teams`);
-        const data = await response.json();
-        const teams = data.teams || [];
+        // Get actual team data from backend AND tickets to find team with today's tickets
+        const [teamsResponse, ticketsResponse] = await Promise.all([
+            fetch(`${API_BASE}/teams`),
+            fetch(`${API_BASE}/ticketv2?limit=20000`)
+        ]);
+        
+        const teamsData = await teamsResponse.json();
+        const ticketsData = await ticketsResponse.json();
+        const teams = teamsData.teams || [];
+        const tickets = ticketsData.tickets || [];
+        
+        console.log(`✅ Fetched ${teams.length} teams and ${tickets.length} tickets`);
         
         if (teams.length > 0) {
             let selectedTeam = null;
             
             // Check if there's a stored team ID from login
-            const storedTeamId = localStorage.getItem('aiff_team_id') || localStorage.getItem('field_team_id');
+            const storedTeamId = localStorage.getItem('currentTeamId') || localStorage.getItem('field_team_id');
             
-            if (storedTeamId) {
+            if (storedTeamId && storedTeamId !== 'team_000') {
                 // Find the team by stored ID
                 selectedTeam = teams.find(t => (t.id || t._id) === storedTeamId);
                 console.log('👤 Looking for stored team ID:', storedTeamId, 'Found:', !!selectedTeam);
             }
             
             if (!selectedTeam) {
-                // If no stored team or team not found, select a random team
-                const randomIndex = Math.floor(Math.random() * Math.min(20, teams.length)); // Pick from first 20 teams
-                selectedTeam = teams[randomIndex];
-                console.log('👤 No stored team found, randomly selected:', selectedTeam.name);
+                // Find teams with TODAY's tickets
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+                
+                const teamTodayCounts = {};
+                tickets.forEach(ticket => {
+                    const createdDate = ticket.createdAt?.substring(0, 10);
+                    if (createdDate === todayStr) {
+                        const teamId = ticket.assignedTeam;
+                        if (teamId) {
+                            teamTodayCounts[teamId] = (teamTodayCounts[teamId] || 0) + 1;
+                        }
+                    }
+                });
+                
+                const teamsWithToday = Object.keys(teamTodayCounts);
+                console.log(`📅 Found ${teamsWithToday.length} teams with tickets created today`);
+                
+                if (teamsWithToday.length > 0) {
+                    // Select a team with TODAY's tickets (prefer teams with more tickets)
+                    const sortedTeams = teamsWithToday.sort((a, b) => teamTodayCounts[b] - teamTodayCounts[a]);
+                    const selectedTeamId = sortedTeams[0]; // Pick team with most tickets today
+                    selectedTeam = teams.find(t => (t.id || t._id) === selectedTeamId);
+                    
+                    console.log('👤 Auto-selected team WITH today\'s tickets:', {
+                        id: selectedTeamId,
+                        name: selectedTeam?.name,
+                        todayTickets: teamTodayCounts[selectedTeamId]
+                    });
+                } else {
+                    // Fallback: random team
+                    const randomIndex = Math.floor(Math.random() * Math.min(20, teams.length));
+                    selectedTeam = teams[randomIndex];
+                    console.log('⚠️ No teams with today\'s tickets, randomly selected:', selectedTeam.name);
+                }
             }
             
             // Store both team ID and name
@@ -130,7 +169,7 @@ async function setCurrentUser() {
             localStorage.setItem('currentTeamId', teamId);
             localStorage.setItem('field_team_id', teamId);
             
-            console.log('👤 Set current field team:', {
+            console.log('✅ Set current field team:', {
                 name: teamName,
                 id: teamId
             });
