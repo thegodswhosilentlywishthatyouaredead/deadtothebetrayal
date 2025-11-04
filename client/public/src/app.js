@@ -892,6 +892,11 @@ function showTab(tabName) {
     // Load tab-specific data
     switch(tabName) {
         case 'overview':
+            // Force fresh data load - clear dashboard cache to prevent stale data
+            DataCache.clear('dashboardData');
+            console.log('🗑️ Cleared dashboard cache for fresh data load');
+            // Reload dashboard metrics to ensure correct total tickets
+            loadDashboardData();
             loadRecentTickets();
             loadTeamStatusOverview();
             break;
@@ -1152,6 +1157,11 @@ function updateDashboardMetrics(ticketsData, teamsData, agingData, productivityD
     
     // Update UI - Total Tickets (Overview - show total ASSIGNED tickets, matching Tickets page)
     const totalTickets = tickets.filter(t => t.assignedTeam || t.assigned_team || t.assigned_team_id).length;
+    console.log('✅ MAIN DASHBOARD Total Tickets (ASSIGNED ONLY):', {
+        allTickets: tickets.length,
+        assignedTickets: totalTickets,
+        calculation: 'tickets.filter(assigned)'
+    });
     
     // Calculate yesterday's tickets for comparison
     const yesterday = new Date(today);
@@ -4346,9 +4356,10 @@ function updateAnalyticsKPIs(teams, zones, tickets) {
             tickets: tickets.length
         });
         
-        // Calculate total tickets
-        const totalTickets = tickets.length;
-        updateElement('total-tickets-count', totalTickets);
+        // Calculate total tickets (MUST match Tickets page - only assigned tickets)
+        const totalTickets = tickets.filter(t => t.assignedTeam || t.assigned_team || t.assigned_team_id).length;
+        // DO NOT update total-tickets-count here - it's updated by updateDashboardMetrics
+        // Removed: updateElement('total-tickets-count', totalTickets);
         
         // Calculate completed tickets
         const completedTickets = tickets.filter(t => t.status === 'COMPLETED' || t.status === 'completed').length;
@@ -7205,28 +7216,44 @@ async function loadAnalytics() {
         lastMonth.setDate(1);
         lastMonth.setHours(0, 0, 0, 0);
         
-        // Calculate yesterday's data
+        // Calculate yesterday's data (EXACT day, not range)
+        const todayStart = new Date(now);
+        todayStart.setHours(0, 0, 0, 0);
+        
         const yesterdayTickets = tickets.filter(ticket => {
+            if (!ticket.createdAt && !ticket.created_at) return false;
             const created = new Date(ticket.created_at || ticket.createdAt);
-            return created >= yesterday && created < now;
+            created.setHours(0, 0, 0, 0);
+            return created.getTime() === yesterday.getTime();
         });
         
         const yesterdayCompleted = yesterdayTickets.filter(t => 
-            t.status === 'COMPLETED' || t.status === 'completed'
+            t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || 
+            t.status === 'resolved' || t.status === 'closed' || t.status === 'completed'
         );
         
         const yesterdayActiveTeams = teams.filter(t => 
             t.status === 'available' || t.status === 'busy' || t.is_active
         );
         
-        // Calculate last month's data
+        // Calculate last month's data (entire last month, not including today)
+        const lastMonthStart = new Date(now);
+        lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
+        lastMonthStart.setDate(1);
+        lastMonthStart.setHours(0, 0, 0, 0);
+        
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+        lastMonthEnd.setHours(0, 0, 0, 0);
+        
         const lastMonthTickets = tickets.filter(ticket => {
+            if (!ticket.createdAt && !ticket.created_at) return false;
             const created = new Date(ticket.created_at || ticket.createdAt);
-            return created >= lastMonth && created < now;
+            return created >= lastMonthStart && created < lastMonthEnd;
         });
         
         const lastMonthCompleted = lastMonthTickets.filter(t => 
-            t.status === 'COMPLETED' || t.status === 'completed'
+            t.status === 'RESOLVED' || t.status === 'CLOSED' || t.status === 'COMPLETED' || 
+            t.status === 'resolved' || t.status === 'closed' || t.status === 'completed'
         );
         
         const lastMonthActiveTeams = teams.filter(t => 
@@ -7271,6 +7298,11 @@ async function loadAnalytics() {
         
         updateElement('yesterday-zone', yesterdayCompletionRate);
         updateElement('last-month-zone', monthlyCompletionRate);
+        
+        console.log('✅ Overview KPI comparison data updated:', {
+            yesterday: { tickets: yesterdayTickets.length, completed: yesterdayCompleted.length },
+            lastMonth: { tickets: lastMonthTickets.length, completed: lastMonthCompleted.length }
+        });
     }
 
     function updateKPICardsWithSampleData() {
