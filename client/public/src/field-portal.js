@@ -68,6 +68,22 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeRouteMap();
     initializeCharts();
     
+    // Initialize nBOTS chatbot
+    const chatbotToggle = document.getElementById('ai-chatbot-toggle');
+    if (chatbotToggle) {
+        chatbotToggle.addEventListener('click', toggleFieldAIChatbot);
+        console.log('✅ nBOTS chatbot initialized');
+        
+        // Load initial greeting after a short delay to let other data load first
+        setTimeout(async () => {
+            try {
+                await loadFieldAIPerformanceGreeting();
+            } catch (error) {
+                console.error('Error loading chatbot greeting:', error);
+            }
+        }, 1000);
+    }
+    
     console.log('✅ Field Team Portal initialization complete!');
 });
 
@@ -2056,261 +2072,6 @@ function logout() {
     }
 }
 
-// AI Assistant Functions
-let fieldAIChatHistory = [];
-let isFieldAIVisible = true;
-
-function toggleFieldAIWidget() {
-    const widget = document.getElementById('field-ai-widget');
-    const toggleBtn = document.getElementById('field-ai-toggle-btn');
-    
-    isFieldAIVisible = !isFieldAIVisible;
-    
-    if (isFieldAIVisible) {
-        // Show widget, hide button
-        widget.classList.remove('minimized');
-        toggleBtn.classList.add('hidden');
-        console.log('🤖 AI Assistant opened');
-    } else {
-        // Hide widget, show button
-        widget.classList.add('minimized');
-        toggleBtn.classList.remove('hidden');
-        console.log('🤖 AI Assistant minimized');
-    }
-}
-
-function toggleFieldAI() {
-    // For mobile - expand/collapse widget
-    if (window.innerWidth <= 768) {
-        const widget = document.getElementById('field-ai-widget');
-        widget.classList.toggle('expanded');
-    }
-}
-
-function sendFieldQuickQuery(query) {
-    console.log('🤖 Quick query:', query);
-    sendFieldAIMessage(query);
-}
-
-async function sendFieldAIMessage(customQuery = null) {
-    const input = document.getElementById('field-ai-input');
-    const sendBtn = document.getElementById('field-ai-send-btn');
-    const chatContainer = document.getElementById('field-ai-chat');
-    
-    const query = customQuery || input.value.trim();
-    
-    if (!query) return;
-    
-    console.log('🤖 Sending field AI query:', query);
-    
-    // Clear input
-    if (!customQuery) {
-        input.value = '';
-    }
-    
-    // Disable send button
-    sendBtn.disabled = true;
-    
-    // Add user message
-    addFieldAIMessage(query, 'user');
-    
-    // Show typing indicator
-    showFieldAITyping();
-    
-    try {
-        // Get context data
-        const context = await getFieldTeamContext();
-        
-        // Send to AI API
-        const response = await fetch(`${API_BASE}/ai/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: query,
-                context: 'field_portal',
-                history: fieldAIChatHistory
-            })
-        });
-        
-        const data = await response.json();
-        
-        // Remove typing indicator
-        removeFieldAITyping();
-        
-        // Add AI response
-        addFieldAIMessage(data.response || 'I apologize, but I could not process your request.', 'assistant');
-        
-        // Store in history
-        fieldAIChatHistory.push({
-            query: query,
-            response: data.response,
-            timestamp: new Date().toISOString()
-        });
-        
-        console.log('✅ AI response received');
-        
-    } catch (error) {
-        console.error('❌ Error querying AI:', error);
-        removeFieldAITyping();
-        addFieldAIMessage(
-            'Sorry, I\'m having trouble connecting right now. Please try again in a moment.',
-            'assistant'
-        );
-    } finally {
-        sendBtn.disabled = false;
-    }
-}
-
-async function getFieldTeamContext() {
-    // Get current context for AI
-    try {
-        const ticketsResponse = await fetch(`${API_BASE}/ticketv2?limit=20000`);
-        const ticketsData = await ticketsResponse.json();
-        
-        const teamsResponse = await fetch(`${API_BASE}/teams`);
-        const teamsData = await teamsResponse.json();
-        
-        const myActiveTickets = myTickets.filter(t => 
-            t.status === 'open' || t.status === 'in_progress' || t.status === 'assigned'
-        );
-        
-        return {
-            ticketCount: myTickets.length,
-            activeTickets: myActiveTickets.length,
-            todayTickets: myTickets,
-            performance: {
-                rating: 4.8,
-                efficiency: 92,
-                completedToday: myTickets.filter(t => t.status === 'completed' || t.status === 'resolved').length
-            },
-            totalSystemTickets: ticketsData.total || 0,
-            totalSystemTeams: teamsData.total || 0
-        };
-    } catch (error) {
-        console.error('Error getting context:', error);
-        return {
-            ticketCount: myTickets.length,
-            activeTickets: myTickets.length
-        };
-    }
-}
-
-function addFieldAIMessage(message, type) {
-    const chatContainer = document.getElementById('field-ai-chat');
-    
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `field-ai-message ${type}`;
-    
-    const avatar = type === 'assistant' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
-    
-    messageDiv.innerHTML = `
-        <div class="field-ai-avatar">
-            ${avatar}
-        </div>
-        <div class="field-ai-bubble">
-            ${formatFieldAIMessage(message)}
-        </div>
-    `;
-    
-    chatContainer.appendChild(messageDiv);
-    
-    // Scroll to bottom
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function formatFieldAIMessage(content) {
-    if (!content) return '';
-    
-    // Convert markdown-like formatting to HTML
-    let formatted = content
-        // Bold text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        // Italic text
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        // Code blocks
-        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-        // Inline code
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        // Headers
-        .replace(/^### (.*$)/gm, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gm, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gm, '<h1>$1</h1>')
-        // Lists
-        .replace(/^\- (.*$)/gm, '<li>$1</li>')
-        .replace(/^\* (.*$)/gm, '<li>$1</li>')
-        // Line breaks
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-    
-    // Wrap in paragraph if not already wrapped
-    if (!formatted.includes('<p>') && !formatted.includes('<h') && !formatted.includes('<ul>') && !formatted.includes('<pre>')) {
-        formatted = `<p>${formatted}</p>`;
-    }
-    
-    // Add performance status classes
-    formatted = formatted
-        .replace(/Excellent/g, '<span class="status-excellent">Excellent</span>')
-        .replace(/Good/g, '<span class="status-good">Good</span>')
-        .replace(/Needs Improvement/g, '<span class="status-needs-improvement">Needs Improvement</span>');
-    
-    // Add metric highlighting
-    formatted = formatted
-        .replace(/(\d+\.?\d*%)/g, '<span class="metric-highlight">$1</span>')
-        .replace(/(\d+ tickets?)/gi, '<span class="metric-highlight">$1</span>')
-        .replace(/(\d+\.?\d*% completion rate)/gi, '<span class="metric-highlight">$1</span>');
-    
-    // Wrap performance analysis in cards
-    if (formatted.includes('**Performance Analysis:**')) {
-        formatted = formatted.replace(
-            /(\*\*Performance Analysis:\*\*[\s\S]*?)(?=\*\*|$)/g,
-            '<div class="performance-card">$1</div>'
-        );
-    }
-    
-    // Wrap recommendations in boxes
-    if (formatted.includes('**Recommendation:**') || formatted.includes('**Recommendations:**')) {
-        formatted = formatted.replace(
-            /(\*\*Recommendation[s]?:\*\*[\s\S]*?)(?=\*\*|$)/g,
-            '<div class="recommendation-box">$1</div>'
-        );
-    }
-    
-    return formatted;
-}
-
-function showFieldAITyping() {
-    const chatContainer = document.getElementById('field-ai-chat');
-    
-    const typingDiv = document.createElement('div');
-    typingDiv.className = 'field-ai-message assistant';
-    typingDiv.id = 'field-ai-typing';
-    
-    typingDiv.innerHTML = `
-        <div class="field-ai-avatar">
-            <i class="fas fa-robot"></i>
-        </div>
-        <div class="field-ai-bubble">
-            <div class="field-ai-typing">
-                <div class="field-ai-typing-dot"></div>
-                <div class="field-ai-typing-dot"></div>
-                <div class="field-ai-typing-dot"></div>
-            </div>
-        </div>
-    `;
-    
-    chatContainer.appendChild(typingDiv);
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-}
-
-function removeFieldAITyping() {
-    const typingDiv = document.getElementById('field-ai-typing');
-    if (typingDiv) {
-        typingDiv.remove();
-    }
-}
-
 // ==================== TICKET REPORT FUNCTIONS ====================
 
 let currentReportTicket = null;
@@ -2989,5 +2750,563 @@ Generated: ${new Date().toLocaleString()}
     
     showNotification(`Report downloaded: ${ticketNumber}`, 'success');
 }
+
+// ============================================
+// NBOTS AI CHATBOT FUNCTIONS FOR FIELD PORTAL
+// ============================================
+console.log('🤖 nBOTS chatbot functions loading... [v26]');
+
+let fieldAIChatbotOpen = false;
+let fieldAICurrentLanguage = 'en';
+let fieldAIChatHistory = [];
+
+// Define and expose toggle function IMMEDIATELY
+window.toggleFieldAIChatbot = function toggleFieldAIChatbot() {
+    console.log('🔵 toggleFieldAIChatbot called, current state:', fieldAIChatbotOpen);
+    const chatWindow = document.getElementById('ai-chatbot-window');
+    const badge = document.getElementById('ai-notification-badge');
+    
+    if (!chatWindow) {
+        console.error('❌ Chat window element not found!');
+        return;
+    }
+    
+    fieldAIChatbotOpen = !fieldAIChatbotOpen;
+    console.log('🔵 New state:', fieldAIChatbotOpen);
+    
+    if (fieldAIChatbotOpen) {
+        chatWindow.classList.add('active');
+        if (badge) badge.style.display = 'none';
+        console.log('✅ Chat window opened');
+    } else {
+        chatWindow.classList.remove('active');
+        console.log('✅ Chat window closed');
+    }
+};
+
+console.log('✅ toggleFieldAIChatbot exposed:', typeof window.toggleFieldAIChatbot);
+
+// Also expose as named function for local scope
+const toggleFieldAIChatbot = window.toggleFieldAIChatbot;
+
+async function clearFieldAIChat() {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        messagesContainer.innerHTML = `
+            <div class="ai-message ai-assistant">
+                <div class="ai-avatar">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div class="ai-content">
+                    <p style="text-align: center; color: #64748b; font-size: 12px;">
+                        <i class="fas fa-spinner fa-spin"></i> Loading performance insights...
+                    </p>
+                </div>
+            </div>
+        `;
+    }
+    fieldAIChatHistory = [];
+    await loadFieldAIPerformanceGreeting();
+}
+window.clearFieldAIChat = clearFieldAIChat;
+
+function switchFieldAILanguage(lang) {
+    fieldAICurrentLanguage = lang;
+    
+    // Update button states
+    const langBtns = document.querySelectorAll('.ai-lang-btn');
+    langBtns.forEach(btn => {
+        if (btn.textContent.toLowerCase() === lang.toUpperCase() || (lang === 'ms' && btn.textContent === 'BM')) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    // Reload greeting in new language
+    loadFieldAIPerformanceGreeting();
+}
+window.switchFieldAILanguage = switchFieldAILanguage;
+
+async function loadFieldAIPerformanceGreeting() {
+    try {
+        // Get current user
+        const currentUserId = getCurrentUserId();
+        
+        // Fetch user's tickets and team data
+        const [ticketsResponse, teamsResponse] = await Promise.all([
+            fetch(`${API_BASE}/ticketv2?limit=20000`),
+            fetch(`${API_BASE}/teams`)
+        ]);
+        
+        const ticketsData = await ticketsResponse.json();
+        const teamsData = await teamsResponse.json();
+        
+        const allTickets = ticketsData.tickets || [];
+        const allTeams = teamsData.teams || [];
+        
+        // Find current team
+        const currentTeam = allTeams.find(t => String(t._id) === String(currentUserId));
+        
+        // Filter tickets for current user
+        const userTickets = allTickets.filter(ticket => {
+            return String(ticket.assignedTeam || ticket.assigned_team || ticket.assigned_team_id) === String(currentUserId);
+        });
+        
+        // Filter today's tickets
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const todayTickets = userTickets.filter(ticket => {
+            if (!ticket.createdAt) return false;
+            const ticketDate = new Date(ticket.createdAt);
+            ticketDate.setHours(0, 0, 0, 0);
+            return ticketDate.getTime() === today.getTime();
+        });
+        
+        // Calculate metrics
+        const totalTickets = userTickets.length;
+        const completedTickets = userTickets.filter(t => t.status === 'closed').length;
+        const inProgressTickets = userTickets.filter(t => t.status === 'in_progress').length;
+        const openTickets = userTickets.filter(t => t.status === 'open').length;
+        
+        const completionRate = totalTickets > 0 ? ((completedTickets / totalTickets) * 100).toFixed(1) : 0;
+        
+        // Today's metrics
+        const todayTotal = todayTickets.length;
+        const todayCompleted = todayTickets.filter(t => t.status === 'closed').length;
+        const todayInProgress = todayTickets.filter(t => t.status === 'in_progress').length;
+        const todayOpen = todayTickets.filter(t => t.status === 'open').length;
+        
+        // Team metrics
+        const teamName = currentTeam?.name || 'Your Team';
+        const teamEfficiency = currentTeam?.efficiencyScore || 0;
+        const teamRating = currentTeam?.customerRating || 0;
+        
+        // Calculate average resolution time
+        const completedWithTime = userTickets.filter(t => 
+            t.status === 'closed' && t.createdAt && t.completedAt
+        );
+        
+        let avgResolutionHours = 0;
+        if (completedWithTime.length > 0) {
+            const totalHours = completedWithTime.reduce((sum, t) => {
+                const created = new Date(t.createdAt);
+                const completed = new Date(t.completedAt);
+                const hours = (completed - created) / (1000 * 60 * 60);
+                return sum + hours;
+            }, 0);
+            avgResolutionHours = (totalHours / completedWithTime.length).toFixed(1);
+        }
+        
+        // Generate insights
+        const insights = [];
+        
+        if (todayCompleted === todayTotal && todayTotal > 0) {
+            insights.push(fieldAICurrentLanguage === 'en' 
+                ? '🎉 Excellent! All today\'s tickets are completed'
+                : '🎉 Cemerlang! Semua tiket hari ini telah disiapkan'
+            );
+        } else if (todayInProgress > 0) {
+            insights.push(fieldAICurrentLanguage === 'en' 
+                ? '🔄 You have active tickets in progress'
+                : '🔄 Anda mempunyai tiket aktif dalam proses'
+            );
+        }
+        
+        if (completionRate >= 80) {
+            insights.push(fieldAICurrentLanguage === 'en' 
+                ? '✅ Great overall completion rate!'
+                : '✅ Kadar penyiapan keseluruhan yang bagus!'
+            );
+        }
+        
+        if (teamEfficiency >= 85) {
+            insights.push(fieldAICurrentLanguage === 'en' 
+                ? '⚡ Your team efficiency is excellent'
+                : '⚡ Kecekapan pasukan anda cemerlang'
+            );
+        }
+        
+        // Generate recommendations
+        const recommendations = [];
+        
+        if (todayOpen > 0) {
+            recommendations.push(fieldAICurrentLanguage === 'en'
+                ? 'Focus on completing open tickets today for better performance'
+                : 'Fokus menyelesaikan tiket terbuka hari ini untuk prestasi yang lebih baik'
+            );
+        }
+        
+        if (avgResolutionHours > 4) {
+            recommendations.push(fieldAICurrentLanguage === 'en'
+                ? 'Try to reduce ticket resolution time through efficient workflow'
+                : 'Cuba kurangkan masa penyelesaian tiket melalui aliran kerja yang cekap'
+            );
+        }
+        
+        recommendations.push(fieldAICurrentLanguage === 'en'
+            ? 'Keep up the good work and maintain quality service'
+            : 'Teruskan kerja baik dan kekalkan perkhidmatan berkualiti'
+        );
+        
+        // Build greeting message
+        const greeting = generateFieldGreetingMessage({
+            teamName,
+            totalTickets,
+            completedTickets,
+            inProgressTickets,
+            openTickets,
+            completionRate,
+            todayTotal,
+            todayCompleted,
+            todayInProgress,
+            todayOpen,
+            teamEfficiency,
+            teamRating,
+            avgResolutionHours,
+            insights,
+            recommendations
+        });
+        
+        // Display greeting
+        const messagesContainer = document.getElementById('ai-chatbot-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        ${greeting}
+                    </div>
+                </div>
+            `;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+    } catch (error) {
+        console.error('Error loading field AI greeting:', error);
+        
+        // Fallback greeting
+        const messagesContainer = document.getElementById('ai-chatbot-messages');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p>${fieldAICurrentLanguage === 'en' 
+                            ? 'Hello! I\'m nBOTS, your field assistant. How can I help you today?'
+                            : 'Helo! Saya nBOTS, pembantu lapangan anda. Bagaimana saya boleh membantu anda hari ini?'
+                        }</p>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+function generateFieldGreetingMessage(data) {
+    if (fieldAICurrentLanguage === 'ms') {
+        return `
+            <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                👋 Selamat datang, ${data.teamName}!
+            </p>
+            <p style="margin-bottom: 16px; color: #64748b;">
+                Saya nBOTS, pembantu pintar anda. Berikut adalah ringkasan prestasi anda:
+            </p>
+            
+            <div class="ai-summary-card">
+                <div class="ai-summary-title">
+                    <i class="fas fa-calendar-day"></i>
+                    Prestasi Hari Ini
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Tiket Hari Ini</span>
+                        <span class="ai-metric-value">${data.todayTotal}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Selesai</span>
+                        <span class="ai-metric-value" style="color: #10b981;">${data.todayCompleted}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Dalam Proses</span>
+                        <span class="ai-metric-value" style="color: #f59e0b;">${data.todayInProgress}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Terbuka</span>
+                        <span class="ai-metric-value" style="color: #0ea5e9;">${data.todayOpen}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #8b5cf6;">
+                <div class="ai-summary-title" style="color: #5b21b6;">
+                    <i class="fas fa-chart-line"></i>
+                    Prestasi Keseluruhan
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Jumlah Tiket</span>
+                        <span class="ai-metric-value">${data.totalTickets}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Kadar Penyelesaian</span>
+                        <span class="ai-metric-value">${data.completionRate}%</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Skor Kecekapan</span>
+                        <span class="ai-metric-value">${data.teamEfficiency.toFixed(1)}%</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Penilaian Pelanggan</span>
+                        <span class="ai-metric-value">⭐ ${data.teamRating.toFixed(1)}/5</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Purata Masa Penyelesaian</span>
+                        <span class="ai-metric-value">${data.avgResolutionHours}h</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${data.insights.length > 0 ? `
+            <div class="ai-summary-card" style="border-left-color: #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);">
+                <div class="ai-summary-title" style="color: #92400e;">
+                    <i class="fas fa-lightbulb"></i>
+                    Pandangan & Cadangan
+                </div>
+                <div class="ai-summary-content">
+                    ${data.insights.map(insight => `<p style="margin: 6px 0;">• ${insight}</p>`).join('')}
+                    <p style="font-weight: 600; margin-top: 12px; margin-bottom: 6px; color: #0c4a6e;">💡 Cadangan:</p>
+                    ${data.recommendations.map(rec => `<p style="margin: 6px 0; font-size: 12px;">• ${rec}</p>`).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                Apa yang anda ingin ketahui? Saya boleh membantu dengan tiket, panduan, dan tips.
+            </p>
+        `;
+    } else {
+        return `
+            <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                👋 Welcome, ${data.teamName}!
+            </p>
+            <p style="margin-bottom: 16px; color: #64748b;">
+                I'm nBOTS, your intelligent assistant. Here's your performance summary:
+            </p>
+            
+            <div class="ai-summary-card">
+                <div class="ai-summary-title">
+                    <i class="fas fa-calendar-day"></i>
+                    Today's Performance
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Today's Tickets</span>
+                        <span class="ai-metric-value">${data.todayTotal}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Completed</span>
+                        <span class="ai-metric-value" style="color: #10b981;">${data.todayCompleted}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">In Progress</span>
+                        <span class="ai-metric-value" style="color: #f59e0b;">${data.todayInProgress}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Open</span>
+                        <span class="ai-metric-value" style="color: #0ea5e9;">${data.todayOpen}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-summary-card" style="border-left-color: #8b5cf6;">
+                <div class="ai-summary-title" style="color: #5b21b6;">
+                    <i class="fas fa-chart-line"></i>
+                    Overall Performance
+                </div>
+                <div class="ai-summary-content">
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Total Tickets</span>
+                        <span class="ai-metric-value">${data.totalTickets}</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Completion Rate</span>
+                        <span class="ai-metric-value">${data.completionRate}%</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Efficiency Score</span>
+                        <span class="ai-metric-value">${data.teamEfficiency.toFixed(1)}%</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Customer Rating</span>
+                        <span class="ai-metric-value">⭐ ${data.teamRating.toFixed(1)}/5</span>
+                    </div>
+                    <div class="ai-metric-row">
+                        <span class="ai-metric-label">Avg Resolution Time</span>
+                        <span class="ai-metric-value">${data.avgResolutionHours}h</span>
+                    </div>
+                </div>
+            </div>
+            
+            ${data.insights.length > 0 ? `
+            <div class="ai-summary-card" style="border-left-color: #f59e0b; background: linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%);">
+                <div class="ai-summary-title" style="color: #92400e;">
+                    <i class="fas fa-lightbulb"></i>
+                    Insights & Recommendations
+                </div>
+                <div class="ai-summary-content">
+                    ${data.insights.map(insight => `<p style="margin: 6px 0;">• ${insight}</p>`).join('')}
+                    <p style="font-weight: 600; margin-top: 12px; margin-bottom: 6px; color: #0c4a6e;">💡 Recommendations:</p>
+                    ${data.recommendations.map(rec => `<p style="margin: 6px 0; font-size: 12px;">• ${rec}</p>`).join('')}
+                </div>
+            </div>
+            ` : ''}
+            
+            <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                What would you like to know? I can help with tickets, guidance, and tips.
+            </p>
+        `;
+    }
+}
+
+function handleFieldAIChatbotKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendFieldAIChatbotMessage();
+    }
+}
+window.handleFieldAIChatbotKeyPress = handleFieldAIChatbotKeyPress;
+
+function sendFieldAIChatbotMessage() {
+    const input = document.getElementById('ai-chatbot-input');
+    const message = input.value.trim();
+    
+    if (message) {
+        addFieldUserMessage(message);
+        input.value = '';
+        
+        // Show typing indicator
+        showFieldAITyping();
+        
+        // Process AI response
+        setTimeout(() => {
+            processFieldAIQuery(message);
+        }, 1000);
+    }
+}
+window.sendFieldAIChatbotMessage = sendFieldAIChatbotMessage;
+
+function askFieldAI(question) {
+    const input = document.getElementById('ai-chatbot-input');
+    input.value = question;
+    sendFieldAIChatbotMessage();
+}
+window.askFieldAI = askFieldAI;
+
+function addFieldUserMessage(message) {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'ai-message ai-user';
+        messageDiv.innerHTML = `
+            <div class="ai-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="ai-content">
+                <p>${message}</p>
+            </div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    fieldAIChatHistory.push({ role: 'user', content: message });
+}
+
+function addFieldAIMessage(message) {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        // Remove typing indicator
+        const typingIndicator = messagesContainer.querySelector('.ai-typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
+        }
+        
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'ai-message ai-assistant';
+        messageDiv.innerHTML = `
+            <div class="ai-avatar">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="ai-content">
+                ${message}
+            </div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    fieldAIChatHistory.push({ role: 'assistant', content: message });
+}
+
+function showFieldAITyping() {
+    const messagesContainer = document.getElementById('ai-chatbot-messages');
+    if (messagesContainer) {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'ai-typing-indicator';
+        typingDiv.innerHTML = `
+            <span>${fieldAICurrentLanguage === 'en' ? 'nBOTS is thinking' : 'nBOTS sedang berfikir'}</span>
+            <div class="ai-typing-dots">
+                <div class="ai-typing-dot"></div>
+                <div class="ai-typing-dot"></div>
+                <div class="ai-typing-dot"></div>
+            </div>
+        `;
+        messagesContainer.appendChild(typingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
+function processFieldAIQuery(query) {
+    const lowerQuery = query.toLowerCase();
+    let response = '';
+    
+    if (lowerQuery.includes('performance') || lowerQuery.includes('prestasi')) {
+        response = fieldAICurrentLanguage === 'en' 
+            ? '<p>You can check your performance in the dashboard. Focus on completing your assigned tickets efficiently!</p>'
+            : '<p>Anda boleh semak prestasi anda di papan pemuka. Fokus menyelesaikan tiket yang ditugaskan dengan cekap!</p>';
+    } else if (lowerQuery.includes('ticket') || lowerQuery.includes('tiket')) {
+        response = fieldAICurrentLanguage === 'en' 
+            ? '<p>You can view all your assigned tickets in the "My Tickets" section. Make sure to update ticket status as you progress!</p>'
+            : '<p>Anda boleh lihat semua tiket yang ditugaskan dalam bahagian "Tiket Saya". Pastikan untuk kemas kini status tiket semasa anda maju!</p>';
+    } else if (lowerQuery.includes('troubleshoot') || lowerQuery.includes('masalah')) {
+        response = fieldAICurrentLanguage === 'en' 
+            ? '<p>For troubleshooting tips:<br>• Check equipment before starting<br>• Document all work done<br>• Contact supervisor if you encounter issues<br>• Follow safety protocols</p>'
+            : '<p>Tips penyelesaian masalah:<br>• Semak peralatan sebelum bermula<br>• Dokumen semua kerja yang dilakukan<br>• Hubungi penyelia jika menghadapi masalah<br>• Ikut protokol keselamatan</p>';
+    } else if (lowerQuery.includes('optimize') || lowerQuery.includes('optimum')) {
+        response = fieldAICurrentLanguage === 'en' 
+            ? '<p>Optimization tips:<br>• Plan your route efficiently<br>• Complete tickets in order of priority<br>• Keep equipment well-maintained<br>• Communicate with team regularly</p>'
+            : '<p>Tips pengoptimuman:<br>• Rancang laluan anda dengan cekap<br>• Selesaikan tiket mengikut keutamaan<br>• Pastikan peralatan diselenggara dengan baik<br>• Berkomunikasi dengan pasukan secara berkala</p>';
+    } else {
+        response = fieldAICurrentLanguage === 'en' 
+            ? `<p>I'm here to help! You can ask me about:<br>• Your performance<br>• Your tickets<br>• Troubleshooting tips<br>• Optimization suggestions</p>`
+            : `<p>Saya di sini untuk membantu! Anda boleh tanya saya tentang:<br>• Prestasi anda<br>• Tiket anda<br>• Tips penyelesaian masalah<br>• Cadangan pengoptimuman</p>`;
+    }
+    
+    addFieldAIMessage(response);
+}
+
+// All chatbot functions are now exposed globally right after their definitions
+console.log('✅ Chatbot functions exposed:', {
+    toggleFieldAIChatbot: typeof window.toggleFieldAIChatbot,
+    clearFieldAIChat: typeof window.clearFieldAIChat,
+    switchFieldAILanguage: typeof window.switchFieldAILanguage,
+    askFieldAI: typeof window.askFieldAI,
+    sendFieldAIChatbotMessage: typeof window.sendFieldAIChatbotMessage,
+    handleFieldAIChatbotKeyPress: typeof window.handleFieldAIChatbotKeyPress
+});
 
 console.log('✅ Field Portal JavaScript loaded successfully');

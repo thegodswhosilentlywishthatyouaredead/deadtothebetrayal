@@ -411,21 +411,413 @@
             white-space: nowrap;
         }
 
-        /* Enhanced AI Assistant Widget */
-        .field-ai-widget {
+        /* nBOTS AI Chatbot */
+        .ai-chatbot-container {
             position: fixed;
-            right: 20px;
-            top: 80px;
             bottom: 20px;
-            width: 380px;
+            right: 20px;
+            z-index: 1000;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .ai-chatbot-toggle {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .ai-chatbot-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .ai-chatbot-toggle i {
+            color: white;
+            font-size: 24px;
+        }
+
+        .ai-chatbot-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ff4757;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            animation: pulseBadge 2s infinite;
+        }
+
+        @keyframes pulseBadge {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .ai-chatbot-window {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 520px;
+            height: 680px;
             background: white;
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            display: flex;
+            display: none;
             flex-direction: column;
-            z-index: 1000;
-            transition: all 0.3s ease;
+            overflow: hidden;
             border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .ai-chatbot-window.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-chatbot-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .ai-chatbot-title i {
+            font-size: 18px;
+        }
+
+        .ai-chatbot-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-chatbot-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ai-chatbot-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .ai-chatbot-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8fafc;
+        }
+
+        .ai-message {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+            gap: 12px;
+            animation: messageSlideIn 0.4s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-message.ai-user {
+            flex-direction: row-reverse;
+        }
+
+        .ai-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s ease;
+        }
+
+        .ai-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        .ai-message.ai-assistant .ai-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .ai-message.ai-user .ai-avatar {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .ai-content {
+            max-width: 85%;
+            padding: 16px 20px;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .ai-message.ai-user .ai-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 6px;
+        }
+
+        .ai-message.ai-assistant .ai-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 6px;
+        }
+
+        .ai-content p {
+            margin: 0 0 12px 0;
+            font-weight: 400;
+        }
+
+        .ai-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        .ai-content strong {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .ai-message.ai-user .ai-content strong {
+            color: white;
+        }
+
+        .ai-content ul, .ai-content ol {
+            margin: 12px 0;
+            padding-left: 20px;
+        }
+
+        .ai-content li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        .ai-chatbot-input-container {
+            border-top: 1px solid #e2e8f0;
+            padding: 20px;
+            background: white;
+            border-radius: 0 0 16px 16px;
+        }
+
+        .ai-chatbot-suggestions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .ai-suggestion-chip {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .ai-suggestion-chip:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .ai-chatbot-input {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 8px;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .ai-chatbot-input:focus-within {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        .ai-chatbot-input input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 12px 16px;
+            font-size: 14px;
+            outline: none;
+            color: #1f2937;
+            font-weight: 400;
+        }
+
+        .ai-chatbot-input input::placeholder {
+            color: #9ca3af;
+            font-weight: 400;
+        }
+
+        .ai-send-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .ai-send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .ai-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .ai-language-toggle {
+            display: flex;
+            gap: 4px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 2px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        
+        .ai-lang-btn {
+            padding: 4px 10px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .ai-lang-btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+        }
+        
+        .ai-lang-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .ai-typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #64748b;
+            margin: 8px 0;
+        }
+
+        .ai-typing-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .ai-typing-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+            animation: typingDot 1.4s infinite ease-in-out;
+        }
+
+        .ai-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .ai-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typingDot {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .field-ai-widget.minimized {
@@ -1683,72 +2075,68 @@
         </div>
     </div>
 
-    <!-- AI Assistant Toggle Button -->
-    <button class="field-ai-toggle-btn hidden" id="field-ai-toggle-btn" onclick="toggleFieldAIWidget()">
-        <i class="fas fa-robot"></i>
-    </button>
-
-    <!-- AI Assistant Widget -->
-    <div class="field-ai-widget" id="field-ai-widget">
-        <div class="field-ai-header">
-            <div>
-                <h5><i class="fas fa-robot"></i> NRO-Bots</h5>
-                <div class="field-ai-status">
-                    <div class="field-ai-status-dot"></div>
-                    <span id="field-ai-user-name">Loading...</span>
-                </div>
-            </div>
-            <button class="field-ai-close-btn" onclick="toggleFieldAIWidget()" title="Minimize AI Assistant">
-                <i class="fas fa-minus"></i>
-            </button>
+    <!-- Floating AI Chatbot (nBOTS) -->
+    <div id="ai-chatbot" class="ai-chatbot-container">
+        <div id="ai-chatbot-toggle" class="ai-chatbot-toggle" onclick="toggleFieldAIChatbot()" role="button" tabindex="0" aria-label="Open nBOTS chatbot">
+            <i class="fas fa-robot"></i>
+            <span class="ai-chatbot-badge" id="ai-notification-badge" style="display: none;">1</span>
         </div>
         
-        <div class="field-ai-chat" id="field-ai-chat">
-            <!-- Welcome message -->
-            <div class="field-ai-message assistant">
-                <div class="field-ai-avatar">
+        <div id="ai-chatbot-window" class="ai-chatbot-window">
+            <div class="ai-chatbot-header">
+                <div class="ai-chatbot-title">
                     <i class="fas fa-robot"></i>
+                    <span>nBOTS</span>
+                    <div class="ai-language-toggle">
+                        <button class="ai-lang-btn active" onclick="switchFieldAILanguage('en')">EN</button>
+                        <button class="ai-lang-btn" onclick="switchFieldAILanguage('ms')">BM</button>
+                    </div>
                 </div>
-                <div class="field-ai-bubble">
-                    <strong id="field-ai-welcome-title">👋 Hello! I'm your AI Field Assistant</strong>
-                    <p style="margin: 8px 0 0 0;" id="field-ai-welcome-text">I'm here to help you with:</p>
-                    <ul style="margin: 8px 0 0 0; padding-left: 20px; font-size: 13px;">
-                        <li>Your performance and tasks</li>
-                        <li>Troubleshooting tips</li>
-                        <li>Work optimization advice</li>
-                        <li>Safety guidelines</li>
-                    </ul>
-                    <p style="margin: 8px 0 0 0; font-size: 13px; color: #64748b;">Try asking me anything!</p>
+                <div class="ai-chatbot-actions">
+                    <button class="ai-chatbot-btn" onclick="clearFieldAIChat()" title="Clear Chat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="ai-chatbot-btn" onclick="toggleFieldAIChatbot()" title="Minimize">
+                        <i class="fas fa-minus"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-        
-        <div class="field-ai-input-area">
-            <div class="field-ai-quick-actions">
-                <button class="field-ai-quick-btn" onclick="sendFieldQuickQuery('How is my performance?')">
-                    📊 My Performance
-                </button>
-                <button class="field-ai-quick-btn" onclick="sendFieldQuickQuery('Show my tasks today')">
-                    📋 My Tasks
-                </button>
-                <button class="field-ai-quick-btn" onclick="sendFieldQuickQuery('Troubleshooting tips')">
-                    🔧 Troubleshooting
-                </button>
-                <button class="field-ai-quick-btn" onclick="sendFieldQuickQuery('How to optimize my work?')">
-                    ⚡ Optimize Work
-                </button>
+            
+            <div class="ai-chatbot-messages" id="ai-chatbot-messages">
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p style="text-align: center; color: #64748b; font-size: 12px;">
+                            <i class="fas fa-spinner fa-spin"></i> Loading performance insights...
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div class="field-ai-input-group">
-                <input 
-                    type="text" 
-                    class="field-ai-input" 
-                    id="field-ai-input" 
-                    placeholder="Ask me anything..."
-                    onkeypress="if(event.key==='Enter') sendFieldAIMessage()"
-                >
-                <button class="field-ai-send-btn" id="field-ai-send-btn" onclick="sendFieldAIMessage()">
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+            
+            <div class="ai-chatbot-input-container">
+                <div class="ai-chatbot-suggestions">
+                    <button class="ai-suggestion-chip" onclick="askFieldAI('Show my performance today')">
+                        📈 My Performance
+                    </button>
+                    <button class="ai-suggestion-chip" onclick="askFieldAI('Show my tickets')">
+                        🎫 My Tickets
+                    </button>
+                    <button class="ai-suggestion-chip" onclick="askFieldAI('Troubleshooting tips')">
+                        🔧 Troubleshooting
+                    </button>
+                    <button class="ai-suggestion-chip" onclick="askFieldAI('Optimization suggestions')">
+                        💡 Optimize Work
+                    </button>
+                </div>
+                
+                <div class="ai-chatbot-input">
+                    <input type="text" id="ai-chatbot-input" placeholder="Ask me anything..." onkeypress="handleFieldAIChatbotKeyPress(event)">
+                    <button class="ai-send-btn" onclick="sendFieldAIChatbotMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1841,7 +2229,417 @@
         }
     </script>
     <script src="/src/ticket-utils.js?v=1"></script>
-    <script src="/src/field-portal.js?v=4"></script>
+    
+    <!-- EMERGENCY FIX: Define chatbot toggle inline to bypass cache -->
+    <script>
+        console.log('🚨 INLINE CHATBOT FIX LOADED [v=27.1]');
+        
+        // Define chatbot state
+        window.fieldAIChatbotOpen = false;
+        
+        // Define toggle function inline (bypasses all caching)
+        window.toggleFieldAIChatbot = function() {
+            console.log('🔵 INLINE toggleFieldAIChatbot called');
+            const chatWindow = document.getElementById('ai-chatbot-window');
+            const badge = document.getElementById('ai-notification-badge');
+            
+            if (!chatWindow) {
+                console.error('❌ Chat window not found!');
+                return;
+            }
+            
+            window.fieldAIChatbotOpen = !window.fieldAIChatbotOpen;
+            console.log('🔵 State changed to:', window.fieldAIChatbotOpen);
+            
+            if (window.fieldAIChatbotOpen) {
+                chatWindow.classList.add('active');
+                if (badge) badge.style.display = 'none';
+                console.log('✅ Chat opened');
+            } else {
+                chatWindow.classList.remove('active');
+                console.log('✅ Chat closed');
+            }
+        };
+        
+        console.log('✅ INLINE toggleFieldAIChatbot defined:', typeof window.toggleFieldAIChatbot);
+        
+        // Simple fallback greeting to show chatbot is working
+        window.loadSimpleFieldGreeting = function() {
+            console.log('🔵 loadSimpleFieldGreeting called');
+            const messagesContainer = document.getElementById('ai-chatbot-messages');
+            if (!messagesContainer) {
+                console.error('❌ Messages container not found');
+                return;
+            }
+            
+            console.log('✅ Messages container found');
+            
+            const userName = document.getElementById('user-name')?.textContent || 'Field Team Member';
+            console.log('👤 User name for greeting:', userName);
+            
+            messagesContainer.innerHTML = `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                            👋 Welcome, ${userName}!
+                        </p>
+                        <p style="margin-bottom: 16px; color: #64748b;">
+                            I'm nBOTS, your field assistant. How can I help you today?
+                        </p>
+                        <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="font-weight: 600; color: #0c4a6e; font-size: 13px; margin-bottom: 8px;">
+                                <i class="fas fa-info-circle"></i> Quick Actions
+                            </div>
+                            <p style="color: #334155; font-size: 13px; margin: 0;">
+                                Use the buttons below or type a question to get started!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            console.log('✅ Simple greeting loaded successfully');
+        };
+        
+        // Enhanced greeting with real data and OpenAI support
+        window.fieldAICurrentLanguage = 'en';
+        
+        window.loadEnhancedFieldGreeting = async function() {
+            console.log('🔵 Loading enhanced greeting, language:', window.fieldAICurrentLanguage);
+            const messagesContainer = document.getElementById('ai-chatbot-messages');
+            if (!messagesContainer) return;
+            
+            try {
+                // Get current user ID
+                const currentTeamId = localStorage.getItem('currentTeamId');
+                const userName = document.getElementById('user-name')?.textContent || 'Field Team Member';
+                
+                // Fetch user data
+                const [ticketsRes, teamsRes] = await Promise.all([
+                    fetch('http://localhost:5002/api/ticketv2?limit=20000'),
+                    fetch('http://localhost:5002/api/teams')
+                ]);
+                
+                const ticketsData = await ticketsRes.json();
+                const teamsData = await teamsRes.json();
+                
+                const allTickets = ticketsData.tickets || [];
+                const allTeams = teamsData.teams || [];
+                
+                // Filter user tickets
+                const userTickets = allTickets.filter(t => 
+                    String(t.assignedTeam || t.assigned_team) === String(currentTeamId)
+                );
+                
+                const currentTeam = allTeams.find(t => String(t._id) === String(currentTeamId));
+                
+                // Calculate metrics
+                const totalTickets = userTickets.length;
+                const completed = userTickets.filter(t => t.status === 'closed').length;
+                const inProgress = userTickets.filter(t => t.status === 'in_progress').length;
+                const open = userTickets.filter(t => t.status === 'open').length;
+                const completionRate = totalTickets > 0 ? ((completed / totalTickets) * 100).toFixed(1) : 0;
+                
+                // Today's tickets
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const todayTickets = userTickets.filter(t => {
+                    if (!t.createdAt) return false;
+                    const tDate = new Date(t.createdAt);
+                    tDate.setHours(0,0,0,0);
+                    return tDate.getTime() === today.getTime();
+                });
+                
+                const efficiency = currentTeam?.efficiencyScore || 0;
+                const rating = currentTeam?.customerRating || 0;
+                
+                // Generate greeting using API
+                const greeting = window.fieldAICurrentLanguage === 'en' ? 
+                    generateEnglishGreeting(userName, {totalTickets, completed, inProgress, open, completionRate, todayTickets: todayTickets.length, efficiency, rating}) :
+                    generateMalayGreeting(userName, {totalTickets, completed, inProgress, open, completionRate, todayTickets: todayTickets.length, efficiency, rating});
+                
+                messagesContainer.innerHTML = greeting;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                console.log('✅ Enhanced greeting loaded');
+            } catch (error) {
+                console.error('❌ Error loading enhanced greeting:', error);
+                // Fallback to simple greeting
+                window.loadSimpleFieldGreeting();
+            }
+        };
+        
+        function generateEnglishGreeting(userName, metrics) {
+            return `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                            👋 Welcome, ${userName}!
+                        </p>
+                        <p style="margin-bottom: 16px; color: #64748b;">
+                            I'm nBOTS, your AI-powered field assistant. Here's your performance summary:
+                        </p>
+                        
+                        <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="font-weight: 600; color: #0c4a6e; font-size: 13px; margin-bottom: 8px;">
+                                <i class="fas fa-calendar-day"></i> Today's Performance
+                            </div>
+                            <div style="color: #334155; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Today's Tickets:</span><strong>${metrics.todayTickets}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8fafc; border-left: 4px solid #8b5cf6; padding: 12px 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="font-weight: 600; color: #5b21b6; font-size: 13px; margin-bottom: 8px;">
+                                <i class="fas fa-chart-line"></i> Overall Performance
+                            </div>
+                            <div style="color: #334155; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Total Tickets:</span><strong>${metrics.totalTickets}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Completed:</span><strong style="color: #10b981;">${metrics.completed} (${metrics.completionRate}%)</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>In Progress:</span><strong style="color: #f59e0b;">${metrics.inProgress}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Efficiency Score:</span><strong>${metrics.efficiency.toFixed(1)}%</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Customer Rating:</span><strong>⭐ ${metrics.rating.toFixed(1)}/5</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                            💡 Ask me anything about your tickets, performance, or get optimization tips!
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function generateMalayGreeting(userName, metrics) {
+            return `
+                <div class="ai-message ai-assistant">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p style="font-weight: 600; font-size: 15px; margin-bottom: 12px;">
+                            👋 Selamat datang, ${userName}!
+                        </p>
+                        <p style="margin-bottom: 16px; color: #64748b;">
+                            Saya nBOTS, pembantu lapangan berkuasa AI anda. Berikut adalah ringkasan prestasi anda:
+                        </p>
+                        
+                        <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 12px 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="font-weight: 600; color: #0c4a6e; font-size: 13px; margin-bottom: 8px;">
+                                <i class="fas fa-calendar-day"></i> Prestasi Hari Ini
+                            </div>
+                            <div style="color: #334155; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Tiket Hari Ini:</span><strong>${metrics.todayTickets}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #f8fafc; border-left: 4px solid #8b5cf6; padding: 12px 16px; border-radius: 8px; margin: 12px 0;">
+                            <div style="font-weight: 600; color: #5b21b6; font-size: 13px; margin-bottom: 8px;">
+                                <i class="fas fa-chart-line"></i> Prestasi Keseluruhan
+                            </div>
+                            <div style="color: #334155; font-size: 13px;">
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Jumlah Tiket:</span><strong>${metrics.totalTickets}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Selesai:</span><strong style="color: #10b981;">${metrics.completed} (${metrics.completionRate}%)</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Dalam Proses:</span><strong style="color: #f59e0b;">${metrics.inProgress}</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Skor Kecekapan:</span><strong>${metrics.efficiency.toFixed(1)}%</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding: 4px 0;">
+                                    <span>Penilaian Pelanggan:</span><strong>⭐ ${metrics.rating.toFixed(1)}/5</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+                            💡 Tanya saya apa sahaja tentang tiket, prestasi, atau dapatkan petua pengoptimuman!
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Load greeting when page is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(window.loadEnhancedFieldGreeting, 1000);
+            });
+        } else {
+            setTimeout(window.loadEnhancedFieldGreeting, 1000);
+        }
+        
+        // Define other chatbot functions inline
+        window.clearFieldAIChat = function() {
+            console.log('🔵 Clear chat called');
+            window.loadEnhancedFieldGreeting();
+        };
+        
+        window.switchFieldAILanguage = function(lang) {
+            console.log('🔵 Language switch to:', lang);
+            window.fieldAICurrentLanguage = lang;
+            
+            // Update button states
+            const langBtns = document.querySelectorAll('.ai-lang-btn');
+            langBtns.forEach(btn => {
+                if ((lang === 'en' && btn.textContent === 'EN') || (lang === 'ms' && btn.textContent === 'BM')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            // Reload greeting in new language
+            window.loadEnhancedFieldGreeting();
+        };
+        
+        window.askFieldAI = function(question) {
+            console.log('🔵 Ask AI:', question);
+            const input = document.getElementById('ai-chatbot-input');
+            if (input) {
+                input.value = question;
+                window.sendFieldAIChatbotMessage();
+            }
+        };
+        
+        window.sendFieldAIChatbotMessage = async function() {
+            const input = document.getElementById('ai-chatbot-input');
+            const message = input?.value?.trim();
+            
+            if (!message) return;
+            
+            console.log('🔵 Sending message:', message);
+            
+            const messagesContainer = document.getElementById('ai-chatbot-messages');
+            if (!messagesContainer) return;
+            
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'ai-message ai-user';
+            userMsg.innerHTML = `
+                <div class="ai-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="ai-content">
+                    <p>${message}</p>
+                </div>
+            `;
+            messagesContainer.appendChild(userMsg);
+            input.value = '';
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'ai-typing-indicator';
+            typingDiv.id = 'ai-typing-temp';
+            typingDiv.innerHTML = `
+                <span>${window.fieldAICurrentLanguage === 'en' ? 'nBOTS is thinking' : 'nBOTS sedang berfikir'}</span>
+                <div class="ai-typing-dots">
+                    <div class="ai-typing-dot"></div>
+                    <div class="ai-typing-dot"></div>
+                    <div class="ai-typing-dot"></div>
+                </div>
+            `;
+            messagesContainer.appendChild(typingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            try {
+                // Get user context
+                const currentTeamId = localStorage.getItem('currentTeamId');
+                
+                // Call AI backend
+                const response = await fetch('http://localhost:5002/api/ai/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        message: message,
+                        language: window.fieldAICurrentLanguage || 'en',
+                        context: {
+                            teamId: currentTeamId
+                        }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                // Remove typing indicator
+                document.getElementById('ai-typing-temp')?.remove();
+                
+                // Add AI response
+                const aiMsg = document.createElement('div');
+                aiMsg.className = 'ai-message ai-assistant';
+                aiMsg.innerHTML = `
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        ${data.response || '<p>Sorry, I could not process your request.</p>'}
+                    </div>
+                `;
+                messagesContainer.appendChild(aiMsg);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                
+                console.log('✅ AI response received from:', data.provider);
+                
+            } catch (error) {
+                console.error('❌ Error calling AI:', error);
+                
+                // Remove typing indicator
+                document.getElementById('ai-typing-temp')?.remove();
+                
+                // Show error message
+                const errMsg = document.createElement('div');
+                errMsg.className = 'ai-message ai-assistant';
+                errMsg.innerHTML = `
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-content">
+                        <p>${window.fieldAICurrentLanguage === 'en' ? 
+                            'Sorry, I\'m having trouble connecting. Please try again.' :
+                            'Maaf, saya menghadapi masalah sambungan. Sila cuba lagi.'
+                        }</p>
+                    </div>
+                `;
+                messagesContainer.appendChild(errMsg);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        };
+        
+        window.handleFieldAIChatbotKeyPress = function(event) {
+            if (event.key === 'Enter') {
+                window.sendFieldAIChatbotMessage();
+            }
+        };
+        
+        console.log('✅ All inline chatbot functions defined');
+    </script>
+    
+    <script src="/src/field-portal.js?v=27"></script>
     
     <!-- Fallback functions in case scripts don't load -->
     <script>

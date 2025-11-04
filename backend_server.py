@@ -14,6 +14,17 @@ import math
 import sys
 import os
 
+# OpenAI integration (optional)
+try:
+    import openai
+    OPENAI_AVAILABLE = True
+    # Set API key from environment variable
+    openai.api_key = os.environ.get('OPENAI_API_KEY', '')
+    print("✅ OpenAI integration available")
+except ImportError:
+    OPENAI_AVAILABLE = False
+    print("⚠️  OpenAI not available (install with: pip install openai)")
+
 # Add data directory to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), 'data'))
 from sample_data import SampleDataGenerator, generate_sample_data
@@ -1667,32 +1678,157 @@ def create_team():
 
 @app.route('/api/ai/chat', methods=['POST'])
 def ai_chat():
-    """Handle AI chat messages"""
+    """Handle AI chat messages with OpenAI integration"""
     try:
         data = request.get_json()
-        message = data.get('message', '').lower()
+        message = data.get('message', '')
+        language = data.get('language', 'en')  # 'en' or 'ms' (Malay)
+        user_context = data.get('context', {})
+        team_id = user_context.get('teamId')
         
-        # Simple AI chat responses
-        if 'ticket' in message:
-            response = f"You currently have {len(tickets)} tickets. {len([t for t in tickets if t.get('status') == 'pending'])} are pending assignment."
-        elif 'team' in message:
-            response = f"There are {len(field_teams)} field teams available. {len([t for t in field_teams if t.get('status') == 'active'])} are currently active."
-        elif 'help' in message:
-            response = "I can help you with ticket management, team assignments, analytics, and planning. What would you like to know?"
+        # Get user-specific data
+        user_tickets = []
+        user_team = None
+        
+        if team_id:
+            user_tickets = [t for t in tickets if str(t.get('assignedTeam', '')) == str(team_id)]
+            user_team = next((t for t in field_teams if str(t.get('_id', '')) == str(team_id)), None)
+        
+        # Calculate user metrics
+        total_tickets = len(user_tickets)
+        completed_tickets = len([t for t in user_tickets if t.get('status') == 'closed'])
+        in_progress_tickets = len([t for t in user_tickets if t.get('status') == 'in_progress'])
+        open_tickets = len([t for t in user_tickets if t.get('status') == 'open'])
+        completion_rate = (completed_tickets / total_tickets * 100) if total_tickets > 0 else 0
+        
+        # Today's tickets
+        today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+        today_tickets = [t for t in user_tickets if t.get('createdAt') and 
+                        datetime.fromisoformat(t['createdAt'].replace('Z', '+00:00')).replace(tzinfo=None) >= today]
+        
+        # Build context for AI
+        context_summary = {
+            'teamName': user_team.get('name', 'Unknown') if user_team else 'Unknown',
+            'totalTickets': total_tickets,
+            'completedTickets': completed_tickets,
+            'inProgressTickets': in_progress_tickets,
+            'openTickets': open_tickets,
+            'completionRate': round(completion_rate, 1),
+            'todayTickets': len(today_tickets),
+            'efficiency': user_team.get('efficiencyScore', 0) if user_team else 0,
+            'rating': user_team.get('customerRating', 0) if user_team else 0
+        }
+        
+        # Try OpenAI if available
+        if OPENAI_AVAILABLE and openai.api_key:
+            try:
+                response_text = call_openai_chat(message, context_summary, language)
+            except Exception as e:
+                print(f"⚠️  OpenAI error: {e}, falling back to rule-based")
+                response_text = generate_intelligent_response(message, context_summary, language)
         else:
-            response = "I'm here to help! You can ask me about tickets, teams, performance, or any other aspect of the field force management system."
+            response_text = generate_intelligent_response(message, context_summary, language)
         
         return jsonify({
-            'response': response,
+            'response': response_text,
             'timestamp': datetime.now().isoformat(),
-            'context': {
-                'totalTickets': len(tickets),
-                'totalTeams': len(field_teams),
-                'pendingTickets': len([t for t in tickets if t.get('status') == 'pending'])
-            }
+            'context': context_summary,
+            'language': language,
+            'provider': 'openai' if (OPENAI_AVAILABLE and openai.api_key) else 'intelligent_fallback'
         })
     except Exception as e:
+        print(f"❌ AI chat error: {e}")
         return jsonify({'error': str(e)}), 500
+
+def call_openai_chat(message, context, language='en'):
+    """Call OpenAI API for intelligent responses"""
+    lang_name = 'English' if language == 'en' else 'Bahasa Malaysia (Malay)'
+    
+    system_prompt = f"""You are nBOTS, an AI assistant for field technicians in a fiber optic network company.
+    
+User Context:
+- Team: {context['teamName']}
+- Total Tickets: {context['totalTickets']}
+- Completed: {context['completedTickets']} ({context['completionRate']}%)
+- In Progress: {context['inProgressTickets']}
+- Open: {context['openTickets']}
+- Today's Tickets: {context['todayTickets']}
+- Efficiency Score: {context['efficiency']}%
+- Customer Rating: {context['rating']}/5
+
+Respond in {lang_name}. Be helpful, concise, and provide actionable insights.
+Focus on helping the field technician optimize their work, complete tickets efficiently, and maintain quality service.
+"""
+
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            max_tokens=500,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"OpenAI API error: {e}")
+        raise
+
+def generate_intelligent_response(message, context, language='en'):
+    """Generate intelligent responses without OpenAI (fallback with translation)"""
+    msg_lower = message.lower()
+    
+    # English responses
+    if language == 'en':
+        if 'performance' in msg_lower or 'how am i' in msg_lower:
+            if context['completionRate'] >= 80:
+                return f"<p>🎉 <strong>Excellent performance!</strong> You've completed {context['completedTickets']} out of {context['totalTickets']} tickets ({context['completionRate']}%).</p><p>Your efficiency score of {context['efficiency']}% is great. Keep up the good work!</p>"
+            elif context['completionRate'] >= 60:
+                return f"<p>👍 <strong>Good work!</strong> You've completed {context['completedTickets']} tickets ({context['completionRate']}%).</p><p>Tip: Focus on completing the {context['inProgressTickets']} in-progress tickets to boost your rate.</p>"
+            else:
+                return f"<p>📊 You have {context['openTickets']} open tickets and {context['inProgressTickets']} in progress.</p><p>💡 Recommendation: Prioritize high-priority tickets and maintain steady progress.</p>"
+        
+        elif 'ticket' in msg_lower:
+            return f"<p>🎫 <strong>Your Tickets:</strong></p><ul><li>Total: {context['totalTickets']}</li><li>Completed: {context['completedTickets']}</li><li>In Progress: {context['inProgressTickets']}</li><li>Open: {context['openTickets']}</li><li>Today: {context['todayTickets']}</li></ul><p>Focus on completing open tickets for better performance.</p>"
+        
+        elif 'today' in msg_lower:
+            return f"<p>📅 <strong>Today's Summary:</strong></p><p>You have {context['todayTickets']} tickets assigned today. Make sure to update their status as you progress!</p>"
+        
+        elif 'tip' in msg_lower or 'help' in msg_lower or 'advice' in msg_lower:
+            return "<p>💡 <strong>Optimization Tips:</strong></p><ul><li>Plan your route efficiently to minimize travel time</li><li>Complete tickets in order of priority (emergency first)</li><li>Update ticket status immediately after completion</li><li>Keep equipment well-maintained</li><li>Communicate with your supervisor regularly</li></ul>"
+        
+        elif 'troubleshoot' in msg_lower or 'problem' in msg_lower:
+            return "<p>🔧 <strong>Troubleshooting Guidelines:</strong></p><ul><li>Check all equipment before starting work</li><li>Document all work done with photos if possible</li><li>If you encounter technical issues, contact your supervisor</li><li>Follow safety protocols at all times</li><li>Report any material shortages immediately</li></ul>"
+        
+        else:
+            return f"<p>👋 Hello! I'm nBOTS, your AI assistant.</p><p>You can ask me about:</p><ul><li>📈 Your performance and metrics</li><li>🎫 Your tickets and assignments</li><li>💡 Optimization tips</li><li>🔧 Troubleshooting guidelines</li></ul><p>Your current rating: ⭐ {context['rating']}/5</p>"
+    
+    # Bahasa Malaysia responses
+    else:
+        if 'performance' in msg_lower or 'prestasi' in msg_lower or 'bagaimana' in msg_lower:
+            if context['completionRate'] >= 80:
+                return f"<p>🎉 <strong>Prestasi cemerlang!</strong> Anda telah menyiapkan {context['completedTickets']} daripada {context['totalTickets']} tiket ({context['completionRate']}%).</p><p>Skor kecekapan anda {context['efficiency']}% sangat baik. Teruskan kerja yang hebat!</p>"
+            elif context['completionRate'] >= 60:
+                return f"<p>👍 <strong>Kerja yang baik!</strong> Anda telah menyiapkan {context['completedTickets']} tiket ({context['completionRate']}%).</p><p>Petua: Fokus menyelesaikan {context['inProgressTickets']} tiket dalam proses untuk meningkatkan kadar anda.</p>"
+            else:
+                return f"<p>📊 Anda mempunyai {context['openTickets']} tiket terbuka dan {context['inProgressTickets']} dalam proses.</p><p>💡 Cadangan: Utamakan tiket keutamaan tinggi dan kekalkan kemajuan yang stabil.</p>"
+        
+        elif 'ticket' in msg_lower or 'tiket' in msg_lower:
+            return f"<p>🎫 <strong>Tiket Anda:</strong></p><ul><li>Jumlah: {context['totalTickets']}</li><li>Selesai: {context['completedTickets']}</li><li>Dalam Proses: {context['inProgressTickets']}</li><li>Terbuka: {context['openTickets']}</li><li>Hari Ini: {context['todayTickets']}</li></ul><p>Fokus untuk menyelesaikan tiket terbuka bagi prestasi yang lebih baik.</p>"
+        
+        elif 'hari ini' in msg_lower or 'today' in msg_lower:
+            return f"<p>📅 <strong>Ringkasan Hari Ini:</strong></p><p>Anda mempunyai {context['todayTickets']} tiket yang ditugaskan hari ini. Pastikan untuk kemas kini status mereka semasa anda maju!</p>"
+        
+        elif 'tip' in msg_lower or 'petua' in msg_lower or 'nasihat' in msg_lower or 'bantuan' in msg_lower:
+            return "<p>💡 <strong>Petua Pengoptimuman:</strong></p><ul><li>Rancang laluan anda dengan cekap untuk mengurangkan masa perjalanan</li><li>Selesaikan tiket mengikut keutamaan (kecemasan dahulu)</li><li>Kemas kini status tiket segera selepas siap</li><li>Pastikan peralatan diselenggara dengan baik</li><li>Berkomunikasi dengan penyelia anda secara berkala</li></ul>"
+        
+        elif 'masalah' in msg_lower or 'troubleshoot' in msg_lower:
+            return "<p>🔧 <strong>Garis Panduan Penyelesaian Masalah:</strong></p><ul><li>Semak semua peralatan sebelum bermula kerja</li><li>Dokumen semua kerja yang dilakukan dengan gambar jika boleh</li><li>Jika anda menghadapi masalah teknikal, hubungi penyelia anda</li><li>Ikut protokol keselamatan pada setiap masa</li><li>Laporkan sebarang kekurangan bahan segera</li></ul>"
+        
+        else:
+            return f"<p>👋 Helo! Saya nBOTS, pembantu AI anda.</p><p>Anda boleh tanya saya tentang:</p><ul><li>📈 Prestasi dan metrik anda</li><li>🎫 Tiket dan tugasan anda</li><li>💡 Petua pengoptimuman</li><li>🔧 Panduan penyelesaian masalah</li></ul><p>Penilaian semasa anda: ⭐ {context['rating']}/5</p>"
 
 # Load sample data on startup
 load_sample_data()
