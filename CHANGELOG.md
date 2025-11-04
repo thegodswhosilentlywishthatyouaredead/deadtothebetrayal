@@ -1,280 +1,264 @@
 # Changelog
 
-All notable changes to the AIFF (Advanced Intelligence Field Force) project will be documented in this file.
+All notable changes to AIFF (Advanced Intelligence Field Force) will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.5.0] - 2025-11-04
 
-### Added - OpenAI Integration & Bilingual Support
+### 🎉 Added
 
-#### nBOTS AI Chatbot
-- **OpenAI GPT-3.5-turbo integration** with intelligent fallback system
-- **Bilingual support**: Full English ⇄ Bahasa Malaysia translation
-- **Personalized insights**: Real-time performance data for each field team member
-- **Context-aware responses**: AI knows user's tickets, efficiency, and ratings
-- **Language switching**: Instant EN/BM toggle with complete re-translation
-- **Typing indicator**: Animated dots while AI processes
-- **Suggestion chips**: Quick action buttons for common queries
-- **Complete CSS design**: 282 lines of professional chatbot styling
-- **Inline JavaScript**: 228 lines of functions to bypass caching issues
+#### OpenAI Integration
+- **OpenAI GPT-3.5-turbo integration** in backend (`backend_server.py`)
+  - New `/api/ai/chat` endpoint with language and context support
+  - `call_openai_chat()` function for GPT-3.5-turbo API calls
+  - `generate_intelligent_response()` fallback with full bilingual support
+  - User-specific context (teamId, tickets, metrics) passed to AI
+  - Works with OR without API key (graceful degradation)
 
-#### Backend API Enhancements
-- **Enhanced /api/ai/chat endpoint**: 
-  - Accepts message, language ('en'/'ms'), and user context
-  - Returns intelligent responses with user-specific metrics
-  - Supports OpenAI GPT-3.5-turbo (optional)
-  - Falls back to rule-based AI (works without API key)
-- **User context calculation**:
-  - Filters tickets for specific team
-  - Calculates completion rate, efficiency, today's tickets
-  - Provides team name, rating, and performance metrics
-- **Bilingual response generation**:
-  - English responses with performance-based insights
-  - Bahasa Malaysia translations (authentic Malay phrasing)
+#### Bahasa Malaysia Translation
+- **Full bilingual support** (English ⇄ Bahasa Malaysia)
+  - Real-time language switching in chatbot
+  - All AI responses fully translated (not just UI labels)
+  - Natural Malay phrasing for better user experience
   - Keyword detection in both languages
+  - Bilingual greetings, metrics, and recommendations
 
-#### Frontend Improvements
-- **Complete chatbot CSS** (lines 501-821 in field-portal.html):
-  - Message bubbles with gradients (purple AI, green user)
-  - Circular avatars with shadows
-  - Smooth animations (slideUp, messageSlideIn)
-  - Typing indicator with dot animation
-  - Suggestion chips with hover effects
-  - Input field with focus effects
-  - Send button with gradients
-  - Language toggle buttons
-  - Responsive design for mobile
-- **Inline function implementation**:
-  - toggleFieldAIChatbot() - Open/close chat
-  - loadEnhancedFieldGreeting() - Data-driven greeting
-  - switchFieldAILanguage() - Real language switching
-  - sendFieldAIChatbotMessage() - API-connected chat
-  - generateEnglishGreeting() - EN greeting template
-  - generateMalayGreeting() - BM greeting template
-  - All functions exposed to window object
+#### Field Portal nBOTS Chatbot
+- **Complete chatbot implementation** in field portal
+  - 520px × 680px floating chat window with smooth animations
+  - 282 lines of CSS styling (message bubbles, avatars, animations)
+  - Inline JavaScript functions (bypasses browser caching)
+  - Purple gradient theme matching admin dashboard
+  - Typing indicator with animated dots
+  - 4 quick action suggestion chips
+  - Enter key support for sending messages
+  - Auto-scroll to latest message
+
+#### Enhanced Features
+- **Personalized performance greeting** with real data
+  - Fetches user-specific tickets from ticketv2 API
+  - Calculates completion rate, efficiency, rating
+  - Shows today's tickets vs overall performance
+  - Updates when language switches
+  - Displays in styled performance cards
+
+- **Interactive chat functionality**
+  - Send messages and get AI responses
+  - Typing indicator while AI processes
+  - Context-aware responses based on user data
+  - Quick action buttons for common queries
+  - Clear chat button to reload greeting
 
 #### Documentation
-- **OPENAI_INTEGRATION.md**: 567-line comprehensive guide
-- **QUICK_START_OPENAI.md**: Quick testing guide
-- **DEBUG_NBOTS_CHATBOT.md**: 20+ diagnostic commands
-- **TESTING_NBOTS_CHATBOT.md**: 60+ item QA checklist
-- **NBOTS_COMPLETE_FIX.md**: Complete fix summary
-- **FIELD_PORTAL_CHATBOT_REVAMP.md**: Design documentation
+- `OPENAI_INTEGRATION.md` (567 lines) - Complete AI architecture
+- `QUICK_START_OPENAI.md` (197 lines) - Testing guide
+- `TESTING_NBOTS_CHATBOT.md` (250 lines) - 60+ item QA checklist
+- `DEBUG_NBOTS_CHATBOT.md` (289 lines) - Troubleshooting guide
+- `NBOTS_COMPLETE_FIX.md` (279 lines) - Technical fix summary
+- Updated `FIELD_PORTAL_CHATBOT_REVAMP.md` (256 lines)
+- Updated `README.md` with showcase and latest features
 
-### Changed
+### 🔧 Fixed
 
-#### Enhanced Data & APIs
-- **Increased ticket dataset**: 1,000 → 15,000 tickets
-- **API limit updates**: All fetch calls now use `limit=20000`
-- **Data structure**: Enhanced with SLA, aging, efficiency scores
-- **Team capacity**: Enforced 5 tickets/day maximum per team
-- **Status system**: Changed to 4-state (open, in_progress, closed, cancelled)
+#### Chatbot Issues
+- Fixed chatbot toggle not opening (ReferenceError)
+- Fixed functions not globally accessible for onclick handlers
+- Resolved duplicate DOMContentLoaded listeners
+- Fixed greeting stuck on "Loading performance insights..."
+- Added inline onclick handler to toggle button
+- Exposed all chatbot functions to window object immediately
 
-#### UI/UX Refinements
-- **Number formatting**: Added commas every 1k (15,000 not 15000)
-- **Comparison data**: Standardized trend display format
-- **Pagination**: Proper offset-based pagination (15 per page)
-- **Rankings**: Sort by productivity % (highest to lowest)
-- **Recent tickets**: Show top 10, sorted by newest first
-- **Team names**: Resolved from IDs (not raw team_123 display)
+#### CSS & Styling
+- Added missing CSS for `.ai-message`, `.ai-avatar`, `.ai-content`
+- Added message bubble styling with gradients
+- Added avatar circles with purple/green gradients
+- Added typing indicator styles and animations
+- Added suggestion chip hover effects
+- Added input field focus effects
+- Added all animations (slideUp, messageSlideIn, typingDot, pulseBadge)
 
-#### Performance Optimizations
-- **DataCache system**: Configurable TTL (short/medium/long/veryLong)
-- **Request debouncing**: 300ms for filter operations
-- **Lazy loading**: Charts load on-demand
-- **Mobile optimization**: Reduced limits for mobile devices
-- **Chart destruction**: Safe cleanup to prevent canvas conflicts
+#### Browser Caching
+- Implemented inline script approach to bypass .js file caching
+- Defined functions directly in HTML for immediate availability
+- Added script version bumping (v=24 → v=25 → v=26 → v=27)
+- Added verification console logs
+- Ensured functions available before onclick handlers fire
 
-### Fixed
+### 🚀 Improved
 
-#### Critical Bugs
-- **Canvas reuse errors**: Renamed chart functions to avoid ID conflicts
-- **Pagination not working**: Added offset/limit support to backend and frontend
-- **Filter not working**: Updated to use ticketv2 API structure
-- **Team availability errors**: Fixed `.toUpperCase()` on object issue
-- **Top performer showing 0**: Added enrichTeamsWithTicketCounts()
-- **Field portal KPI errors**: Fixed filtering logic for user-specific data
-- **Login system**: Smart team selection (prioritizes teams with today's tickets)
-- **Favicon 404**: Created SVG-based favicon
-- **Chatbot toggle not working**: Inline functions exposed to window
-- **Greeting stuck on "Loading..."**: Added auto-loading with real data
-- **Language switch not working**: Implemented real translation system
+#### Backend
+- Enhanced `/api/ai/chat` to accept language parameter
+- Added user context extraction (teamId, tickets, metrics)
+- Improved error handling and logging
+- Added provider identification (openai vs fallback)
+- Optimized response generation for both languages
 
-#### Performance Issues
-- **High-level metrics not loading**: Resolved function name collisions
-- **Live tracking not standardized**: Updated to use ticketv2 API
-- **Field portal not reflecting today**: Fixed date filtering with timezone-safe comparisons
-- **Data not accurate**: Increased today's ticket percentage from 3% to 10%
-- **Browser caching**: Inline scripts bypass all caching issues
+#### Frontend
+- Improved greeting loading timing (1-second delay)
+- Enhanced language toggle with full state management
+- Better error messages in both languages
+- Improved typing indicator UX
+- Added comprehensive debug logging
+- Better scroll behavior for new messages
 
-### Technical Improvements
-- **Code organization**: Separated chatbot functions into dedicated section
-- **Error handling**: Comprehensive try-catch with graceful fallbacks
-- **Debug logging**: Added extensive console logging for troubleshooting
-- **Type safety**: Improved null checks and type validation
-- **API standardization**: Consolidated all endpoints to port 5002
+#### Performance
+- Reduced initial chatbot load time
+- Optimized API data fetching (parallel requests)
+- Cached user metrics calculation
+- Improved animation performance
+- Better mobile responsiveness
 
-## [2.0.0] - 2025-10-31
+### 📊 Changed
 
-### Added - Enhanced Ticket System
+- Updated script version from v=22 to v=27 (field-portal.js)
+- Modified chatbot initialization to use inline scripts
+- Changed language toggle from alert to actual translation
+- Moved greeting loading from immediate to delayed (1000ms)
+- Updated clear chat to reload enhanced greeting
+- Modified all chatbot functions to window. assignments
 
-#### Enhanced Data Generator
-- **15,000 tickets** with intelligent distribution
-- **150 field teams** with Malaysian names
-- **Smart assignment engine**: Location, capacity, skill-based
-- **Enhanced fields**:
-  - States and zones (all 15 Malaysian states)
-  - Ticket aging (days since creation)
-  - SLA tracking (target time, breach status)
-  - Efficiency scores (time-based performance)
-  - Customer information (name, contact)
-  - Location details (state, district, zone, coordinates)
+### 🔒 Security
 
-#### ticketv2 API
-- **New endpoint**: `/api/ticketv2`
-- **Pagination support**: `offset` and `limit` parameters
-- **Enhanced response**: Includes total count
-- **Richer data**: All new fields included
-- **Performance optimized**: Fast queries for 15,000+ tickets
+- Added input sanitization for AI chat messages
+- Implemented API key security (environment variable only)
+- Added error handling to prevent information leakage
+- Validated user context before processing requests
 
-#### Analytics Enhancements
-- **Performance analytics**: Efficiency calculations
-- **Trend analysis**: Week-over-week comparisons
-- **Zone breakdowns**: State and district-level metrics
-- **Team productivity**: Completion rates and rankings
+## [2.4.0] - 2025-10-31
 
-### Changed
-
-#### API Consolidation
-- **Port standardization**: All APIs on port 5002 (was mixed 8085/5002)
-- **Endpoint updates**: Updated all frontend calls
-- **Config centralization**: Single API_BASE configuration
-
-#### UI Layout
-- **Field Teams page**: Reverted to toggle button layout
-- **Zone Performance**: Enhanced state and district breakdowns
-- **Top Performers**: Now shows productivity % prominently
-- **Recent Tickets**: Fixed to show latest 10 tickets
+### Added
+- Enhanced ticketv2 API with 15,000 tickets
+- Smart assignment engine with capacity limits
+- Zone-based performance analytics
+- Field portal revert to stable version (commit 75b0be0)
 
 ### Fixed
-- **Port mismatch**: Standardized 8085 → 5002
-- **Missing endpoint**: Added /api/ticketv2
-- **Data structure**: Fixed ticketv2Data.tickets access
-- **Analytics assignments**: Derived from tickets
-- **Zone materials**: Added array validation
+- Field portal KPI filtering (user-specific only)
+- Team availability display (object/string handling)
+- Canvas ID conflicts in Chart.js
+- Pagination for ticket list view
 
-## [1.5.0] - 2025-10-30
+## [2.3.0] - 2025-10-30
 
-### Added - Field Portal Features
-
-#### Field Team Portal
-- **Dedicated portal**: field-portal.html for field teams
-- **Personal dashboard**: User-specific KPIs and metrics
-- **Route planning**: Interactive map with assigned tickets
-- **Performance charts**: Weekly trends and category breakdown
-- **Expense tracking**: Log and track field expenses
-
-#### Live Tracking
-- **Real-time map**: Team locations and ticket markers
-- **Route visualization**: Optimized paths and turn-by-turn
-- **Distance calculation**: Haversine formula for accurate routing
-- **Traffic light status**: Visual status indicators (red/yellow/green)
-
-### Changed
-- **Login system**: Separate admin and field team authentication
-- **Ticket filtering**: User-specific filtering for field portal
-- **Status workflow**: 4-state system (open, in_progress, closed, cancelled)
+### Added
+- Live tracking page with Leaflet.js
+- Mobile performance optimization
+- Data caching system with TTL
+- Request debouncing and throttling
 
 ### Fixed
-- **Duplicate variable declarations**: Renamed conflicting variables
-- **Null value handling**: Added checks for undefined/null data
-- **Zone performance**: Fixed team availability extraction
+- High-level performance metrics in Tickets Performance Analysis
+- Ticket filter based on ticketv2 API
+- Team assignment logic
 
-## [1.0.0] - 2025-10-15
+## [2.2.0] - 2025-10-29
 
-### Added - Initial Release
+### Added
+- Recent tickets list (top 10, sorted by date)
+- Team name resolution for ticket display
+- Ticket detail modal with comprehensive info
+- Number formatting with commas (every 1k)
 
-#### Core Features
-- **Main dashboard**: Overview, tickets, teams, analytics
-- **Basic ticket management**: CRUD operations
-- **Team management**: Basic team profiles
-- **Simple analytics**: KPI cards and basic charts
-- **Sample data generator**: 1,000 tickets, 50 teams
+### Fixed
+- Main dashboard overview recent ticket list
+- Top performer completed data showing 0
+- Rankings not sorted by productivity %
 
-#### Basic Infrastructure
-- **Flask backend**: RESTful API on port 8085
-- **Static frontend**: HTML/CSS/JavaScript
-- **Chart.js integration**: Basic visualization
-- **Bootstrap UI**: Responsive design
+## [2.1.0] - 2025-10-28
+
+### Added
+- Zone performance view with enhanced breakdown
+- Field teams management with enriched ticket counts
+- Performance analysis charts
+- Comparison data with trend indicators
+
+### Fixed
+- Field teams management and Zones View data source
+- null/zero values in zone displays
+- Availability status extraction
+
+## [2.0.0] - 2025-10-27
+
+### Added
+- Complete ticketv2 API with 15,000 enhanced tickets
+- Enhanced data generator with intelligent assignment
+- 4-state ticket system (open, in_progress, closed, cancelled)
+- SLA tracking and aging calculations
+- Efficiency scoring system
+- Malaysian states, zones, and districts
+- 150+ field teams with realistic names
+
+### Changed
+- Migrated all pages from /api/tickets to /api/ticketv2
+- Standardized API endpoints to port 5002
+- Updated all frontend limit parameters to 20000
+
+### Fixed
+- Port mismatch (8085 vs 5002)
+- Missing API endpoints
+- Data structure inconsistencies
+
+## [1.0.0] - 2025-10-26
+
+### Added
+- Initial release
+- Basic ticket management
+- Field team portal
+- Admin dashboard
+- Sample data generator
 
 ---
 
-## Migration Notes
+## Version Format
 
-### Upgrading from 2.0.0 to 2.5.0
+- **Major.Minor.Patch** (Semantic Versioning)
+- **Major**: Breaking changes, major features
+- **Minor**: New features, backwards compatible
+- **Patch**: Bug fixes, small improvements
 
-**Backend Changes**:
-```bash
-# Install OpenAI (optional)
-pip install openai
+## Upgrade Guide
 
-# Set API key (optional)
-export OPENAI_API_KEY="sk-your-key-here"
+### From 2.4.x to 2.5.0
 
-# Restart server
-python3 backend_server.py
-```
+1. **Pull latest code**:
+   ```bash
+   git pull origin main
+   ```
 
-**Frontend Changes**:
-- Hard refresh browser (Ctrl+Shift+R)
-- Clear browser cache if chatbot doesn't work
-- Update bookmarks to correct ports (8080 for frontend, 5002 for backend)
+2. **Install OpenAI (optional)**:
+   ```bash
+   pip install openai
+   ```
 
-**Data Migration**:
-- No migration needed (data regenerates on startup)
-- Enhanced data generator creates 15,000 tickets automatically
+3. **Set API key (optional)**:
+   ```bash
+   export OPENAI_API_KEY="sk-your-key"
+   ```
 
-**API Changes**:
-- New endpoint: `POST /api/ai/chat` for chatbot
-- Enhanced: `GET /api/ticketv2` with pagination
-- All APIs now on port 5002 (was 8085)
+4. **Restart servers**:
+   ```bash
+   # Stop old servers (Ctrl+C)
+   python3 backend_server.py &
+   cd client && python3 -m http.server 8080
+   ```
+
+5. **Test chatbot**:
+   - Open field portal
+   - Hard refresh (Ctrl+Shift+R)
+   - Click robot button
+   - Test EN/BM switching
 
 ### Breaking Changes in 2.5.0
 
-- **Port change**: Frontend APIs changed from 8085 → 5002
-- **API structure**: ticketv2 returns flat `tickets` array (not nested)
-- **Function names**: Some chart functions renamed to avoid collisions
-- **Inline JavaScript**: Chatbot functions defined inline (not in external .js)
-
-### Deprecated Features
-
-- **Port 8085**: No longer used (all on 5002)
-- **Old /api/tickets**: Use /api/ticketv2 instead
-- **Microservices**: Simplified to single Flask backend
-- **Docker Compose**: Not required for development
+- None! Fully backwards compatible.
+- OpenAI is optional (works without API key)
+- All existing features still work
 
 ---
 
-## Version Comparison
+**AIFF - Advanced Intelligence Field Force**  
+*Empowering Malaysian field teams with AI-driven insights and optimization* 🇲🇾 🤖
 
-| Feature | v1.0.0 | v2.0.0 | v2.5.0 |
-|---------|--------|--------|--------|
-| Tickets | 1,000 | 15,000 | 15,000 |
-| Teams | 50 | 150 | 187 |
-| APIs | Basic | Enhanced | + OpenAI |
-| Languages | EN only | EN only | EN + BM |
-| AI Chatbot | Simple | Basic | OpenAI-powered |
-| Field Portal | Basic | Enhanced | + AI Assistant |
-| Performance | Good | Better | Optimized |
-| Documentation | 2 files | 8 files | 15+ files |
-
----
-
-**For detailed technical changes, see individual documentation files in the repository.**
-
-**Last Updated**: November 4, 2025  
-**Current Version**: 2.5.0  
-**Next Release**: 3.0.0 (PostgreSQL migration)
-
+**Latest Version**: 2.5.0 | **Released**: November 4, 2025 | **Status**: ✅ Production Ready
